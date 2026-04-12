@@ -14,8 +14,6 @@ export default function Home() {
   const [visibleCount, setVisibleCount] = useState(4); 
   
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  
-  // 🔥 THE NEW 3-STATE SUMMONING MODAL ('closed', 'recommend', 'warning')
   const [summonModalState, setSummonModalState] = useState('closed');
 
   const navigate = useNavigate();
@@ -60,31 +58,45 @@ export default function Home() {
     }
 
     const fetchData = async () => {
+      // 1. Start loading UI for the main components
       setLoading(true);
       try {
-        const userInterests = parsedUser.interests;
-        const randomTopic = userInterests[Math.floor(Math.random() * userInterests.length)];
-
-        let artRes;
+        // 🔥 THE SPEED FIX: We fetch the fast, internal data first.
+        let artResPromise;
         if (activeTab === 'network') {
-          artRes = await fetch(`https://lantern-library-backend.onrender.com/api/articles/network`, { headers: { 'Authorization': `Bearer ${token}` } });
+          artResPromise = fetch(`https://lantern-library-backend.onrender.com/api/articles/network`, { headers: { 'Authorization': `Bearer ${token}` } });
         } else {
-          artRes = await fetch(`https://lantern-library-backend.onrender.com/api/articles/feed?category=${activeTab}`);
+          artResPromise = fetch(`https://lantern-library-backend.onrender.com/api/articles/feed?category=${activeTab}`);
         }
 
-        const [profRes, paperRes] = await Promise.all([
-          fetch('https://lantern-library-backend.onrender.com/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch(`https://api.openalex.org/works?search=${encodeURIComponent(randomTopic)}&per-page=5`)
-        ]);
+        const profResPromise = fetch('https://lantern-library-backend.onrender.com/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+
+        // Wait ONLY for our fast database
+        const [artRes, profRes] = await Promise.all([artResPromise, profResPromise]);
 
         if (artRes.ok) setArticles(await artRes.json());
         if (profRes.ok) setUserProfile(await profRes.json());
-        if (paperRes.ok) setAcademicPapers((await paperRes.json()).results || []);
 
       } catch (error) {
         console.error("Could not fetch dashboard data");
       } finally {
+        // 🔥 DROP THE LOADING SCREEN INSTANTLY!
         setLoading(false);
+      }
+
+      // 🔥 2. SILENT BACKGROUND FETCH: Let the slow external API load on its own time
+      try {
+        const userInterests = parsedUser.interests;
+        const randomTopic = userInterests[Math.floor(Math.random() * userInterests.length)];
+        
+        fetch(`https://api.openalex.org/works?search=${encodeURIComponent(randomTopic)}&per-page=5`)
+          .then(res => res.json())
+          .then(paperData => {
+            if (paperData.results) setAcademicPapers(paperData.results);
+          })
+          .catch(err => console.error("Background paper fetch failed", err));
+      } catch (e) {
+        console.error("Failed to trigger background fetch");
       }
     };
     
@@ -96,13 +108,10 @@ export default function Home() {
     if (searchQuery.trim()) navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}&type=${searchType}`);
   };
 
-  // 🔥 THE SMART SUMMONING LOGIC GATE
   const handleSummonClick = () => {
     if (userProfile?.finishedList?.length > 0) {
-      // Path 1: They have finished items. Recommend they use them!
       setSummonModalState('recommend');
     } else {
-      // Path 2: Empty list. Go straight to guilt trip!
       setSummonModalState('warning');
     }
   };
@@ -207,7 +216,6 @@ export default function Home() {
         <div style={{ background: 'linear-gradient(135deg, var(--bg-panel) 0%, #1a1525 100%)', padding: isMobile ? '20px' : '25px', borderRadius: '12px', border: '1px solid #4a235a', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '1.5rem' }}>✨</span><h3 style={{ margin: 0, color: '#c39bd3', fontSize: '1.1rem' }}>The Summoning Room</h3></div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 15px 0' }}>Dialogue with the minds behind the text. Ask Elizabeth Bennet about modern dating, or debate morality with Raskolnikov.</p>
-          {/* 🔥 TRIGGERS THE NEW LOGIC GATE */}
           <button onClick={handleSummonClick} style={{ padding: '10px', background: '#4a235a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Initiate Summoning →</button>
         </div>
 
@@ -288,7 +296,7 @@ export default function Home() {
             </h3>
 
             {academicPapers.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>Loading archives...</p>
+              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>Searching global archives...</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {academicPapers.map(paper => (

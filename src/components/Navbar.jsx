@@ -92,12 +92,14 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid #2c3e50', padding: isMobile ? '12px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
+    <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid #2c3e50', padding: isMobile ? '12px 10px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
       
-      {/* LEFT: Logo */}
-      <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ fontSize: isMobile ? '1.5rem' : '1.8rem' }}>🏮</span>
-        {!isMobile && <h2 style={{ margin: 0, color: 'var(--lantern-gold)', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '1.2rem' }}>The Lantern Library</h2>}
+      {/* LEFT: Logo (NOW ALWAYS VISIBLE) */}
+      <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '10px' }}>
+        <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem' }}>🏮</span>
+        <h2 style={{ margin: 0, color: 'var(--lantern-gold)', letterSpacing: isMobile ? '0px' : '2px', textTransform: 'uppercase', fontSize: isMobile ? '0.85rem' : '1.2rem', whiteSpace: 'nowrap' }}>
+          The Lantern Library
+        </h2>
       </Link>
 
       {/* MIDDLE: Links (HIDDEN ON MOBILE TO PREVENT CLUTTER) */}
@@ -109,7 +111,7 @@ export default function Navbar() {
       )}
 
       {/* RIGHT: Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px' }}>
         
         {/* Publish Button (HIDDEN ON MOBILE) */}
         {!isMobile && (
