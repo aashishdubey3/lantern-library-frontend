@@ -15,8 +15,8 @@ export default function Home() {
   
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
-  // 🔥 NEW STATE FOR THE SUMMONING WARNING
-  const [showSummonWarning, setShowSummonWarning] = useState(false);
+  // 🔥 THE NEW 3-STATE SUMMONING MODAL ('closed', 'recommend', 'warning')
+  const [summonModalState, setSummonModalState] = useState('closed');
 
   const navigate = useNavigate();
 
@@ -96,12 +96,14 @@ export default function Home() {
     if (searchQuery.trim()) navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}&type=${searchType}`);
   };
 
-  // 🔥 THE SUMMONING LOGIC GATE
+  // 🔥 THE SMART SUMMONING LOGIC GATE
   const handleSummonClick = () => {
-    if (!userProfile?.finishedList || userProfile.finishedList.length === 0) {
-      setShowSummonWarning(true);
+    if (userProfile?.finishedList?.length > 0) {
+      // Path 1: They have finished items. Recommend they use them!
+      setSummonModalState('recommend');
     } else {
-      navigate('/summon');
+      // Path 2: Empty list. Go straight to guilt trip!
+      setSummonModalState('warning');
     }
   };
 
@@ -127,29 +129,59 @@ export default function Home() {
   return (
     <div style={{ maxWidth: '1200px', margin: '40px auto', padding: isMobile ? '0 15px' : '0 20px', position: 'relative' }}>
       
-      {/* 🔥 THE GUILT-TRIP SUMMONING MODAL */}
-      {showSummonWarning && (
+      {/* 🔮 MODAL 1: THE RECOMMENDATION (For users with finished items) */}
+      {summonModalState === 'recommend' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '12px', border: '1px solid #935116', maxWidth: '400px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
-            <h2 style={{ color: 'var(--lantern-gold)', marginTop: 0, fontSize: '1.6rem' }}>Halt, Scholar! 🛑</h2>
-            <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '15px' }}>
-              We checked your ledger. Your <strong>Finished</strong> shelf is completely empty. It is unwise to summon literary figures whose journeys you haven't even witnessed. Are you not ashamed?
-            </p>
-            <p style={{ color: '#e74c3c', fontSize: '0.85rem', fontStyle: 'italic', marginBottom: '25px', background: 'rgba(231, 76, 60, 0.1)', padding: '10px', borderRadius: '6px' }}>
-              <strong>Disclaimer:</strong> If you proceed anyway, you must provide the Oracle with full context. Do not just type "Raskolnikov"—you must type "Raskolnikov from Crime and Punishment by Fyodor Dostoevsky" or the magic will fail.
+          <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '12px', border: '1px solid #3498db', maxWidth: '400px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ color: '#3498db', marginTop: 0, fontSize: '1.6rem' }}>Highly Recommended 💡</h2>
+            <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '25px' }}>
+              The magic works best with characters whose journeys you have fully witnessed. We recommend summoning directly from your <strong>Finished Archives</strong>.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button onClick={() => navigate('/summon')} style={{ padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid #7f8c8d', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                I know the risks. Let me summon.
+              <button onClick={() => navigate('/profile')} style={{ padding: '12px', background: '#3498db', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                Go to my Archives →
               </button>
-              <button onClick={() => { setShowSummonWarning(false); navigate('/search'); }} style={{ padding: '12px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                You're right. I should read first. 📚
+              <button onClick={() => setSummonModalState('warning')} style={{ padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid #7f8c8d', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                No, I want to summon someone else
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* 🛑 MODAL 2: THE WARNING / GUILT TRIP (Empty list OR bypassed recommendation) */}
+      {summonModalState === 'warning' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '12px', border: '1px solid #935116', maxWidth: '400px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ color: 'var(--lantern-gold)', marginTop: 0, fontSize: '1.6rem' }}>Halt, Scholar! 🛑</h2>
+            
+            {userProfile?.finishedList?.length === 0 ? (
+              <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '15px' }}>
+                Your <strong>Finished</strong> shelf is completely empty. It is unwise to summon literary figures whose journeys you haven't even witnessed. Are you not ashamed?
+              </p>
+            ) : (
+              <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '15px' }}>
+                You are stepping outside the safety of your established archives. 
+              </p>
+            )}
+
+            <p style={{ color: '#e74c3c', fontSize: '0.85rem', fontStyle: 'italic', marginBottom: '25px', background: 'rgba(231, 76, 60, 0.1)', padding: '10px', borderRadius: '6px' }}>
+              <strong>Disclaimer:</strong> You must provide the Oracle with full context. Do not just type "Raskolnikov"—you must type "Raskolnikov from Crime and Punishment by Fyodor Dostoevsky" or the magic will fail.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button onClick={() => navigate('/summon')} style={{ padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid #7f8c8d', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                I know the risks. Let me summon.
+              </button>
+              <button onClick={() => { setSummonModalState('closed'); }} style={{ padding: '12px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                Cancel ↩️
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- STANDARD HOMEPAGE CONTENT BELOW --- */}
       <div style={{ padding: isMobile ? '20px 0' : '40px 20px', textAlign: 'center', marginBottom: isMobile ? '20px' : '40px' }}>
         <h1 style={{ margin: '0 0 10px 0', fontSize: isMobile ? '1.8rem' : '2.8rem', color: 'var(--lantern-gold)', lineHeight: '1.2' }}>Your Library, Brought to Life.</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '30px', fontSize: isMobile ? '0.9rem' : '1rem', maxWidth: '700px', margin: '0 auto 30px auto', lineHeight: '1.6' }}>Track your favorite series, summon protagonists to chat, and dive into a world of curated research and articles.</p>
@@ -172,10 +204,10 @@ export default function Home() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: isMobile ? '15px' : '20px', marginBottom: '60px' }}>
         
-        {/* SUMMONING CARD */}
         <div style={{ background: 'linear-gradient(135deg, var(--bg-panel) 0%, #1a1525 100%)', padding: isMobile ? '20px' : '25px', borderRadius: '12px', border: '1px solid #4a235a', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '1.5rem' }}>✨</span><h3 style={{ margin: 0, color: '#c39bd3', fontSize: '1.1rem' }}>The Summoning Room</h3></div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 15px 0' }}>Dialogue with the minds behind the text. Ask Elizabeth Bennet about modern dating, or debate morality with Raskolnikov.</p>
+          {/* 🔥 TRIGGERS THE NEW LOGIC GATE */}
           <button onClick={handleSummonClick} style={{ padding: '10px', background: '#4a235a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Initiate Summoning →</button>
         </div>
 

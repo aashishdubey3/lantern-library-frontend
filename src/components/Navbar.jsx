@@ -100,22 +100,26 @@ export default function Navbar() {
         {!isMobile && <h2 style={{ margin: 0, color: 'var(--lantern-gold)', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '1.2rem' }}>The Lantern Library</h2>}
       </Link>
 
-      {/* MIDDLE: Links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '15px' : '25px' }}>
-        <Link to="/messages" style={{ textDecoration: 'none', color: 'var(--text-main)', fontSize: isMobile ? '1.3rem' : '1rem', fontWeight: 'bold' }} title="Whispers">💬 {!isMobile && 'Whispers'}</Link>
-        <Link to="/community" style={{ textDecoration: 'none', color: 'var(--text-main)', fontSize: isMobile ? '1.3rem' : '1rem', fontWeight: 'bold' }} title="Lounge">🗣️ {!isMobile && 'Lounge'}</Link>
-      </div>
+      {/* MIDDLE: Links (HIDDEN ON MOBILE TO PREVENT CLUTTER) */}
+      {!isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
+          <Link to="/messages" style={{ textDecoration: 'none', color: 'var(--text-main)', fontSize: '1rem', fontWeight: 'bold' }}>💬 Whispers</Link>
+          <Link to="/community" style={{ textDecoration: 'none', color: 'var(--text-main)', fontSize: '1rem', fontWeight: 'bold' }}>🗣️ Lounge</Link>
+        </div>
+      )}
 
       {/* RIGHT: Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '20px' }}>
         
-        {/* Publish Button (Just a pencil icon on mobile) */}
-        <button onClick={() => navigate('/write')} style={{ background: isMobile ? 'transparent' : 'var(--lantern-gold)', color: isMobile ? 'var(--lantern-gold)' : 'var(--bg-deep)', border: 'none', padding: isMobile ? '5px' : '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: isMobile ? '1.3rem' : '1rem' }}>
-          ✏️ {!isMobile && 'Publish'}
-        </button>
+        {/* Publish Button (HIDDEN ON MOBILE) */}
+        {!isMobile && (
+          <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
+            ✏️ Publish
+          </button>
+        )}
         
-        {/* Streak (Just the fire and number on mobile, no border) */}
-        <div style={{ background: 'transparent', border: isMobile ? 'none' : '1px solid var(--lantern-gold)', color: 'var(--lantern-gold)', padding: isMobile ? '0' : '6px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: isMobile ? '1.1rem' : '0.9rem' }}>
+        {/* Streak */}
+        <div style={{ background: 'transparent', border: isMobile ? 'none' : '1px solid var(--lantern-gold)', color: 'var(--lantern-gold)', padding: isMobile ? '0' : '6px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: isMobile ? '1rem' : '0.9rem' }}>
           {isMobile ? `🔥 ${user?.currentStreak || 0}` : `STREAK 🔥 ${user?.currentStreak || 0}`}
         </div>
 
@@ -155,7 +159,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* 👤 PROFILE MENU */}
+        {/* 👤 PROFILE MENU (NOW CONTAINS EXTRA MOBILE LINKS) */}
         <div style={{ position: 'relative' }} ref={profileRef}>
           <img 
             onClick={() => setShowProfileMenu(!showProfileMenu)} 
@@ -165,7 +169,17 @@ export default function Navbar() {
           />
           
           {showProfileMenu && (
-            <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '180px', background: 'var(--bg-panel)', border: '1px solid #34495e', borderRadius: '8px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '200px', background: 'var(--bg-panel)', border: '1px solid #34495e', borderRadius: '8px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+              
+              {/* MOBILE ONLY MENU ITEMS */}
+              {isMobile && (
+                <>
+                  <div onClick={() => { setShowProfileMenu(false); navigate('/write'); }} style={{ padding: '12px 15px', color: 'var(--lantern-gold)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold', fontSize: '0.9rem' }}>✏️ Publish</div>
+                  <div onClick={() => { setShowProfileMenu(false); navigate('/messages'); }} style={{ padding: '12px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold', fontSize: '0.9rem' }}>💬 Whispers</div>
+                  <div onClick={() => { setShowProfileMenu(false); navigate('/community'); }} style={{ padding: '12px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold', fontSize: '0.9rem' }}>🗣️ Lounge</div>
+                </>
+              )}
+              
               <div onClick={() => { setShowProfileMenu(false); navigate('/profile'); }} style={{ padding: '12px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold', fontSize: '0.9rem' }}>📚 My Archives</div>
               <div onClick={() => { setShowProfileMenu(false); navigate('/settings'); }} style={{ padding: '12px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold', fontSize: '0.9rem' }}>⚙️ Settings</div>
               <div onClick={handleLogout} style={{ padding: '12px 15px', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold', background: 'var(--bg-deep)', fontSize: '0.9rem' }}>🚪 Log Out</div>
