@@ -9,7 +9,6 @@ export default function Navbar() {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   
-  // 🔥 Mobile Radar
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
   const notifRef = useRef(null);
@@ -93,55 +92,60 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid #2c3e50', padding: isMobile ? '10px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
+    <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid #2c3e50', padding: isMobile ? '12px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
       
+      {/* LEFT: Logo */}
       <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span style={{ fontSize: isMobile ? '1.5rem' : '1.8rem' }}>🏮</span>
         {!isMobile && <h2 style={{ margin: 0, color: 'var(--lantern-gold)', letterSpacing: '2px', textTransform: 'uppercase', fontSize: '1.2rem' }}>The Lantern Library</h2>}
       </Link>
 
+      {/* MIDDLE: Links */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '15px' : '25px' }}>
-        <Link to="/messages" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: 'bold', fontSize: isMobile ? '1.2rem' : '1rem' }} title="Whispers">💬 {!isMobile && 'Whispers'}</Link>
-        <Link to="/community" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: 'bold', fontSize: isMobile ? '1.2rem' : '1rem' }} title="Lounge">🗣️ {!isMobile && 'Lounge'}</Link>
+        <Link to="/messages" style={{ textDecoration: 'none', color: 'var(--text-main)', fontSize: isMobile ? '1.3rem' : '1rem', fontWeight: 'bold' }} title="Whispers">💬 {!isMobile && 'Whispers'}</Link>
+        <Link to="/community" style={{ textDecoration: 'none', color: 'var(--text-main)', fontSize: isMobile ? '1.3rem' : '1rem', fontWeight: 'bold' }} title="Lounge">🗣️ {!isMobile && 'Lounge'}</Link>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px' }}>
-        <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', padding: isMobile ? '6px 12px' : '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* RIGHT: Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '12px' : '20px' }}>
+        
+        {/* Publish Button (Just a pencil icon on mobile) */}
+        <button onClick={() => navigate('/write')} style={{ background: isMobile ? 'transparent' : 'var(--lantern-gold)', color: isMobile ? 'var(--lantern-gold)' : 'var(--bg-deep)', border: 'none', padding: isMobile ? '5px' : '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: isMobile ? '1.3rem' : '1rem' }}>
           ✏️ {!isMobile && 'Publish'}
         </button>
         
-        {/* 🔥 Now pulling real streak data! */}
-        <div style={{ background: 'transparent', border: '1px solid var(--lantern-gold)', color: 'var(--lantern-gold)', padding: isMobile ? '4px 8px' : '6px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: isMobile ? '0.8rem' : '0.9rem' }}>
+        {/* Streak (Just the fire and number on mobile, no border) */}
+        <div style={{ background: 'transparent', border: isMobile ? 'none' : '1px solid var(--lantern-gold)', color: 'var(--lantern-gold)', padding: isMobile ? '0' : '6px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: isMobile ? '1.1rem' : '0.9rem' }}>
           {isMobile ? `🔥 ${user?.currentStreak || 0}` : `STREAK 🔥 ${user?.currentStreak || 0}`}
         </div>
 
         {/* 🔔 NOTIFICATION BELL */}
         <div style={{ position: 'relative' }} ref={notifRef}>
-          <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} style={{ background: 'transparent', border: 'none', fontSize: isMobile ? '1.2rem' : '1.5rem', cursor: 'pointer', position: 'relative', padding: '5px' }}>
+          <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} style={{ background: 'transparent', border: 'none', fontSize: isMobile ? '1.3rem' : '1.5rem', cursor: 'pointer', position: 'relative', padding: '0' }}>
             🔔
             {unreadCount > 0 && (
-              <span style={{ position: 'absolute', top: '0', right: '0', background: '#e74c3c', color: 'white', borderRadius: '50%', width: '18px', height: '18px', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.65rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {unreadCount}
               </span>
             )}
           </button>
 
           {showNotifDropdown && (
-             <div style={{ position: 'absolute', top: '100%', right: isMobile ? '-50px' : '0', marginTop: '15px', width: isMobile ? '280px' : '320px', background: 'var(--bg-panel)', border: '1px solid var(--lantern-gold)', borderRadius: '8px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+             <div style={{ position: 'absolute', top: '100%', right: isMobile ? '-40px' : '0', marginTop: '15px', width: isMobile ? '260px' : '320px', background: 'var(--bg-panel)', border: '1px solid var(--lantern-gold)', borderRadius: '8px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #34495e', background: 'var(--bg-deep)' }}>
-                 <h4 style={{ margin: 0, color: 'var(--text-main)' }}>Notifications</h4>
-                 {unreadCount > 0 && <span onClick={markAllAsRead} style={{ fontSize: '0.8rem', color: '#3498db', cursor: 'pointer', fontWeight: 'bold' }}>Mark all read</span>}
+                 <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '0.95rem' }}>Notifications</h4>
+                 {unreadCount > 0 && <span onClick={markAllAsRead} style={{ fontSize: '0.75rem', color: '#3498db', cursor: 'pointer', fontWeight: 'bold' }}>Mark all read</span>}
                </div>
-               <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+               <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                  {notifications.length === 0 ? (
                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px', fontStyle: 'italic', margin: 0 }}>All caught up.</p>
                  ) : (
                    notifications.map(notif => (
-                     <div key={notif._id} onClick={() => handleNotificationClick(notif)} style={{ padding: '15px', borderBottom: '1px solid #2c3e50', background: notif.isRead ? 'transparent' : 'rgba(243, 156, 18, 0.1)', cursor: 'pointer', display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-                       <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${notif.senderName || 'System'}`} alt="Avatar" style={{ width: '35px', height: '35px', borderRadius: '50%', background: '#ecf0f1', flexShrink: 0 }} />
+                     <div key={notif._id} onClick={() => handleNotificationClick(notif)} style={{ padding: '12px', borderBottom: '1px solid #2c3e50', background: notif.isRead ? 'transparent' : 'rgba(243, 156, 18, 0.1)', cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                       <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${notif.senderName || 'System'}`} alt="Avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#ecf0f1', flexShrink: 0 }} />
                        <div>
-                         <p style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '0.9rem', lineHeight: '1.4' }}>{notif.message}</p>
-                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(notif.createdAt).toLocaleDateString()}</span>
+                         <p style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '0.85rem', lineHeight: '1.3' }}>{notif.message}</p>
+                         <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(notif.createdAt).toLocaleDateString()}</span>
                        </div>
                      </div>
                    ))
@@ -157,14 +161,14 @@ export default function Navbar() {
             onClick={() => setShowProfileMenu(!showProfileMenu)} 
             src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.username}`} 
             alt="Profile" 
-            style={{ width: isMobile ? '35px' : '45px', height: isMobile ? '35px' : '45px', borderRadius: '50%', border: '2px solid var(--lantern-gold)', background: '#ecf0f1', cursor: 'pointer' }} 
+            style={{ width: isMobile ? '32px' : '45px', height: isMobile ? '32px' : '45px', borderRadius: '50%', border: '2px solid var(--lantern-gold)', background: '#ecf0f1', cursor: 'pointer' }} 
           />
           
           {showProfileMenu && (
-            <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '200px', background: 'var(--bg-panel)', border: '1px solid #34495e', borderRadius: '8px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-              <div onClick={() => { setShowProfileMenu(false); navigate('/profile'); }} style={{ padding: '15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold' }}>📚 My Archives</div>
-              <div onClick={() => { setShowProfileMenu(false); navigate('/settings'); }} style={{ padding: '15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold' }}>⚙️ Settings</div>
-              <div onClick={handleLogout} style={{ padding: '15px', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold', background: 'var(--bg-deep)' }}>🚪 Log Out</div>
+            <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '180px', background: 'var(--bg-panel)', border: '1px solid #34495e', borderRadius: '8px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+              <div onClick={() => { setShowProfileMenu(false); navigate('/profile'); }} style={{ padding: '12px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold', fontSize: '0.9rem' }}>📚 My Archives</div>
+              <div onClick={() => { setShowProfileMenu(false); navigate('/settings'); }} style={{ padding: '12px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid #2c3e50', fontWeight: 'bold', fontSize: '0.9rem' }}>⚙️ Settings</div>
+              <div onClick={handleLogout} style={{ padding: '12px 15px', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold', background: 'var(--bg-deep)', fontSize: '0.9rem' }}>🚪 Log Out</div>
             </div>
           )}
         </div>
