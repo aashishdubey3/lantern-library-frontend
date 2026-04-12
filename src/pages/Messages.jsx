@@ -8,7 +8,7 @@ export default function Messages() {
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
   const [groups, setGroups] = useState([]);
-  const [blockedUsers, setBlockedUsers] = useState([]); // 🔥 Brought back the Blocked state
+  const [blockedUsers, setBlockedUsers] = useState([]); 
   const [activeTab, setActiveTab] = useState('friends');
   
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
@@ -27,6 +27,7 @@ export default function Messages() {
 
   const isGroupChat = activeChat && activeChat.members !== undefined;
 
+  // 🔥 UPGRADED: Socket Initialization
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) return navigate('/login');
@@ -36,7 +37,12 @@ export default function Messages() {
 
     const newSocket = io('https://lantern-library-backend.onrender.com');
     setSocket(newSocket);
-    newSocket.emit('register_scholar', parsedUser.id);
+    
+    // THE FIX: MongoDB uses _id. We check both just in case to avoid undefined errors.
+    const myId = parsedUser._id || parsedUser.id;
+    if (myId) {
+      newSocket.emit('register_scholar', myId);
+    }
 
     return () => newSocket.close();
   }, [navigate]);
@@ -52,25 +58,21 @@ export default function Messages() {
       localStorage.setItem('user', JSON.stringify(myProfile));
       setCurrentUser(myProfile);
 
-      // Fetch Friends
       if (myProfile.friends) {
         const friendData = await Promise.all(myProfile.friends.map(id => fetch(`https://lantern-library-backend.onrender.com/api/users/scholar/${id}`).then(res => res.json())));
         setFriends(friendData.map(d => d.scholar));
       }
 
-      // Fetch Requests
       if (myProfile.friendRequests) {
         const requestData = await Promise.all(myProfile.friendRequests.map(id => fetch(`https://lantern-library-backend.onrender.com/api/users/scholar/${id}`).then(res => res.json())));
         setRequests(requestData.map(d => d.scholar));
       }
 
-      // Fetch Blocked Users
       if (myProfile.blockedUsers) {
         const blockedData = await Promise.all(myProfile.blockedUsers.map(id => fetch(`https://lantern-library-backend.onrender.com/api/users/scholar/${id}`).then(res => res.json())));
         setBlockedUsers(blockedData.map(d => d.scholar));
       }
 
-      // Fetch Groups
       const groupRes = await fetch('https://lantern-library-backend.onrender.com/api/groups', { headers: { 'Authorization': `Bearer ${token}` } });
       if (groupRes.ok) setGroups(await groupRes.json());
 
@@ -108,10 +110,12 @@ export default function Messages() {
     }
   }, [activeChat, socket, isGroupChat]);
 
+  // 🔥 UPGRADED: Real-time Listeners
   useEffect(() => {
     if (!socket) return;
 
     const handlePrivateMsg = (newMessage) => {
+      // If we are currently looking at the chat of the person who sent it
       if (activeChat && !isGroupChat && newMessage.senderId === activeChat._id) {
         setMessages(prev => [...prev, newMessage]);
       }
@@ -155,11 +159,15 @@ export default function Messages() {
         setMessages(prev => [...prev, savedMessage]);
         setMessageText('');
         
-        if (isGroupChat) socket.emit('send_group_message', { groupId: activeChat._id, message: savedMessage });
-        else socket.emit('send_private_message', { receiverId: activeChat._id, message: savedMessage });
+        // Immediately emit the saved message so the other person sees it without refreshing
+        if (isGroupChat) {
+          socket.emit('send_group_message', { groupId: activeChat._id, message: savedMessage });
+        } else {
+          socket.emit('send_private_message', { receiverId: activeChat._id, message: savedMessage });
+        }
       } else {
         const errorData = await res.json();
-        alert(errorData.message); // Alerts if blocked!
+        alert(errorData.message); 
       }
     } catch (err) { alert("Failed to send message."); }
   };
@@ -213,7 +221,6 @@ export default function Messages() {
     } catch (e) { alert("Failed to delete chat."); }
   };
 
-  // 🔥 NEW: UNFRIEND LOGIC
   const handleUnfriend = async () => {
     if (!window.confirm(`Are you sure you want to remove ${activeChat.username} from your friends list?`)) return;
     const token = localStorage.getItem('token');
@@ -226,7 +233,6 @@ export default function Messages() {
     } catch (e) { alert("Failed to unfriend."); }
   };
 
-  // 🔥 NEW: BLOCK/UNBLOCK LOGIC
   const handleBlockToggle = async () => {
     if (!window.confirm(`Are you sure you want to change the block status for ${activeChat.username}?`)) return;
     const token = localStorage.getItem('token');
@@ -324,7 +330,6 @@ export default function Messages() {
             ))
           )}
 
-          {/* 🔥 NEW RENDER FOR BLOCKED USERS */}
           {activeTab === 'blocked' && (
             blockedUsers.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '20px' }}>Nobody blocked.</p> :
             blockedUsers.map(user => (

@@ -21,7 +21,7 @@ export default function Profile() {
   
   const [myArticles, setMyArticles] = useState([]);
 
-  // 🔥 UPGRADED: Network & Discovery States
+  // Network & Discovery States
   const [networkModal, setNetworkModal] = useState(null); // 'followers', 'following', or 'discover'
   const [networkUsers, setNetworkUsers] = useState([]);
   const [isNetworkLoading, setIsNetworkLoading] = useState(false);
@@ -84,7 +84,7 @@ export default function Profile() {
     }
   };
 
-  // 🔥 NEW: Search the database for new scholars
+  // Search the database for new scholars
   const handleSearchScholars = async () => {
     if (!searchQuery.trim()) return;
     setIsNetworkLoading(true);
@@ -103,7 +103,7 @@ export default function Profile() {
     }
   };
 
-  // 🔥 UPGRADED: Toggle Follow (Works for both Unfollowing and Following from Search)
+  // Toggle Follow
   const handleToggleFollow = async (targetId, action) => {
     if (action === 'unfollow' && !window.confirm("Are you sure you want to unfollow this scholar?")) return;
     
@@ -409,7 +409,7 @@ export default function Profile() {
           "{profileData.bio || 'A wandering scholar of the archives.'}"
         </p>
 
-        {/* 🔥 UPGRADED: The Search (+) Button added next to stats */}
+        {/* The Search (+) Button added next to stats */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', marginTop: '10px', marginBottom: '10px' }}>
           <div onClick={() => openNetworkModal('followers')} style={{ textAlign: 'center', cursor: 'pointer' }}>
             <h4 style={{ margin: '0 0 5px 0', color: 'var(--lantern-gold)', fontSize: '1.5rem' }}>{profileData?.followers?.length || 0}</h4>
@@ -530,6 +530,9 @@ export default function Profile() {
               ) : (
                 (networkModal === 'discover' ? searchResults : networkUsers).map(user => {
                   const isFollowingThisUser = profileData.following?.includes(user._id);
+                  
+                  // 🔥 THE FIX: Identify if this row is the current user
+                  const isSelf = user._id === profileData._id;
 
                   return (
                     <div key={user._id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 10px', borderBottom: '1px solid #2c3e50' }}>
@@ -541,8 +544,8 @@ export default function Profile() {
                         </div>
                       </div>
                       
-                      {/* Dynamic Button (Follow / Unfollow) */}
-                      {networkModal === 'following' || networkModal === 'discover' ? (
+                      {/* Dynamic Button (Follow / Unfollow) - Now Hidden for "Self" */}
+                      {!isSelf && (networkModal === 'following' || networkModal === 'discover') ? (
                         <button 
                           onClick={() => handleToggleFollow(user._id, isFollowingThisUser ? 'unfollow' : 'follow')} 
                           style={{ 
