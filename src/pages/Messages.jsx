@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { io } from 'socket.io-client';
 
 export default function Messages() {
   const [currentUser, setCurrentUser] = useState(null);
-  
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -15,7 +14,10 @@ export default function Messages() {
   const [newGroupName, setNewGroupName] = useState('');
   const [selectedFriendsForGroup, setSelectedFriendsForGroup] = useState([]);
 
+  // 🔥 Now we grab the active chat from the URL if it exists!
+  const { id } = useParams();
   const [activeChat, setActiveChat] = useState(null); 
+  
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState('');
   const [socket, setSocket] = useState(null);
@@ -54,39 +56,60 @@ export default function Messages() {
   const fetchNetworkData = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    
     try {
       const profRes = await fetch('https://lantern-library-backend.onrender.com/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } });
       const myProfile = await profRes.json();
       localStorage.setItem('user', JSON.stringify(myProfile));
       setCurrentUser(myProfile);
 
+      let loadedFriends = [];
+      let loadedGroups = [];
+
       if (myProfile.friends) {
         const friendData = await Promise.all(myProfile.friends.map(id => fetch(`https://lantern-library-backend.onrender.com/api/users/scholar/${id}`).then(res => res.json())));
-        setFriends(friendData.map(d => d.scholar));
+        loadedFriends = friendData.map(d => d.scholar);
+        setFriends(loadedFriends);
       }
-
       if (myProfile.friendRequests) {
         const requestData = await Promise.all(myProfile.friendRequests.map(id => fetch(`https://lantern-library-backend.onrender.com/api/users/scholar/${id}`).then(res => res.json())));
         setRequests(requestData.map(d => d.scholar));
       }
-
       if (myProfile.blockedUsers) {
         const blockedData = await Promise.all(myProfile.blockedUsers.map(id => fetch(`https://lantern-library-backend.onrender.com/api/users/scholar/${id}`).then(res => res.json())));
         setBlockedUsers(blockedData.map(d => d.scholar));
       }
-
       const groupRes = await fetch('https://lantern-library-backend.onrender.com/api/groups', { headers: { 'Authorization': `Bearer ${token}` } });
-      if (groupRes.ok) setGroups(await groupRes.json());
+      if (groupRes.ok) {
+        loadedGroups = await groupRes.json();
+        setGroups(loadedGroups);
+      }
+
+      // 🔥 If there is an ID in the URL, find that friend or group and set them as active!
+      if (id) {
+        const foundFriend = loadedFriends.find(f => f._id === id);
+        const foundGroup = loadedGroups.find(g => g._id === id);
+        if (foundFriend) setActiveChat(foundFriend);
+        else if (foundGroup) setActiveChat(foundGroup);
+      }
 
     } catch (err) { console.error("Failed to load network"); }
   };
 
-  useEffect(() => { fetchNetworkData(); }, []);
+  useEffect(() => { fetchNetworkData(); }, [id]); // Re-run if ID changes
+
+  // 🔥 Clicking a friend now pushes the URL!
+  const handleChatClick = (chatObject) => {
+    navigate(`/messages/${chatObject._id}`);
+  };
+
+  // 🔥 Going back clears the URL
+  const handleBackToList = () => {
+    setActiveChat(null);
+    navigate('/messages');
+  };
 
   useEffect(() => {
     if (!activeChat) return;
-    
     const fetchHistory = async () => {
       const token = localStorage.getItem('token');
       try {
@@ -95,13 +118,11 @@ export default function Messages() {
         if (res.ok) setMessages(await res.json());
       } catch (err) { console.error("Failed to fetch history"); }
     };
-    
     fetchHistory();
 
     if (socket) {
-      if (isGroupChat) {
-        socket.emit('join_group_chat', activeChat._id);
-      } else {
+      if (isGroupChat) socket.emit('join_group_chat', activeChat._id);
+      else {
         socket.emit('check_online_status', activeChat._id);
         const handleStatus = (data) => { if (data.userId === activeChat._id) setIsOnline(data.isOnline); };
         socket.on('online_status_result', handleStatus);
@@ -124,17 +145,12 @@ export default function Messages() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!messageText.trim() || !activeChat) return;
-
     const token = localStorage.getItem('token');
     const url = isGroupChat ? `https://lantern-library-backend.onrender.com/api/groups/${activeChat._id}/message` : `https://lantern-library-backend.onrender.com/api/messages`;
     const bodyData = isGroupChat ? { text: messageText } : { receiverId: activeChat._id, text: messageText };
 
     try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(bodyData)
-      });
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(bodyData) });
       if (res.ok) {
         const savedMessage = await res.json();
         setMessages(prev => [...prev, savedMessage]);
@@ -151,12 +167,11 @@ export default function Messages() {
     return member ? member.username : 'Unknown';
   };
 
-  // Remaining Handlers untouched (handleAcceptRequest, handleCreateGroup, etc)...
   const handleAcceptRequest = async (id) => { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/users/accept-request/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }}); fetchNetworkData(); };
   const handleDeclineRequest = async (id) => { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/users/remove-friend/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }}); fetchNetworkData(); };
   const handleDeleteChat = async () => { if (window.confirm("Burn this conversation?")) { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/messages/${activeChat._id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); setMessages([]); } };
-  const handleUnfriend = async () => { if (window.confirm("Unfriend?")) { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/users/remove-friend/${activeChat._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); setActiveChat(null); fetchNetworkData(); } };
-  const handleBlockToggle = async () => { if (window.confirm("Change block status?")) { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/users/block/${activeChat._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); setActiveChat(null); fetchNetworkData(); } };
+  const handleUnfriend = async () => { if (window.confirm("Unfriend?")) { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/users/remove-friend/${activeChat._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); handleBackToList(); fetchNetworkData(); } };
+  const handleBlockToggle = async () => { if (window.confirm("Change block status?")) { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/users/block/${activeChat._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); handleBackToList(); fetchNetworkData(); } };
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
@@ -168,33 +183,16 @@ export default function Messages() {
     } catch(e) { alert("Failed to create group."); }
   };
 
-  const containerStyle = { 
-    maxWidth: '1200px', margin: isMobile ? '0' : '20px auto', 
-    display: 'flex', gap: isMobile ? '0' : '20px', 
-    height: isMobile ? 'calc(100vh - 65px)' : '80vh', 
-    flexDirection: isMobile ? 'column' : 'row'
-  };
-
-  const leftColumnStyle = { 
-    width: isMobile ? '100%' : '35%', background: 'var(--bg-panel)', 
-    borderRadius: isMobile ? '0' : '16px', border: isMobile ? 'none' : '1px solid var(--border-color)', 
-    display: (!isMobile || (isMobile && !activeChat)) ? 'flex' : 'none', 
-    flexDirection: 'column', overflow: 'hidden', height: '100%'
-  };
-
-  const rightColumnStyle = { 
-    width: isMobile ? '100%' : '65%', background: 'var(--bg-panel)', 
-    borderRadius: isMobile ? '0' : '16px', border: isMobile ? 'none' : '1px solid var(--border-color)', 
-    display: (!isMobile || (isMobile && activeChat)) ? 'flex' : 'none', 
-    flexDirection: 'column', overflow: 'hidden', height: '100%'
-  };
+  const containerStyle = { maxWidth: '1200px', margin: isMobile ? '0' : '20px auto', display: 'flex', gap: isMobile ? '0' : '20px', height: isMobile ? 'auto' : 'calc(100vh - 120px)', flexDirection: isMobile ? 'column' : 'row' };
+  const leftColumnStyle = { width: isMobile ? '100%' : '35%', display: (!isMobile || !activeChat) ? 'flex' : 'none', flexDirection: 'column', height: '100%' };
+  const rightColumnStyle = { width: isMobile ? '100%' : '65%', display: (!isMobile || activeChat) ? 'flex' : 'none', flexDirection: 'column' };
 
   return (
     <div style={containerStyle}>
       
       {/* LEFT COLUMN: INBOX TABS */}
       <div style={leftColumnStyle}>
-        <div style={{ padding: '15px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-deep)' }}>
+        <div style={{ padding: '15px', background: 'var(--bg-deep)' }}>
           <h2 style={{ margin: '0 0 10px 0', color: 'var(--text-main)', fontSize: '1.4rem' }}>Whispers</h2>
           <div className="hide-scroll" style={{ display: 'flex', overflowX: 'auto', gap: '8px', paddingBottom: '5px' }}>
             <button onClick={() => setActiveTab('friends')} style={{ flexShrink: 0, padding: '8px 16px', borderRadius: '20px', background: activeTab === 'friends' ? 'var(--text-main)' : 'var(--bg-panel)', color: activeTab === 'friends' ? 'var(--bg-deep)' : 'var(--text-muted)', border: '1px solid var(--border-color)', fontWeight: 'bold' }}>Friends</button>
@@ -203,11 +201,11 @@ export default function Messages() {
           </div>
         </div>
 
-        <div className="chat-tunnel">
+        <div style={{ flexGrow: 1, overflowY: 'auto', padding: '10px' }}>
           {activeTab === 'friends' && (
             friends.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No friends yet.</p> :
             friends.map(friend => (
-              <div key={friend._id} className="app-card" onClick={() => setActiveChat(friend)} style={{ padding: '15px', background: activeChat?._id === friend._id ? 'var(--bg-deep)' : 'var(--bg-panel)', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div key={friend._id} className="app-card" onClick={() => handleChatClick(friend)} style={{ padding: '15px', background: activeChat?._id === friend._id ? 'var(--bg-deep)' : 'var(--bg-panel)', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
                 <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${friend.username}`} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#ecf0f1' }} />
                 <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.05rem' }}>{friend.username}</h4>
               </div>
@@ -238,7 +236,7 @@ export default function Messages() {
                 </form>
               )}
               {groups.map(group => (
-                <div key={group._id} className="app-card" onClick={() => setActiveChat(group)} style={{ padding: '15px', background: activeChat?._id === group._id ? 'var(--bg-deep)' : 'var(--bg-panel)', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div key={group._id} className="app-card" onClick={() => handleChatClick(group)} style={{ padding: '15px', background: activeChat?._id === group._id ? 'var(--bg-deep)' : 'var(--bg-panel)', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
                   <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#3498db', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>👥</div>
                   <div>
                     <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.05rem' }}>{group.name}</h4>
@@ -252,7 +250,7 @@ export default function Messages() {
           {activeTab === 'requests' && (
             requests.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No pending requests.</p> :
             requests.map(req => (
-              <div key={req._id} style={{ padding: '15px', background: 'var(--bg-panel)', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div key={req._id} style={{ padding: '15px', background: 'var(--bg-panel)', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${req.username}`} alt="Avatar" style={{ width: '35px', height: '35px', borderRadius: '50%' }} />
                   <h4 style={{ margin: 0, color: 'var(--text-main)' }}>{req.username}</h4>
@@ -267,8 +265,8 @@ export default function Messages() {
         </div>
       </div>
 
-      {/* RIGHT COLUMN: ACTIVE CHAT WINDOW */}
-      <div style={rightColumnStyle}>
+      {/* RIGHT COLUMN: ACTIVE CHAT WINDOW (LOCKED ON MOBILE) */}
+      <div style={rightColumnStyle} className={isMobile && activeChat ? "mobile-fixed-chat chat-layout" : "chat-layout"}>
         {!activeChat ? (
           <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
             <h3>Select a conversation.</h3>
@@ -279,7 +277,7 @@ export default function Messages() {
             <div className="chat-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 {isMobile && (
-                  <button onClick={() => setActiveChat(null)} style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', fontSize: '1.5rem', cursor: 'pointer', padding: 0 }}>←</button>
+                  <button onClick={handleBackToList} style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', fontSize: '1.5rem', cursor: 'pointer', padding: 0 }}>←</button>
                 )}
                 {!isGroupChat ? (
                   <>
@@ -339,7 +337,7 @@ export default function Messages() {
 
             {/* FIXED BOTTOM INPUT */}
             {activeTab !== 'blocked' && (
-              <form onSubmit={handleSendMessage} className="chat-input-area" style={{ display: 'flex', gap: '10px' }}>
+              <form onSubmit={handleSendMessage} className="chat-input-area">
                 <input type="text" placeholder="Message..." value={messageText} onChange={e => setMessageText(e.target.value)} style={{ flexGrow: 1, padding: '12px 20px', borderRadius: '25px', outline: 'none' }} />
                 <button type="submit" style={{ padding: '0 25px', background: 'var(--lantern-gold)', color: '#fff', border: 'none', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' }}>Send</button>
               </form>

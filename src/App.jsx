@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Link } from "react-router-dom";
+import { useState, useEffect } from 'react';
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -23,9 +24,22 @@ import SummonChat from "./pages/SummonChat";
 import Articles from "./pages/Articles"; 
 import Research from "./pages/Research";
 
-function App() {
+// 🔥 A Helper Component to control the Bottom Nav
+function AppLayout() {
+  const location = useLocation();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // 🔥 THE MAGIC: Hide bottom nav if we are inside a specific chat or the summoning room!
+  const isChatScreen = location.pathname.startsWith('/messages/') || location.pathname === '/summon';
+
   return (
-    <BrowserRouter>
+    <>
       <Navbar />
 
       <div style={{ minHeight: "80vh" }}>
@@ -37,29 +51,45 @@ function App() {
           <Route path="/search" element={<Search />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/write" element={<Write />} />
-
-          {/* 🔥 The Summoning Room */}
           <Route path="/summon" element={<SummonChat />} />
           <Route path="/settings" element={<Settings />} />
-
-          {/* 📖 The Manuscript Reader */}
           <Route path="/article/:id" element={<Read />} />
           <Route path="/scholar/:id" element={<ScholarProfile />} />
           <Route path="/community" element={<Community />} />
+          
+          {/* 🔥 Notice we added the /:id route for Messages! */}
           <Route path="/messages" element={<Messages />} />
+          <Route path="/messages/:id" element={<Messages />} />
 
-          {/* 📱 The New Mobile Deepstash Feeds */}
           <Route path="/articles" element={<Articles />} />
           <Route path="/research" element={<Research />} />
-
-          {/* 🔐 Authentication Routes */}
           <Route path="/verify/:token" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Routes>
       </div>
 
-      <Footer />
+      <div className="hide-on-mobile">
+        <Footer />
+      </div>
+
+      {/* 📱 MOBILE BOTTOM NAV (Only shows if NOT in a chat) */}
+      {isMobile && !isChatScreen && (
+        <nav style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'var(--bg-panel)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '12px 0', zIndex: 100, paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
+          <Link to="/" className="bottom-nav-link">🏠</Link>
+          <Link to="/write" className="bottom-nav-link">✏️</Link>
+          <Link to="/messages" className="bottom-nav-link">💬</Link>
+          <Link to="/community" className="bottom-nav-link">🗣️</Link>
+        </nav>
+      )}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppLayout />
     </BrowserRouter>
   );
 }
