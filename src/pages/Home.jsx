@@ -33,7 +33,7 @@ export default function Home() {
     { id: 'technology', label: 'Technology' }
   ];
 
-  // 🔥 FIXED SNIPPET CLEANER HERE TOO
+  // 🔥 FIXED SNIPPET CLEANER (Destroys &nbsp; and HTML trash)
   const getSnippet = (text, maxWords) => {
     if (!text) return "The ancient texts are currently being translated...";
     let cleanText = text
@@ -135,38 +135,49 @@ export default function Home() {
         </div>
       )}
 
-      {/* --- HERO & SEARCH SECTION --- */}
-      <div style={{ padding: isMobile ? '10px 0 20px 0' : '40px 20px', textAlign: isMobile ? 'left' : 'center' }}>
+      {/* --- FLOATING, AESTHETIC SEARCH HERO --- */}
+      <div style={{ padding: isMobile ? '30px 0 40px 0' : '60px 20px', textAlign: 'center', position: 'relative' }}>
+        
         {!isMobile && (
           <>
-            <h1 style={{ margin: '0 0 10px 0', fontSize: '2.8rem', color: 'var(--lantern-gold)', lineHeight: '1.2' }}>Your Library, Brought to Life.</h1>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '30px', fontSize: '1rem', maxWidth: '700px', margin: '0 auto 30px auto' }}>Track your favorite series, summon protagonists to chat, and dive into a world of curated research and articles.</p>
+            <h1 style={{ margin: '0 0 15px 0', fontSize: '3.5rem', color: 'var(--text-main)', textShadow: '0 0 20px rgba(243, 156, 18, 0.2)' }}>Your Library, Brought to Life.</h1>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '1.1rem', maxWidth: '700px', margin: '0 auto 40px auto' }}>Track your favorite series, summon protagonists to chat, and dive into a world of curated research and articles.</p>
           </>
         )}
         
-        <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '20px' : '25px', borderRadius: '24px', border: '1px solid var(--border-color)', maxWidth: isMobile ? '100%' : '750px', margin: '0 auto' }}>
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', marginBottom: '15px' }}>
-            <input type="text" placeholder="Search across all realms..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flexGrow: 1, padding: '15px 20px', borderRadius: '16px', fontSize: '1rem' }} />
-            <button type="submit" style={{ padding: '15px 30px', background: 'var(--lantern-gold)', color: '#fff', border: 'none', borderRadius: '16px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}>Search</button>
+        {/* Floating Glassmorphism Bar */}
+        <div style={{ maxWidth: '750px', margin: '0 auto', position: 'relative', zIndex: 10 }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '15px', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              placeholder="Search across all realms..." 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+              style={{ 
+                flexGrow: 1, padding: '18px 25px', borderRadius: '30px', fontSize: '1.1rem', 
+                background: 'rgba(21, 26, 34, 0.6)', backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(243, 156, 18, 0.3)', color: 'var(--text-main)',
+                width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+              }} 
+            />
+            {/* The Glowing Lantern Button */}
+            <button type="submit" className="lantern-search-btn" style={{ padding: '16px 35px', borderRadius: '30px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', width: isMobile ? '100%' : 'auto' }}>
+              Search 🏮
+            </button>
           </form>
 
-          {/* 🔥 SLEEK TABS APPLIED HERE */}
-          <div className="hide-scroll" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '5px', justifyContent: isMobile ? 'flex-start' : 'center' }}>
+          {/* Sleek Pills */}
+          <div className="hide-scroll" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '5px', justifyContent: 'center', marginTop: '20px' }}>
             {[{ id: 'book', label: 'Books' }, { id: 'movie', label: 'Movies' }, { id: 'series', label: 'Series' }, { id: 'paper', label: 'Research' }].map(type => (
               <button 
                 key={type.id} 
                 onClick={() => setSearchType(type.id)} 
                 style={{ 
-                  flexShrink: 0, 
-                  padding: '6px 16px', 
-                  borderRadius: '30px', 
-                  background: searchType === type.id ? 'var(--text-main)' : 'transparent', 
-                  color: searchType === type.id ? 'var(--bg-panel)' : 'var(--text-muted)', 
+                  flexShrink: 0, padding: '8px 20px', borderRadius: '20px', 
+                  background: searchType === type.id ? 'var(--lantern-gold)' : 'transparent', 
+                  color: searchType === type.id ? '#fff' : 'var(--text-muted)', 
                   border: searchType === type.id ? 'none' : '1px solid var(--border-color)', 
-                  cursor: 'pointer', 
-                  fontWeight: '600', 
-                  fontSize: '0.85rem',
-                  transition: 'all 0.2s ease'
+                  cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem', transition: 'all 0.2s' 
                 }}
               >
                 {type.label}
@@ -176,7 +187,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- SWIPEABLE FEATURE CARDS --- */}
+      {/* --- SWIPEABLE FEATURE CARDS (ALIVE) --- */}
       <div 
         className="hide-scroll"
         style={{ 

@@ -14,6 +14,10 @@ export default function Read() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
+  // 🔥 STATE FOR THE SHARE MODAL
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [friendsList, setFriendsList] = useState([]);
+
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -39,6 +43,13 @@ export default function Read() {
              const parsedUser = JSON.parse(storedUser);
              if (parsedUser.following && parsedUser.following.includes(fetchedArticle.authorId)) {
                setIsFollowing(true);
+             }
+
+             // Load friends for the Share modal
+             if (parsedUser.friends) {
+               Promise.all(parsedUser.friends.map(friendId => fetch(`https://lantern-library-backend.onrender.com/api/users/scholar/${friendId}`).then(r => r.json())))
+                 .then(data => setFriendsList(data.map(d => d.scholar)))
+                 .catch(err => console.error(err));
              }
           }
 
@@ -120,6 +131,51 @@ export default function Read() {
     }
   };
 
+  // 🔥 HANDLE LIKES
+  const handleLike = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return alert("Please log in to like articles.");
+    
+    // Optimistic UI update
+    setArticle({ 
+      ...article, 
+      isLikedByMe: !article.isLikedByMe, 
+      likesCount: (article.likesCount || article.likes?.length || 0) + (article.isLikedByMe ? -1 : 1) 
+    });
+
+    try {
+      await fetch(`https://lantern-library-backend.onrender.com/api/articles/${article._id}/like`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (err) { console.error("Failed to like article"); }
+  };
+
+  // 🔥 SEND TO WHISPERS LOGIC
+  const sendToFriend = async (friendId) => {
+    const token = localStorage.getItem('token');
+    const shareUrl = window.location.href;
+    const text = `Hey! Check out this article: "${article.title}"\nRead it here: ${shareUrl}`;
+
+    try {
+      await fetch(`https://lantern-library-backend.onrender.com/api/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ receiverId: friendId, text: text })
+      });
+      alert('Article sent to friend!');
+      setShareModalOpen(false); 
+    } catch (err) {
+      alert('Failed to send article.');
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Link copied to clipboard!');
+    setShareModalOpen(false);
+  };
+
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Unrolling manuscript...</h2>;
   if (!article) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--text-main)' }}>Manuscript not found in the archives.</h2>;
 
@@ -132,9 +188,44 @@ export default function Read() {
   const isMyOwnArticle = currentUser && currentUser.id === article.authorId;
 
   return (
-    <div style={{ maxWidth: '800px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px', paddingBottom: isMobile ? '80px' : '20px' }}>
+    <div style={{ maxWidth: '800px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px', paddingBottom: isMobile ? '80px' : '20px', position: 'relative' }}>
       
-      {/* 🔥 THE CSS FIX FOR BEAUTIFUL QUOTES! */}
+      {/* 🔥 THE SHARE MODAL */}
+      {shareModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '20px', width: '100%', maxWidth: '350px', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem' }}>Share Article</h3>
+              <button onClick={() => setShareModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+            </div>
+            
+            <button onClick={copyToClipboard} style={{ width: '100%', padding: '15px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'var(--text-main)', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '20px' }}>
+              🔗 Copy External Link
+            </button>
+
+            <h4 style={{ margin: '0 0 10px 0', color: 'var(--lantern-gold)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Send to Whispers</h4>
+            <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+              {friendsList.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center' }}>No friends in your network yet.</p>
+              ) : (
+                friendsList.map(friend => (
+                  <div key={friend._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${friend.username}`} alt="Avatar" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
+                      <span style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{friend.username}</span>
+                    </div>
+                    <button onClick={() => sendToFriend(friend._id)} style={{ padding: '6px 15px', background: 'var(--lantern-gold)', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
+                      Send
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* THE CSS FIX FOR BEAUTIFUL QUOTES! */}
       <style>
         {`
           .parchment-content {
@@ -150,13 +241,13 @@ export default function Read() {
           }
           .parchment-content blockquote {
             border-left: 4px solid var(--lantern-gold);
-            background: rgba(212, 175, 55, 0.15); /* A slightly darker gold tint for the quote box */
+            background: rgba(212, 175, 55, 0.15); 
             margin: 25px 0;
             padding: 15px 25px;
             font-style: italic;
-            color: #1a252f; /* Darker text for readability */
+            color: #1a252f; 
             border-radius: 0 8px 8px 0;
-            font-size: 1.25rem; /* Make quotes slightly larger */
+            font-size: 1.25rem; 
           }
           .parchment-content a {
             color: var(--lantern-gold);
@@ -232,7 +323,6 @@ export default function Read() {
               {isFollowing ? 'Following ✓' : 'Follow +'}
             </button>
           )}
-
         </div>
 
         {/* The content rendering area */}
@@ -240,6 +330,38 @@ export default function Read() {
           className="parchment-content" 
           dangerouslySetInnerHTML={{ __html: cleanContent }} 
         />
+
+        {/* 🔥 THE IN-ARTICLE SOCIAL BAR */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'center', justifyContent: 'space-between', marginTop: '50px', paddingTop: '25px', borderTop: '1px solid #d4c4a8' }}>
+          
+          <div style={{ display: 'flex', gap: '15px' }}>
+            <button 
+              onClick={handleLike} 
+              style={{ background: '#f5ead3', border: '1px solid #d4c4a8', display: 'flex', alignItems: 'center', gap: '8px', color: article.isLikedByMe ? '#e74c3c' : '#2c3e50', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', padding: '10px 20px', borderRadius: '30px' }}
+            >
+              {article.isLikedByMe ? '❤️' : '🤍'} {article.likesCount || article.likes?.length || 0} Likes
+            </button>
+            <button 
+              style={{ background: '#f5ead3', border: '1px solid #d4c4a8', display: 'flex', alignItems: 'center', gap: '8px', color: '#2c3e50', cursor: 'default', fontSize: '1rem', fontWeight: 'bold', padding: '10px 20px', borderRadius: '30px' }}
+            >
+              💬 {article.comments?.length || 0} Comments
+            </button>
+          </div>
+
+          <button 
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({ title: article.title, url: window.location.href });
+              } else {
+                setShareModalOpen(true);
+              }
+            }} 
+            style={{ background: 'var(--lantern-gold)', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', padding: '10px 20px', borderRadius: '30px' }}
+          >
+            📤 Share
+          </button>
+        </div>
+
       </div>
     </div>
   );
