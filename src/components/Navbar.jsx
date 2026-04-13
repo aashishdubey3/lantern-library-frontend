@@ -49,7 +49,6 @@ export default function Navbar() {
     } catch (err) { console.error("Error fetching notifications"); }
   };
 
-  // 🔥 UPDATED SOCKET LOGIC: Handles Mobile Sleep Reconnections
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -63,11 +62,7 @@ export default function Navbar() {
 
         if (myId) {
           socket.emit('register_scholar', myId);
-          
-          // Re-register if phone goes to sleep and wakes up
-          socket.on('connect', () => {
-            socket.emit('register_scholar', myId);
-          });
+          socket.on('connect', () => socket.emit('register_scholar', myId));
         }
 
         socket.on('receive_notification_ping', () => fetchNotifications());
@@ -77,9 +72,7 @@ export default function Navbar() {
           socket.off('receive_notification_ping');
           socket.close();
         };
-      } catch (e) {
-        console.error("Parse error", e);
-      }
+      } catch (e) { console.error("Parse error", e); }
     } else {
       setUser(null);
     }
@@ -89,6 +82,28 @@ export default function Navbar() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login'; 
+  };
+
+  // 🔥 SMART NOTIFICATION ROUTER
+  const handleNotificationClick = async (notif) => {
+    setShowNotifDropdown(false); // Close dropdown
+    
+    const msg = (notif.message || '').toLowerCase();
+    
+    // Guess the route based on keywords in your backend's message
+    if (msg.includes('request') || msg.includes('friend') || msg.includes('message')) {
+      navigate('/messages'); 
+    } else if (msg.includes('reply') || msg.includes('group') || msg.includes('discussion')) {
+      navigate('/community');
+    } else if (msg.includes('article') || msg.includes('post')) {
+      navigate('/articles');
+    } else if (notif.link) {
+      // If your backend ever sends a direct link property, use it!
+      navigate(notif.link); 
+    }
+    
+    // Optional: If you have a backend endpoint to mark it as read, call it here!
+    // await fetch(`https://lantern-library-backend.onrender.com/api/notifications/${notif._id}/read`, { method: 'POST', headers: {...} });
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -150,7 +165,9 @@ export default function Navbar() {
                </div>
                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                  {notifications.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>All caught up.</p> : notifications.map(notif => (
-                   <div key={notif._id} style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: '10px' }}>
+                   
+                   // 🔥 THIS IS NOW CLICKABLE!
+                   <div key={notif._id} onClick={() => handleNotificationClick(notif)} style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: '10px', cursor: 'pointer', background: notif.isRead ? 'transparent' : 'rgba(243, 156, 18, 0.05)' }}>
                      <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${notif?.senderName || 'System'}`} alt="Avatar" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
                      <div><p style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '0.85rem' }}>{notif.message}</p></div>
                    </div>
