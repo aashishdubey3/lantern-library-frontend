@@ -56,6 +56,7 @@ export default function Home() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
+    
     if (!token) { setLoading(false); return; }
 
     const parsedUser = JSON.parse(storedUser);
@@ -108,7 +109,6 @@ export default function Home() {
       
       <div className={`page-dimmer ${searchFocused ? 'active' : ''}`} onClick={() => setSearchFocused(false)}></div>
 
-      {/* --- MODALS (Unchanged) --- */}
       {summonModalState === 'recommend' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '20px', border: '1px solid #3498db', maxWidth: '400px', textAlign: 'center' }}>
@@ -143,13 +143,12 @@ export default function Home() {
         
         {!isMobile && (
           <>
-            <h1 style={{ margin: '0 0 15px 0', fontSize: '3.5rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Your Library, Brought to Life.</h1>
+            <h1 style={{ margin: '0 0 15px 0', fontSize: '3.5rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)', textShadow: '0 0 20px rgba(245, 158, 11, 0.15)' }}>Your Library, Brought to Life.</h1>
             <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '1.1rem', maxWidth: '700px', margin: '0 auto 40px auto' }}>Track your favorite series, summon protagonists to chat, and dive into a world of curated research and articles.</p>
           </>
         )}
         
         <div style={{ maxWidth: '650px', margin: '0 auto', position: 'relative' }}>
-          
           <form onSubmit={handleSearchSubmit} style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
             <input 
               ref={searchInputRef}
@@ -166,7 +165,6 @@ export default function Home() {
                 transition: 'all 0.3s ease'
               }} 
             />
-            {/* UNIFIED NATIVE SEARCH ICON */}
             <button 
               type="submit" 
               style={{ 
@@ -184,7 +182,6 @@ export default function Home() {
             </button>
           </form>
 
-          {/* TRANSLUCENT AMBER TABS */}
           <div className="hide-scroll" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '5px', justifyContent: 'center', marginTop: '20px' }}>
             {searchCategories.map(type => {
               const isActive = searchType === type.id;
@@ -208,13 +205,12 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- CONDITIONAL RENDERING: MOBILE VS DESKTOP --- */}
       {isMobile ? (
         
-        /* 🔥 MOBILE LAYOUT: Swipeable Row & Strips */
+        /* ================== 📱 MOBILE VIEW ================== */
         <div style={{ padding: '0 15px 20px 15px' }}>
           
-          <div className="glass-card animate-cascade-2" style={{ padding: '35px 20px', borderRadius: '24px', textAlign: 'center', marginBottom: '15px', background: 'var(--hero-gradient)', border: '1px solid var(--border-color)', position: 'relative', overflow: 'hidden' }}>
+          <div className="glass-card animate-cascade-2" style={{ padding: '35px 20px', borderRadius: '24px', textAlign: 'center', marginBottom: '15px', background: 'var(--hero-gradient)', border: '1px solid rgba(245, 158, 11, 0.2)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)', width: '150px', height: '150px', background: 'var(--lantern-glow)', filter: 'blur(50px)', borderRadius: '50%', zIndex: 0 }}></div>
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Sparkles size={40} color="var(--lantern-gold)" strokeWidth={1.5} />
@@ -259,7 +255,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Deepstash Portals */}
           <div className="animate-cascade-3" style={{ display: 'flex', flexDirection: 'column', gap: '15px', paddingBottom: '40px' }}>
             <div onClick={() => navigate('/articles')} className="glass-card" style={{ padding: '25px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -280,7 +275,7 @@ export default function Home() {
 
       ) : (
 
-        /* 🔥 DESKTOP LAYOUT: Original Classic Grid */
+        /* ================== 💻 DESKTOP VIEW ================== */
         <div style={{ marginBottom: '60px' }}>
           
           <div className="animate-cascade-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '40px' }}>
