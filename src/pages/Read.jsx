@@ -14,7 +14,6 @@ export default function Read() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
-  // 🔥 Mobile Radar for padding adjustments
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -73,7 +72,6 @@ export default function Read() {
     }
   }, [secondsLeft]);
 
-  // 🔥 FIXED THE API ROUTE HERE!
   const triggerStreakUpdate = async () => {
     setReadingStatus('Logging to your ledger...');
     const token = localStorage.getItem('token');
@@ -134,30 +132,40 @@ export default function Read() {
   const isMyOwnArticle = currentUser && currentUser.id === article.authorId;
 
   return (
-    <div style={{ maxWidth: '800px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px' }}>
+    <div style={{ maxWidth: '800px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px', paddingBottom: isMobile ? '80px' : '20px' }}>
       
-      {/* 🔥 THE CSS FIX FOR QUOTES! */}
+      {/* 🔥 THE CSS FIX FOR BEAUTIFUL QUOTES! */}
       <style>
         {`
           .parchment-content {
-            color: #2c3e50; /* Deep charcoal text */
+            color: #2c3e50; 
             font-size: 1.15rem;
             line-height: 1.8;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            font-family: 'Georgia', serif; /* Classic book font */
+            font-family: 'Georgia', serif; 
           }
           .parchment-content p {
             margin-bottom: 20px;
           }
           .parchment-content blockquote {
             border-left: 4px solid var(--lantern-gold);
-            background: rgba(243, 156, 18, 0.1);
+            background: rgba(212, 175, 55, 0.15); /* A slightly darker gold tint for the quote box */
             margin: 25px 0;
-            padding: 15px 20px;
+            padding: 15px 25px;
             font-style: italic;
-            color: #34495e;
+            color: #1a252f; /* Darker text for readability */
             border-radius: 0 8px 8px 0;
+            font-size: 1.25rem; /* Make quotes slightly larger */
+          }
+          .parchment-content a {
+            color: var(--lantern-gold);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--lantern-gold);
+          }
+          .parchment-content a:hover {
+            color: #b9770e;
+            border-bottom: 1px solid #b9770e;
           }
         `}
       </style>
@@ -176,7 +184,7 @@ export default function Read() {
 
       {/* 🔥 THE PARCHMENT CONTAINER */}
       <div style={{ 
-        background: '#fdf6e3', /* Vintage off-white parchment */
+        background: '#fdf6e3', 
         padding: isMobile ? '25px' : '50px', 
         borderRadius: '12px', 
         border: '1px solid #d4c4a8', 

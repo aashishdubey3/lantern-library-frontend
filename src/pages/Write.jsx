@@ -7,10 +7,8 @@ export default function Write() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // 🔥 Catch the article if we clicked "Edit" from the Profile page
   const editingArticle = location.state?.article || null;
 
-  // Pre-fill the state if we are editing!
   const [title, setTitle] = useState(editingArticle ? editingArticle.title : '');
   const [content, setContent] = useState(editingArticle ? editingArticle.content : '');
   const [tags, setTags] = useState(editingArticle && editingArticle.tags ? editingArticle.tags.join(', ') : '');
@@ -30,7 +28,6 @@ export default function Write() {
     const token = localStorage.getItem('token');
     const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
 
-    // If editing, use the PUT route. If new, use the POST route.
     const url = editingArticle 
       ? `https://lantern-library-backend.onrender.com/api/articles/${editingArticle._id}` 
       : 'https://lantern-library-backend.onrender.com/api/articles/create';
@@ -40,16 +37,13 @@ export default function Write() {
     try {
       const response = await fetch(url, {
         method: method,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ title, content, tags: tagArray })
       });
 
       if (response.ok) {
         alert(editingArticle ? "✨ Manuscript updated!" : "✨ Manuscript published to the archives!");
-        navigate('/profile'); // Send them back to their profile to see it!
+        navigate('/profile'); 
       } else {
         alert("Failed to save.");
       }
@@ -71,7 +65,33 @@ export default function Write() {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
+    <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px', overflowX: 'hidden' }}>
+      
+      {/* 🔥 INJECTED CSS JUST FOR THE EDITOR ON THIS PAGE */}
+      <style>
+        {`
+          .ql-toolbar.ql-snow {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            background: #ecf0f1;
+            border-radius: 8px 8px 0 0;
+            border: none !important;
+          }
+          .ql-toolbar::-webkit-scrollbar { display: none; }
+          .ql-container.ql-snow {
+            border: none !important;
+            background: #fdf6e3; /* Soft parchment for typing */
+            color: #2c3e50;
+            font-size: 1.1rem;
+            border-radius: 0 0 8px 8px;
+          }
+          .ql-editor { min-height: 400px; }
+          .ql-editor.ql-blank::before { color: #95a5a6; font-style: italic; }
+        `}
+      </style>
+
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
         <h1 style={{ fontSize: '2.5rem', color: 'var(--lantern-gold)', marginBottom: '10px' }}>
           {editingArticle ? 'Revise Manuscript' : 'The Scriptorium'}
@@ -81,14 +101,14 @@ export default function Write() {
         </p>
       </div>
 
-      <form onSubmit={handlePublish} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '12px', border: '1px solid #2c3e50', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+      <form onSubmit={handlePublish} style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
         
         <input 
           type="text" 
           placeholder="Title of your manuscript..." 
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          style={{ width: '100%', padding: '15px', fontSize: '1.5rem', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid #34495e', borderRadius: '8px', marginBottom: '20px', outline: 'none' }}
+          style={{ width: '100%', padding: '15px', fontSize: '1.5rem', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '20px', outline: 'none' }}
         />
 
         <input 
@@ -96,24 +116,23 @@ export default function Write() {
           placeholder="Tags (e.g., Sci-Fi, Review, Dune) - separate with commas" 
           value={tags}
           onChange={(e) => setTags(e.target.value)}
-          style={{ width: '100%', padding: '12px', fontSize: '1rem', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid #34495e', borderRadius: '8px', marginBottom: '20px', outline: 'none' }}
+          style={{ width: '100%', padding: '12px', fontSize: '1rem', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '20px', outline: 'none' }}
         />
 
-        <div style={{ background: '#ecf0f1', color: 'black', borderRadius: '8px', overflow: 'hidden', marginBottom: '25px' }}>
+        <div style={{ borderRadius: '8px', overflow: 'hidden', marginBottom: '25px', border: '1px solid var(--border-color)' }}>
           <ReactQuill 
             theme="snow" 
             value={content} 
             onChange={setContent} 
             modules={modules}
-            style={{ height: '300px', border: 'none' }}
           />
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '50px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
           <button 
             type="submit" 
             disabled={isPublishing}
-            style={{ padding: '12px 30px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: isPublishing ? 'not-allowed' : 'pointer' }}
+            style={{ padding: '12px 30px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: isPublishing ? 'not-allowed' : 'pointer', width: window.innerWidth <= 768 ? '100%' : 'auto' }}
           >
             {isPublishing ? 'Sealing the ink...' : (editingArticle ? 'Update Manuscript' : 'Publish to Archives')}
           </button>
