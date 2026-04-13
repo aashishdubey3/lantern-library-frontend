@@ -10,13 +10,20 @@ export default function Read() {
   const [secondsLeft, setSecondsLeft] = useState(null);
   const [readingStatus, setReadingStatus] = useState('');
   
-  // 🔥 Follow System States
   const [currentUser, setCurrentUser] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
+  // 🔥 Mobile Radar for padding adjustments
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
   useEffect(() => {
-    // Get the logged-in user from local storage
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setCurrentUser(JSON.parse(storedUser));
@@ -29,7 +36,6 @@ export default function Read() {
           const fetchedArticle = await res.json();
           setArticle(fetchedArticle);
 
-          // Check if we are already following this author!
           if (storedUser) {
              const parsedUser = JSON.parse(storedUser);
              if (parsedUser.following && parsedUser.following.includes(fetchedArticle.authorId)) {
@@ -67,35 +73,29 @@ export default function Read() {
     }
   }, [secondsLeft]);
 
+  // 🔥 FIXED THE API ROUTE HERE!
   const triggerStreakUpdate = async () => {
     setReadingStatus('Logging to your ledger...');
     const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
-      const streakRes = await fetch('https://lantern-library-backend.onrender.com/api/users/update-streak', {
+      const streakRes = await fetch('https://lantern-library-backend.onrender.com/api/users/log-read', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await streakRes.json();
       
       if (streakRes.ok) {
-        if (data.streakUpdated) {
-          setReadingStatus('🔥 Goal Met! Streak Increased!');
-          const storedUser = JSON.parse(localStorage.getItem('user'));
-          storedUser.currentStreak = data.currentStreak;
-          localStorage.setItem('user', JSON.stringify(storedUser));
-          window.dispatchEvent(new Event('storage')); 
-        } else {
-          setReadingStatus(`📖 Logged! (${data.articlesReadToday}/${data.goal} read today)`);
-        }
+        setReadingStatus(`📖 Logged! (${data.articlesReadToday}/${data.dailyGoal} read today)`);
+      } else {
+        setReadingStatus('Failed to log reading session.');
       }
     } catch (error) {
       setReadingStatus('Failed to log reading session.');
     }
   };
 
-  // 🔥 Handle the Follow Button Click
   const handleFollowToggle = async () => {
     if (!currentUser) return alert("You must be logged in to follow scholars.");
     setIsFollowLoading(true);
@@ -111,7 +111,6 @@ export default function Read() {
         const data = await res.json();
         setIsFollowing(data.isFollowing);
         
-        // Update local storage so the app remembers who you follow
         const updatedUser = { ...currentUser, following: data.followingList };
         setCurrentUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
@@ -126,22 +125,46 @@ export default function Read() {
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Unrolling manuscript...</h2>;
   if (!article) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--text-main)' }}>Manuscript not found in the archives.</h2>;
 
-// 🔥 FIX: Aggressively strip rogue font colors and background colors!
   const cleanContent = article.content
     .replace(/&nbsp;/g, ' ')
     .replace(/&#160;/g, ' ')
     .replace(/color\s*:[^;"]+;?/gi, '') 
     .replace(/background-color\s*:[^;"]+;?/gi, '');
   
-  // 🔥 SMART CHECK: Is this article written by the person currently logged in?
   const isMyOwnArticle = currentUser && currentUser.id === article.authorId;
 
   return (
-    <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
+    <div style={{ maxWidth: '800px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px' }}>
       
+      {/* 🔥 THE CSS FIX FOR QUOTES! */}
+      <style>
+        {`
+          .parchment-content {
+            color: #2c3e50; /* Deep charcoal text */
+            font-size: 1.15rem;
+            line-height: 1.8;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-family: 'Georgia', serif; /* Classic book font */
+          }
+          .parchment-content p {
+            margin-bottom: 20px;
+          }
+          .parchment-content blockquote {
+            border-left: 4px solid var(--lantern-gold);
+            background: rgba(243, 156, 18, 0.1);
+            margin: 25px 0;
+            padding: 15px 20px;
+            font-style: italic;
+            color: #34495e;
+            border-radius: 0 8px 8px 0;
+          }
+        `}
+      </style>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span>←</span> Return to Archives
+          <span>←</span> Return
         </button>
         
         {secondsLeft !== null && (
@@ -151,27 +174,37 @@ export default function Read() {
         )}
       </div>
 
-      <div style={{ background: 'var(--bg-panel)', padding: '50px', borderRadius: '12px', border: '1px solid #2c3e50', boxShadow: '0 10px 40px rgba(0,0,0,0.3)' }}>
-        <h1 style={{ fontSize: '2.8rem', color: 'var(--text-main)', margin: '0 0 20px 0', lineHeight: '1.2' }}>{article.title}</h1>
+      {/* 🔥 THE PARCHMENT CONTAINER */}
+      <div style={{ 
+        background: '#fdf6e3', /* Vintage off-white parchment */
+        padding: isMobile ? '25px' : '50px', 
+        borderRadius: '12px', 
+        border: '1px solid #d4c4a8', 
+        boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+        backgroundImage: 'radial-gradient(#e0d5c1 1px, transparent 1px)',
+        backgroundSize: '20px 20px'
+      }}>
+        <h1 style={{ fontSize: isMobile ? '2rem' : '2.8rem', color: '#1a1a1a', margin: '0 0 20px 0', lineHeight: '1.2', fontFamily: 'Georgia, serif' }}>
+          {article.title}
+        </h1>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '40px', borderBottom: '1px solid #34495e', paddingBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '40px', borderBottom: '1px solid #d4c4a8', paddingBottom: '20px' }}>
           <img 
             src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${article.authorName}`} 
             alt="Author Avatar" 
             style={{ width: '45px', height: '45px', borderRadius: '50%', background: '#ecf0f1', border: '2px solid var(--lantern-gold)', cursor: 'pointer' }} 
-            onClick={() => navigate(`/scholar/${article.authorId}`)} // Clicking avatar goes to their profile!
+            onClick={() => navigate(`/scholar/${article.authorId}`)} 
           />
           <div style={{ flexGrow: 1 }}>
             <p 
-              style={{ margin: 0, color: 'var(--lantern-gold)', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}
+              style={{ margin: 0, color: '#b9770e', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}
               onClick={() => navigate(`/scholar/${article.authorId}`)}
             >
               {article.authorName}
             </p>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Published on {new Date(article.createdAt).toLocaleDateString()}</p>
+            <p style={{ margin: 0, color: '#7f8c8d', fontSize: '0.85rem' }}>Published on {new Date(article.createdAt).toLocaleDateString()}</p>
           </div>
 
-          {/* 🔥 THE CONDITIONAL FOLLOW BUTTON */}
           {!isMyOwnArticle && currentUser && (
             <button 
               onClick={handleFollowToggle}
@@ -194,7 +227,11 @@ export default function Read() {
 
         </div>
 
-        <div style={{ color: '#ecf0f1', fontSize: '1.15rem', lineHeight: '1.8', wordWrap: 'break-word', overflowWrap: 'break-word' }} dangerouslySetInnerHTML={{ __html: cleanContent }} />
+        {/* The content rendering area */}
+        <div 
+          className="parchment-content" 
+          dangerouslySetInnerHTML={{ __html: cleanContent }} 
+        />
       </div>
     </div>
   );

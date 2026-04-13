@@ -1,47 +1,63 @@
-import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
+
+import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import ProfilePage from './pages/ProfilePage';
-import NgoLogin from './pages/NgoLogin';
-import NgoDashboard from './pages/NgoDashboard';
-import RegisterNgo from './pages/RegisterNgo';
-// --- ADD THESE TWO NEW IMPORTS ---
-import AdminLogin from './pages/AdminLogin';
-import AdminDashboard from './pages/AdminDashboard';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import Search from './pages/Search';
+import Onboarding from './pages/Onboarding';
+import Write from './pages/Write';
+import Settings from './pages/Settings';
+import Read from './pages/Read';
+import ScholarProfile from './pages/ScholarProfile'; 
+import Community from './pages/Community';
+import Messages from './pages/Messages';
 
-export default function App() {
-    const [loggedInNgo, setLoggedInNgo] = useState(localStorage.getItem('loggedInNgoId'));
+import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
-    return (
-        <BrowserRouter>
-            <div className="min-h-screen flex flex-col font-sans">
-                
-                <div className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
-                    <div className="max-w-6xl mx-auto px-5 pt-5">
-                        <Header loggedInNgo={loggedInNgo} setLoggedInNgo={setLoggedInNgo} />
-                    </div>
-                </div>
-                
-                <main className="flex-grow max-w-6xl mx-auto w-full px-5 py-8">
-                    <Routes>
-                        <Route path="/" element={<HomePage />} />
-                        
-                        {/* --- ADD THESE TWO NEW ROUTES --- */}
-                        <Route path="/admin" element={<AdminLogin />} />
-                        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-                        <Route path="/profile/:id" element={<ProfilePage />} />
-                        <Route path="/ngo-login" element={<NgoLogin setLoggedInNgo={setLoggedInNgo} />} />
-                        <Route path="/ngo-dashboard" element={<NgoDashboard />} />
-                        <Route path="/register" element={<RegisterNgo />} />
+// 🔥 THIS NOW MATCHES YOUR EXACT FILENAME:
+import SummonChat from './pages/SummonChat'; 
 
-                    </Routes>
-                </main>
+function App() {
+  return (
+    <BrowserRouter>
+      <Navbar />
+      
+      <div style={{ minHeight: '80vh' }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/write" element={<Write />} />
+          
+          {/* 🔥 THIS NOW USES THE EXACT COMPONENT NAME: */}
+          <Route path="/summon" element={<SummonChat />} /> 
+          <Route path="/settings" element={<Settings />} />
 
-                <Footer loggedInNgo={loggedInNgo} />
-                
-            </div>
-        </BrowserRouter>
-    );
+          {/* 📖 THE NEW DOORWAY TO THE READING ROOM */}
+          <Route path="/article/:id" element={<Read />} />
+
+          <Route path="/scholar/:id" element={<ScholarProfile />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/messages" element={<Messages />} />
+
+          <Route path="/verify/:token" element={<VerifyEmail />} />
+<Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password/:token" element={<ResetPassword />} />
+
+        </Routes>
+      </div>
+
+      <Footer />
+    </BrowserRouter>
+  );
 }
+
+export default App;
