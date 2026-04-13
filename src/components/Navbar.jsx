@@ -15,8 +15,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 🔥 BULLETPROOF FIX: Only hide if inside an active chat!
-  const isChatScreen = isMobile && (location.pathname.match(/^\/messages\/.+/) || location.pathname === '/summon');
+  const isChatScreen = isMobile && (location.pathname.startsWith('/messages/') || location.pathname === '/summon');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -50,6 +49,7 @@ export default function Navbar() {
     } catch (err) { console.error("Error fetching notifications"); }
   };
 
+  // 🔥 UPDATED SOCKET LOGIC: Handles Mobile Sleep Reconnections
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -57,12 +57,32 @@ export default function Navbar() {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         fetchNotifications();
+        
         const socket = io('https://lantern-library-backend.onrender.com');
-        socket.emit('register_scholar', parsedUser.id || parsedUser._id);
+        const myId = parsedUser.id || parsedUser._id;
+
+        if (myId) {
+          socket.emit('register_scholar', myId);
+          
+          // Re-register if phone goes to sleep and wakes up
+          socket.on('connect', () => {
+            socket.emit('register_scholar', myId);
+          });
+        }
+
         socket.on('receive_notification_ping', () => fetchNotifications());
-        return () => socket.close();
-      } catch (e) { console.error("Parse error", e); }
-    } else { setUser(null); }
+
+        return () => {
+          socket.off('connect');
+          socket.off('receive_notification_ping');
+          socket.close();
+        };
+      } catch (e) {
+        console.error("Parse error", e);
+      }
+    } else {
+      setUser(null);
+    }
   }, [location.pathname]);
 
   const handleLogout = () => {
@@ -72,13 +92,14 @@ export default function Navbar() {
   };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
-  if (!user) return null;
 
+  if (!user) return null;
   if (isChatScreen) return null;
 
   return (
     <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', padding: isMobile ? '12px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, transition: 'background 0.8s ease' }}>
       
+      {/* LEFT: 3D Book Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '15px' }}>
         <div className="aesthetic-3d-book" onClick={toggleTheme} title="Turn the page to change time">
           <div className="book-static-page left"></div>
@@ -86,6 +107,7 @@ export default function Navbar() {
           <div className="book-flipping-page"></div>
           <div className="book-static-page right"></div>
         </div>
+        
         <Link to="/" style={{ textDecoration: 'none' }}>
           <h2 style={{ margin: 0, color: 'var(--lantern-gold)', letterSpacing: isMobile ? '0px' : '1px', textTransform: 'uppercase', fontSize: isMobile ? '0.9rem' : '1.2rem', whiteSpace: 'nowrap', fontWeight: 'bold' }}>
             The Lantern Library
@@ -93,6 +115,7 @@ export default function Navbar() {
         </Link>
       </div>
 
+      {/* MIDDLE: Desktop Links */}
       {!isMobile && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
           <Link to="/messages" style={{ textDecoration: 'none', color: 'var(--text-main)', fontSize: '1rem', fontWeight: 'bold' }}>💬 Whispers</Link>
@@ -100,18 +123,26 @@ export default function Navbar() {
         </div>
       )}
 
+      {/* RIGHT: Actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '15px' : '20px' }}>
+        
         {!isMobile && (
-          <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>✏️ Publish</button>
+          <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
+            ✏️ Publish
+          </button>
         )}
         
-        <div style={{ color: 'var(--lantern-gold)', fontWeight: 'bold', fontSize: isMobile ? '1rem' : '0.9rem' }}>🔥 {user?.currentStreak || 0}</div>
+        <div style={{ color: 'var(--lantern-gold)', fontWeight: 'bold', fontSize: isMobile ? '1rem' : '0.9rem' }}>
+          🔥 {user?.currentStreak || 0}
+        </div>
 
+        {/* NOTIFICATION BELL */}
         <div style={{ position: 'relative' }} ref={notifRef}>
           <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} style={{ background: 'transparent', border: 'none', fontSize: isMobile ? '1.4rem' : '1.5rem', cursor: 'pointer', position: 'relative', padding: '0' }}>
             🔔
             {unreadCount > 0 && <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.65rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unreadCount}</span>}
           </button>
+
           {showNotifDropdown && (
              <div style={{ position: 'absolute', top: '100%', right: isMobile ? '-40px' : '0', marginTop: '15px', width: isMobile ? '260px' : '320px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
                <div style={{ padding: '15px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-deep)' }}>
@@ -129,8 +160,10 @@ export default function Navbar() {
           )}
         </div>
 
+        {/* PROFILE DROPDOWN */}
         <div style={{ position: 'relative' }} ref={profileRef}>
           <img onClick={() => setShowProfileMenu(!showProfileMenu)} src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user?.username || 'user'}`} alt="Profile" style={{ width: isMobile ? '34px' : '42px', height: isMobile ? '34px' : '42px', borderRadius: '50%', border: '2px solid var(--lantern-gold)', background: '#ecf0f1', cursor: 'pointer' }} />
+          
           {showProfileMenu && (
             <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '220px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
               <div onClick={() => { setShowProfileMenu(false); navigate('/profile'); }} style={{ padding: '14px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontWeight: 'bold', fontSize: '0.9rem' }}>📚 My Archives</div>
