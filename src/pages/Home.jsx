@@ -57,36 +57,47 @@ export default function Home() {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
-    if (!token) { setLoading(false); return; }
-
-    const parsedUser = JSON.parse(storedUser);
-    setUser(parsedUser);
-
-    if (!parsedUser.interests || parsedUser.interests.length === 0) {
-      navigate('/onboarding'); return;
+    // 🔥 FIX 2: If no token or user, send them directly to login immediately.
+    if (!token || !storedUser) { 
+      setLoading(false); 
+      navigate('/login'); 
+      return; 
     }
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        let artResPromise = fetch(`https://lantern-library-backend.onrender.com/api/articles/${activeTab === 'network' ? 'network' : 'feed?category=' + activeTab}`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const profResPromise = fetch('https://lantern-library-backend.onrender.com/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
 
-        const [artRes, profRes] = await Promise.all([artResPromise, profResPromise]);
-        if (artRes.ok) setArticles(await artRes.json());
-        if (profRes.ok) setUserProfile(await profRes.json());
-      } catch (error) { console.error("Could not fetch data"); } finally { setLoading(false); }
+      // If they haven't finished onboarding, send them there.
+      if (!parsedUser.interests || parsedUser.interests.length === 0) {
+        navigate('/onboarding'); 
+        return;
+      }
 
-      try {
-        const userInterests = parsedUser.interests;
-        const randomTopic = userInterests[Math.floor(Math.random() * userInterests.length)];
-        fetch(`https://api.openalex.org/works?search=${encodeURIComponent(randomTopic)}&per-page=5`)
-          .then(res => res.json())
-          .then(paperData => { if (paperData.results) setAcademicPapers(paperData.results); });
-      } catch (e) { console.error("Background fetch failed"); }
-    };
-    
-    fetchData();
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          let artResPromise = fetch(`https://lantern-library-backend.onrender.com/api/articles/${activeTab === 'network' ? 'network' : 'feed?category=' + activeTab}`, { headers: { 'Authorization': `Bearer ${token}` } });
+          const profResPromise = fetch('https://lantern-library-backend.onrender.com/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+
+          const [artRes, profRes] = await Promise.all([artResPromise, profResPromise]);
+          if (artRes.ok) setArticles(await artRes.json());
+          if (profRes.ok) setUserProfile(await profRes.json());
+        } catch (error) { console.error("Could not fetch data"); } finally { setLoading(false); }
+
+        try {
+          const userInterests = parsedUser.interests;
+          const randomTopic = userInterests[Math.floor(Math.random() * userInterests.length)];
+          fetch(`https://api.openalex.org/works?search=${encodeURIComponent(randomTopic)}&per-page=5`)
+            .then(res => res.json())
+            .then(paperData => { if (paperData.results) setAcademicPapers(paperData.results); });
+        } catch (e) { console.error("Background fetch failed"); }
+      };
+      
+      fetchData();
+    } catch (e) {
+      navigate('/login'); // Fallback if local storage data gets corrupted
+    }
   }, [navigate, activeTab]); 
 
   const handleSearchSubmit = (e) => {
@@ -99,8 +110,8 @@ export default function Home() {
     else setSummonModalState('warning');
   };
 
-  if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)' }}>Dusting off the archives...</h2>;
-  if (!user) return null; 
+  // Prevent rendering if user isn't verified to avoid crashes
+  if (loading || !user) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><h2 style={{ color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)' }}>Dusting off the archives...</h2></div>;
 
   const currentMedia = userProfile?.currentlyConsuming?.[0];
 
@@ -109,8 +120,9 @@ export default function Home() {
       
       <div className={`page-dimmer ${searchFocused ? 'active' : ''}`} onClick={() => setSearchFocused(false)}></div>
 
+      {/* --- MODALS --- */}
       {summonModalState === 'recommend' && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '20px', border: '1px solid #3498db', maxWidth: '400px', textAlign: 'center' }}>
             <h2 style={{ color: '#3498db', marginTop: 0, fontFamily: 'var(--font-heading)', fontSize: '1.8rem' }}>Highly Recommended</h2>
             <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', marginBottom: '25px' }}>The magic works best with characters whose journeys you have fully witnessed. We recommend summoning from your <strong>Finished Archives</strong>.</p>
@@ -123,7 +135,7 @@ export default function Home() {
       )}
 
       {summonModalState === 'warning' && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '20px', border: '1px solid var(--lantern-gold)', maxWidth: '400px', textAlign: 'center' }}>
             <h2 style={{ color: 'var(--lantern-gold)', marginTop: 0, fontFamily: 'var(--font-heading)', fontSize: '1.8rem' }}>Halt, Scholar!</h2>
             <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', marginBottom: '15px' }}>You are stepping outside the safety of your established archives.</p>

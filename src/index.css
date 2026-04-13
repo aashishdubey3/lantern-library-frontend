@@ -46,7 +46,8 @@ body.theme-daylight {
    ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-body {
+/* 🔥 FIX: Added overflow-x: hidden and max-width to stop mobile horizontal wobbling */
+html, body {
   background-color: var(--bg-deep);
   color: var(--text-main);
   font-family: var(--font-body);
@@ -54,11 +55,14 @@ body {
   transition: background-color 0.4s ease, color 0.4s ease; 
   -webkit-font-smoothing: antialiased;
   padding-bottom: 70px; 
+  overflow-x: hidden; 
+  max-width: 100%;
 }
+
+html { scroll-behavior: smooth; }
 
 h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 600; color: var(--text-main); transition: color 0.8s ease; }
 p, span, div, a { font-family: var(--font-body); }
-html { scroll-behavior: smooth; }
 
 .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 .hide-scroll::-webkit-scrollbar { display: none; }
@@ -199,5 +203,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 /* 3. Dynamic Search Focus Mode */
 .search-container { transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); transform-origin: center; }
 .search-container.focused { transform: scale(1.03); z-index: 100; }
-.page-dimmer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+
+/* 🔥 FIX: Changed 100vw to 100% to stop scrollbar glitching */
+.page-dimmer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
 .page-dimmer.active { opacity: 1; pointer-events: auto; }
