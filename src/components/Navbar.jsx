@@ -11,7 +11,7 @@ export default function Navbar() {
   
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
-  // 🔥 THEME STATE: Check local storage first, default to 'lamplight'
+  // 🔥 THEME STATE
   const [theme, setTheme] = useState(localStorage.getItem('lantern-theme') || 'lamplight');
   
   const notifRef = useRef(null);
@@ -26,17 +26,17 @@ export default function Navbar() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 🔥 THEME EFFECT: Applies the class to the <body> tag whenever theme changes
+  // 🔥 THEME EFFECT
   useEffect(() => {
     if (theme === 'daylight') {
       document.body.classList.add('theme-daylight');
     } else {
       document.body.classList.remove('theme-daylight');
     }
-    localStorage.setItem('lantern-theme', theme); // Remember their choice!
+    localStorage.setItem('lantern-theme', theme);
   }, [theme]);
 
-  // 🔥 FLIP THE BOOK FUNCTION
+  // 🔥 FLIP THE THEME
   const toggleTheme = () => {
     setTheme(prev => prev === 'lamplight' ? 'daylight' : 'lamplight');
   };
@@ -120,16 +120,26 @@ export default function Navbar() {
           {isMobile ? `🔥 ${user?.currentStreak || 0}` : `STREAK 🔥 ${user?.currentStreak || 0}`}
         </div>
 
-        {/* 📖 THE MAGIC BOOK TOGGLE */}
-        <div 
-          className={`magic-book-toggle ${theme === 'daylight' ? 'is-daylight' : ''}`} 
-          onClick={toggleTheme}
-          title={theme === 'lamplight' ? "Switch to Daylight" : "Switch to Lamplight"}
-        >
-          <div className="book-half left"></div>
-          <div className="book-half right"></div>
-          <div className="flipping-page"></div>
-        </div>
+        {/* 📖 THE MAGIC THEME TOGGLE (Responsive!) */}
+        {isMobile ? (
+          <button 
+            onClick={toggleTheme} 
+            style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', padding: '0' }}
+            title="Toggle Theme"
+          >
+            {theme === 'lamplight' ? '☀️' : '🌙'}
+          </button>
+        ) : (
+          <div 
+            className={`magic-book-toggle ${theme === 'daylight' ? 'is-daylight' : ''}`} 
+            onClick={toggleTheme}
+            title={theme === 'lamplight' ? "Switch to Daylight" : "Switch to Lamplight"}
+          >
+            <div className="book-half left"></div>
+            <div className="book-half right"></div>
+            <div className="flipping-page"></div>
+          </div>
+        )}
 
         {/* 🔔 NOTIFICATION BELL */}
         <div style={{ position: 'relative' }} ref={notifRef}>

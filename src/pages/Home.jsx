@@ -43,6 +43,17 @@ export default function Home() {
 
   const cleanTitle = (title) => title ? title.replace(/<[^>]+>/g, '') : '';
 
+  // 🔥 THEMATIC JEWEL-TONE BADGES
+  const getBadgeStyle = (index) => {
+    const styles = [
+      { bg: 'rgba(192, 57, 43, 0.1)', color: '#c0392b', border: 'rgba(192, 57, 43, 0.3)', label: '🪶 Lore' },       // Ruby
+      { bg: 'rgba(41, 128, 185, 0.1)', color: '#2980b9', border: 'rgba(41, 128, 185, 0.3)', label: '📜 Archive' },    // Sapphire
+      { bg: 'rgba(39, 174, 96, 0.1)', color: '#27ae60', border: 'rgba(39, 174, 96, 0.3)', label: '🕯️ Insight' },    // Emerald
+      { bg: 'rgba(142, 68, 173, 0.1)', color: '#8e44ad', border: 'rgba(142, 68, 173, 0.3)', label: '🗝️ Theory' }     // Amethyst
+    ];
+    return styles[index % styles.length];
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -58,10 +69,8 @@ export default function Home() {
     }
 
     const fetchData = async () => {
-      // 1. Start loading UI for the main components
       setLoading(true);
       try {
-        // 🔥 THE SPEED FIX: We fetch the fast, internal data first.
         let artResPromise;
         if (activeTab === 'network') {
           artResPromise = fetch(`https://lantern-library-backend.onrender.com/api/articles/network`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -71,7 +80,6 @@ export default function Home() {
 
         const profResPromise = fetch('https://lantern-library-backend.onrender.com/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } });
 
-        // Wait ONLY for our fast database
         const [artRes, profRes] = await Promise.all([artResPromise, profResPromise]);
 
         if (artRes.ok) setArticles(await artRes.json());
@@ -80,11 +88,9 @@ export default function Home() {
       } catch (error) {
         console.error("Could not fetch dashboard data");
       } finally {
-        // 🔥 DROP THE LOADING SCREEN INSTANTLY!
         setLoading(false);
       }
 
-      // 🔥 2. SILENT BACKGROUND FETCH: Let the slow external API load on its own time
       try {
         const userInterests = parsedUser.interests;
         const randomTopic = userInterests[Math.floor(Math.random() * userInterests.length)];
@@ -138,7 +144,7 @@ export default function Home() {
   return (
     <div style={{ maxWidth: '1200px', margin: '40px auto', padding: isMobile ? '0 15px' : '0 20px', position: 'relative' }}>
       
-      {/* 🔮 MODAL 1: THE RECOMMENDATION (For users with finished items) */}
+      {/* MODALS */}
       {summonModalState === 'recommend' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '12px', border: '1px solid #3498db', maxWidth: '400px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
@@ -147,63 +153,47 @@ export default function Home() {
               The magic works best with characters whose journeys you have fully witnessed. We recommend summoning directly from your <strong>Finished Archives</strong>.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button onClick={() => navigate('/profile')} style={{ padding: '12px', background: '#3498db', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                Go to my Archives →
-              </button>
-              <button onClick={() => setSummonModalState('warning')} style={{ padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid #7f8c8d', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                No, I want to summon someone else
-              </button>
+              <button onClick={() => navigate('/profile')} style={{ padding: '12px', background: '#3498db', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Go to my Archives →</button>
+              <button onClick={() => setSummonModalState('warning')} style={{ padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>No, I want to summon someone else</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 🛑 MODAL 2: THE WARNING / GUILT TRIP (Empty list OR bypassed recommendation) */}
       {summonModalState === 'warning' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '12px', border: '1px solid #935116', maxWidth: '400px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
             <h2 style={{ color: 'var(--lantern-gold)', marginTop: 0, fontSize: '1.6rem' }}>Halt, Scholar! 🛑</h2>
-            
             {userProfile?.finishedList?.length === 0 ? (
-              <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '15px' }}>
-                Your <strong>Finished</strong> shelf is completely empty. It is unwise to summon literary figures whose journeys you haven't even witnessed. Are you not ashamed?
-              </p>
+              <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '15px' }}>Your <strong>Finished</strong> shelf is completely empty. It is unwise to summon literary figures whose journeys you haven't even witnessed. Are you not ashamed?</p>
             ) : (
-              <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '15px' }}>
-                You are stepping outside the safety of your established archives. 
-              </p>
+              <p style={{ color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '15px' }}>You are stepping outside the safety of your established archives. </p>
             )}
-
-            <p style={{ color: '#e74c3c', fontSize: '0.85rem', fontStyle: 'italic', marginBottom: '25px', background: 'rgba(231, 76, 60, 0.1)', padding: '10px', borderRadius: '6px' }}>
+            <p style={{ color: 'var(--danger)', fontSize: '0.85rem', fontStyle: 'italic', marginBottom: '25px', background: 'rgba(231, 76, 60, 0.1)', padding: '10px', borderRadius: '6px' }}>
               <strong>Disclaimer:</strong> You must provide the Oracle with full context. Do not just type "Raskolnikov"—you must type "Raskolnikov from Crime and Punishment by Fyodor Dostoevsky" or the magic will fail.
             </p>
-            
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button onClick={() => navigate('/summon')} style={{ padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid #7f8c8d', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                I know the risks. Let me summon.
-              </button>
-              <button onClick={() => { setSummonModalState('closed'); }} style={{ padding: '12px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                Cancel ↩️
-              </button>
+              <button onClick={() => navigate('/summon')} style={{ padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>I know the risks. Let me summon.</button>
+              <button onClick={() => { setSummonModalState('closed'); }} style={{ padding: '12px', background: 'var(--lantern-gold)', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Cancel ↩️</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- STANDARD HOMEPAGE CONTENT BELOW --- */}
+      {/* HERO SECTION */}
       <div style={{ padding: isMobile ? '20px 0' : '40px 20px', textAlign: 'center', marginBottom: isMobile ? '20px' : '40px' }}>
         <h1 style={{ margin: '0 0 10px 0', fontSize: isMobile ? '1.8rem' : '2.8rem', color: 'var(--lantern-gold)', lineHeight: '1.2' }}>Your Library, Brought to Life.</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: '30px', fontSize: isMobile ? '0.9rem' : '1rem', maxWidth: '700px', margin: '0 auto 30px auto', lineHeight: '1.6' }}>Track your favorite series, summon protagonists to chat, and dive into a world of curated research and articles.</p>
         
-        <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '15px' : '25px', borderRadius: '16px', border: '1px solid #34495e', maxWidth: '750px', margin: '0 auto' }}>
+        <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '15px' : '25px', borderRadius: '16px', border: '1px solid var(--border-color)', maxWidth: '750px', margin: '0 auto' }}>
           <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', marginBottom: '20px' }}>
-            <input type="text" placeholder="Search across all realms..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flexGrow: 1, padding: '12px', borderRadius: '8px', border: '1px solid #2c3e50', background: 'var(--bg-deep)', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }} />
-            <button type="submit" style={{ padding: '12px 30px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}>Search</button>
+            <input type="text" placeholder="Search across all realms..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ flexGrow: 1, padding: '12px', borderRadius: '8px', fontSize: '1rem' }} />
+            <button type="submit" style={{ padding: '12px 30px', background: 'var(--lantern-gold)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}>Search</button>
           </form>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
             {[{ id: 'book', label: 'Books' }, { id: 'movie', label: 'Movies' }, { id: 'series', label: 'Series' }, { id: 'paper', label: 'Research' }].map(type => (
-              <button key={type.id} onClick={() => setSearchType(type.id)} style={{ background: searchType === type.id ? 'var(--lantern-gold)' : 'transparent', color: searchType === type.id ? 'var(--bg-deep)' : 'var(--text-muted)', border: searchType === type.id ? 'none' : '1px solid #34495e', padding: '6px 14px', borderRadius: '25px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
+              <button key={type.id} onClick={() => setSearchType(type.id)} style={{ background: searchType === type.id ? 'var(--lantern-gold)' : 'transparent', color: searchType === type.id ? '#fff' : 'var(--text-muted)', border: searchType === type.id ? 'none' : '1px solid var(--border-color)', padding: '6px 14px', borderRadius: '25px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}>
                 {type.label}
               </button>
             ))}
@@ -213,22 +203,22 @@ export default function Home() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: isMobile ? '15px' : '20px', marginBottom: '60px' }}>
         
-        <div style={{ background: 'linear-gradient(135deg, var(--bg-panel) 0%, #1a1525 100%)', padding: isMobile ? '20px' : '25px', borderRadius: '12px', border: '1px solid #4a235a', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '1.5rem' }}>✨</span><h3 style={{ margin: 0, color: '#c39bd3', fontSize: '1.1rem' }}>The Summoning Room</h3></div>
+        <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '20px' : '25px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '1.5rem' }}>✨</span><h3 style={{ margin: 0, fontSize: '1.1rem' }}>The Summoning Room</h3></div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 15px 0' }}>Dialogue with the minds behind the text. Ask Elizabeth Bennet about modern dating, or debate morality with Raskolnikov.</p>
-          <button onClick={handleSummonClick} style={{ padding: '10px', background: '#4a235a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Initiate Summoning →</button>
+          <button onClick={handleSummonClick} style={{ padding: '10px', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Initiate Summoning →</button>
         </div>
 
-        <div style={{ background: 'linear-gradient(135deg, var(--bg-panel) 0%, #2e2013 100%)', padding: isMobile ? '20px' : '25px', borderRadius: '12px', border: '1px solid #935116', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '1.5rem' }}>🔮</span><h3 style={{ margin: 0, color: 'var(--lantern-gold)', fontSize: '1.1rem' }}>Stuck in a Slump?</h3></div>
+        <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '20px' : '25px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '1.5rem' }}>🔮</span><h3 style={{ margin: 0, fontSize: '1.1rem' }}>Stuck in a Slump?</h3></div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 15px 0' }}>Let the Oracle analyze your footprint to generate your next obsession based on what you already love.</p>
           <button onClick={() => navigate('/profile')} style={{ padding: '10px', background: 'transparent', color: 'var(--lantern-gold)', border: '1px solid var(--lantern-gold)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Consult the Oracle →</button>
         </div>
 
-        <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '20px' : '25px', borderRadius: '12px', border: '1px solid #2c3e50', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '20px' : '25px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           {currentMedia ? (
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-              <img src={currentMedia.coverImage} style={{ width: '60px', height: '90px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #34495e' }} alt="" />
+              <img src={currentMedia.coverImage} style={{ width: '60px', height: '90px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} alt="" />
               <div>
                 <span style={{ fontSize: '0.75rem', color: '#3498db', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Currently Tracking</span>
                 <h3 style={{ color: 'var(--text-main)', margin: '5px 0 10px 0', fontSize: '1rem', lineHeight: '1.3' }}>{currentMedia.title}</h3>
@@ -239,7 +229,7 @@ export default function Home() {
             <div style={{ textAlign: 'center' }}>
               <h3 style={{ color: 'var(--text-main)', margin: '0 0 10px 0', fontSize: '1.1rem' }}>The Desk is Empty</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '15px' }}>Your reading ledger awaits its first entry.</p>
-              <button onClick={() => navigate('/search')} style={{ padding: '8px 16px', background: '#34495e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>Search Archives</button>
+              <button onClick={() => navigate('/search')} style={{ padding: '8px 16px', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>Search Archives</button>
             </div>
           )}
         </div>
@@ -253,64 +243,88 @@ export default function Home() {
 
         <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '30px' }}>
           {categories.map((cat) => (
-            <button key={cat.id} onClick={() => { setActiveTab(cat.id); setVisibleCount(4); }} style={{ padding: '6px 14px', borderRadius: '20px', background: activeTab === cat.id ? 'var(--text-main)' : 'transparent', color: activeTab === cat.id ? 'var(--bg-deep)' : 'var(--text-muted)', border: activeTab === cat.id ? 'none' : '1px solid #34495e', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+            <button key={cat.id} onClick={() => { setActiveTab(cat.id); setVisibleCount(4); }} style={{ padding: '6px 14px', borderRadius: '20px', background: activeTab === cat.id ? 'var(--text-main)' : 'transparent', color: activeTab === cat.id ? 'var(--bg-deep)' : 'var(--text-muted)', border: activeTab === cat.id ? 'none' : '1px solid var(--border-color)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
               {cat.label}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
           
-          <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '15px' : '25px', borderRadius: '12px', border: '1px solid #2c3e50' }}>
-            <h3 style={{ borderBottom: '2px solid var(--lantern-gold)', paddingBottom: '10px', marginBottom: '20px', color: 'var(--text-main)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* 🔥 INTERACTIVE MANUSCRIPT CARDS (ARTICLES) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <h3 style={{ paddingBottom: '10px', color: 'var(--text-main)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
               📰 {activeTab === 'network' ? 'Your Network Feed' : 'Daily Articles'}
             </h3>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {articles.length === 0 && activeTab === 'network' ? (
-                <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>Your network hasn't published anything yet, or you aren't following anyone!</p>
-              ) : (
-                articles.slice(0, visibleCount).map((article, index) => (
-                  <div key={index} style={{ borderBottom: '1px solid #34495e', paddingBottom: '15px' }}>
-                    <span onClick={() => article._id ? navigate(`/scholar/${article.authorId}`) : null} style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--lantern-gold)', textTransform: 'uppercase', cursor: article._id ? 'pointer' : 'default' }}>
-                      {article.authorName || article.source || 'Community'}
-                    </span>
-                    <h4 style={{ margin: '8px 0', fontSize: '1.05rem', color: 'var(--text-main)', lineHeight: '1.4' }}>{article.title}</h4>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '15px' }}>{getSnippet(article.snippet, 30)}</p>
-                    <button onClick={() => { article._id ? navigate(`/article/${article._id}`) : window.open(article.link || article.externalLink, '_blank') }} style={{ background: 'transparent', color: 'var(--lantern-gold)', border: '1px solid var(--lantern-gold)', padding: '6px 15px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+            {articles.length === 0 && activeTab === 'network' ? (
+              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>Your network hasn't published anything yet!</p>
+            ) : (
+              articles.slice(0, visibleCount).map((article, index) => {
+                const badge = getBadgeStyle(index);
+                return (
+                  <div 
+                    key={index} 
+                    className="manuscript-card"
+                    onClick={() => article._id ? navigate(`/article/${article._id}`) : window.open(article.link || article.externalLink, '_blank')}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.7rem', padding: '4px 10px', borderRadius: '12px', background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        {badge.label}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        {article.authorName || article.source || 'Community'}
+                      </span>
+                    </div>
+                    
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '1.15rem', color: 'var(--text-main)', lineHeight: '1.4' }}>{article.title}</h4>
+                    <p style={{ margin: '0 0 15px 0', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.6', flexGrow: 1 }}>{getSnippet(article.snippet, 25)}</p>
+                    
+                    <div style={{ color: 'var(--lantern-gold)', fontSize: '0.85rem', fontWeight: 'bold', marginTop: 'auto', paddingTop: '15px', borderTop: '1px solid var(--border-color)' }}>
                       {article._id ? 'Read Manuscript →' : 'Read External Article ↗'}
-                    </button>
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
+                );
+              })
+            )}
 
             {articles.length > visibleCount && (
-              <button onClick={() => setVisibleCount(prev => prev + 3)} style={{ width: '100%', marginTop: '20px', padding: '12px', background: 'transparent', border: '1px dashed #34495e', color: 'var(--text-muted)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Load More Articles ↓</button>
+              <button onClick={() => setVisibleCount(prev => prev + 3)} style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px dashed var(--border-color)', color: 'var(--text-muted)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Load More Articles ↓</button>
             )}
           </div>
 
-          <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '15px' : '25px', borderRadius: '12px', border: '1px solid #2c3e50' }}>
-             <h3 style={{ borderBottom: '2px solid #3498db', paddingBottom: '10px', marginBottom: '20px', color: 'var(--text-main)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* 🔥 INTERACTIVE MANUSCRIPT CARDS (ACADEMIC PAPERS) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+             <h3 style={{ paddingBottom: '10px', color: 'var(--text-main)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
               📜 Academic Journals
             </h3>
 
             {academicPapers.length === 0 ? (
               <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>Searching global archives...</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {academicPapers.map(paper => (
-                  <div key={paper.id} style={{ background: 'var(--bg-deep)', padding: '15px', borderRadius: '8px', borderLeft: '3px solid #3498db' }}>
-                    <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.4' }}>{cleanTitle(paper.title)}</h4>
-                    <p style={{ margin: '0 0 15px 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                      {paper.authorships?.slice(0, 2).map(a => a.author.display_name).join(', ')} {paper.authorships?.length > 2 ? 'et al.' : ''} • {paper.publication_year}
-                    </p>
-                    <button onClick={() => window.open(paper.primary_location?.landing_page_url || paper.id, '_blank')} style={{ background: '#3498db', color: 'white', border: 'none', padding: '6px 15px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                      Read DOI ↗
-                    </button>
+              academicPapers.map((paper, index) => (
+                <div 
+                  key={paper.id} 
+                  className="manuscript-card"
+                  onClick={() => window.open(paper.primary_location?.landing_page_url || paper.id, '_blank')}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '0.7rem', padding: '4px 10px', borderRadius: '12px', background: 'rgba(52, 152, 219, 0.1)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.3)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      🔬 Peer Reviewed
+                    </span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>{paper.publication_year}</span>
                   </div>
-                ))}
-              </div>
+
+                  <h4 style={{ margin: '0 0 10px 0', color: 'var(--text-main)', fontSize: '1rem', lineHeight: '1.4' }}>{cleanTitle(paper.title)}</h4>
+                  <p style={{ margin: '0 0 15px 0', color: 'var(--text-muted)', fontSize: '0.85rem', flexGrow: 1 }}>
+                    {paper.authorships?.slice(0, 2).map(a => a.author.display_name).join(', ')} {paper.authorships?.length > 2 ? 'et al.' : ''}
+                  </p>
+
+                  <div style={{ color: '#3498db', fontSize: '0.85rem', fontWeight: 'bold', marginTop: 'auto', paddingTop: '15px', borderTop: '1px solid var(--border-color)' }}>
+                    Read DOI ↗
+                  </div>
+                </div>
+              ))
             )}
           </div>
 
