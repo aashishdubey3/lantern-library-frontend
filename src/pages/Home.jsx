@@ -77,12 +77,7 @@ export default function Home() {
 
         if (artRes.ok) setArticles(await artRes.json());
         if (profRes.ok) setUserProfile(await profRes.json());
-
-      } catch (error) {
-        console.error("Could not fetch dashboard data");
-      } finally {
-        setLoading(false);
-      }
+      } catch (error) { console.error("Could not fetch dashboard data"); } finally { setLoading(false); }
 
       try {
         const userInterests = parsedUser.interests;
@@ -91,9 +86,7 @@ export default function Home() {
           .then(res => res.json())
           .then(paperData => { if (paperData.results) setAcademicPapers(paperData.results); })
           .catch(err => console.error("Background paper fetch failed", err));
-      } catch (e) {
-        console.error("Failed to trigger background fetch");
-      }
+      } catch (e) { console.error("Failed to trigger background fetch"); }
     };
     
     fetchData();
@@ -117,7 +110,7 @@ export default function Home() {
   return (
     <div style={{ maxWidth: '1200px', margin: isMobile ? '10px auto' : '40px auto', padding: isMobile ? '0 15px' : '0 20px', position: 'relative' }}>
       
-      {/* --- ALL YOUR MODALS EXACTLY AS YOU WROTE THEM --- */}
+      {/* --- ALL YOUR MODALS --- */}
       {summonModalState === 'recommend' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '20px', border: '1px solid #3498db', maxWidth: '400px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
@@ -153,10 +146,16 @@ export default function Home() {
         </div>
       )}
 
-      {/* --- HERO & SEARCH SECTION (Deepstash style) --- */}
+      {/* --- HERO & SEARCH SECTION --- */}
       <div style={{ padding: isMobile ? '20px 0 10px 0' : '40px 20px', textAlign: isMobile ? 'left' : 'center' }}>
-        <h1 style={{ margin: '0 0 10px 0', fontSize: isMobile ? '2rem' : '2.8rem', color: 'var(--lantern-gold)', lineHeight: '1.2' }}>The Archives.</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: isMobile ? '1rem' : '1.1rem' }}>Your magical library, brought to life.</p>
+        
+        {/* Hide text on mobile for Deepstash look! */}
+        {!isMobile && (
+          <>
+            <h1 style={{ margin: '0 0 10px 0', fontSize: '2.8rem', color: 'var(--lantern-gold)', lineHeight: '1.2' }}>The Archives.</h1>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '20px', fontSize: '1.1rem' }}>Your magical library, brought to life.</p>
+          </>
+        )}
         
         <div style={{ background: 'var(--bg-panel)', padding: isMobile ? '20px' : '25px', borderRadius: '24px', border: '1px solid var(--border-color)', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
           <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '12px', marginBottom: '15px' }}>
@@ -174,8 +173,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* --- SWIPEABLE FEATURE CARDS --- */}
-      {/* This uses the exact same HTML structure you provided, just placed in a Flex row for mobile! */}
+      {/* --- SWIPEABLE FEATURE CARDS (With breathing animation) --- */}
       <div 
         className="hide-scroll"
         style={{ 
@@ -188,22 +186,19 @@ export default function Home() {
           padding: isMobile ? '10px 0 20px 0' : '0 0 60px 0',
         }}
       >
-        
-        <div style={{ flex: isMobile ? '0 0 85%' : '1', scrollSnapAlign: 'center', background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+        <div className="alive-card" style={{ flex: isMobile ? '0 0 85%' : '1', scrollSnapAlign: 'center', background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '1.8rem' }}>✨</span><h3 style={{ margin: 0, fontSize: '1.2rem' }}>Summoning Room</h3></div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 20px 0' }}>Dialogue with the minds behind the text. Ask Elizabeth Bennet about modern dating, or debate morality with Raskolnikov.</p>
-          {/* YOUR ORIGINAL BUTTON */}
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 20px 0' }}>Ask Elizabeth Bennet about modern dating, or debate morality with Raskolnikov.</p>
           <button onClick={handleSummonClick} style={{ padding: '14px', background: 'var(--bg-deep)', color: 'var(--text-main)', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}>Initiate Summoning →</button>
         </div>
 
-        <div style={{ flex: isMobile ? '0 0 85%' : '1', scrollSnapAlign: 'center', background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+        <div className="alive-card" style={{ flex: isMobile ? '0 0 85%' : '1', scrollSnapAlign: 'center', background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '1.8rem' }}>🔮</span><h3 style={{ margin: 0, fontSize: '1.2rem' }}>Stuck in a Slump?</h3></div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 20px 0' }}>Let the Oracle analyze your footprint to generate your next obsession based on what you already love.</p>
-          {/* YOUR ORIGINAL BUTTON */}
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 20px 0' }}>Let the Oracle analyze your footprint to generate your next obsession.</p>
           <button onClick={() => navigate('/profile')} style={{ padding: '14px', background: 'transparent', color: 'var(--lantern-gold)', border: '2px solid var(--lantern-gold)', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}>Consult the Oracle →</button>
         </div>
 
-        <div style={{ flex: isMobile ? '0 0 85%' : '1', scrollSnapAlign: 'center', background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+        <div className="alive-card" style={{ flex: isMobile ? '0 0 85%' : '1', scrollSnapAlign: 'center', background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           {currentMedia ? (
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
               <img src={currentMedia.coverImage} style={{ width: '70px', height: '100px', objectFit: 'cover', borderRadius: '10px', border: '1px solid var(--border-color)' }} alt="" />
@@ -216,7 +211,7 @@ export default function Home() {
           ) : (
             <div style={{ textAlign: 'center' }}>
               <h3 style={{ color: 'var(--text-main)', margin: '0 0 10px 0', fontSize: '1.2rem' }}>The Desk is Empty</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px' }}>Your reading ledger awaits its first entry.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px' }}>Your reading ledger awaits.</p>
               <button onClick={() => navigate('/search')} style={{ padding: '12px 20px', background: 'var(--bg-deep)', color: 'var(--text-main)', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 'bold' }}>Search Archives</button>
             </div>
           )}
@@ -226,30 +221,24 @@ export default function Home() {
       {/* --- THE DEEPSTASH MOBILE PORTALS --- */}
       {isMobile ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '40px' }}>
-          <div 
-            onClick={() => navigate('/articles')} 
-            style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', border: '1px solid var(--border-color)', cursor: 'pointer' }}
-          >
+          <div onClick={() => navigate('/articles')} className="manuscript-card" style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border-color)' }}>
              <div>
                <h3 style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '1.3rem' }}>📰 Read Articles</h3>
-               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Browse the daily feed</p>
+               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Browse the daily community feed</p>
              </div>
              <span style={{ fontSize: '1.5rem', color: 'var(--lantern-gold)' }}>→</span>
           </div>
 
-          <div 
-            onClick={() => navigate('/research')} 
-            style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', border: '1px solid var(--border-color)', cursor: 'pointer' }}
-          >
+          <div onClick={() => navigate('/research')} className="manuscript-card" style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border-color)' }}>
              <div>
                <h3 style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '1.3rem' }}>📜 Academic Journals</h3>
-               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Explore global research</p>
+               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Explore global open-access research</p>
              </div>
              <span style={{ fontSize: '1.5rem', color: '#3498db' }}>→</span>
           </div>
         </div>
       ) : (
-        /* --- DESKTOP REMAINS EXACTLY THE SAME (MAPPING THE LISTS) --- */
+        /* --- DESKTOP REMAINS EXACTLY THE SAME --- */
         <div style={{ marginBottom: '60px' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h2 style={{ fontSize: '2rem', color: 'var(--text-main)', margin: '0 0 10px 0' }}>The Reading Room</h2>
@@ -268,51 +257,43 @@ export default function Home() {
             
             {/* ARTICLES */}
             <div style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
-              <h3 style={{ borderBottom: '2px solid var(--lantern-gold)', paddingBottom: '10px', marginBottom: '20px', color: 'var(--text-main)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                📰 {activeTab === 'network' ? 'Your Network Feed' : 'Daily Articles'}
-              </h3>
-              
+              <h3 style={{ borderBottom: '2px solid var(--lantern-gold)', paddingBottom: '10px', marginBottom: '20px', color: 'var(--text-main)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>📰 {activeTab === 'network' ? 'Your Network Feed' : 'Daily Articles'}</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {articles.length === 0 && activeTab === 'network' ? (
-                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>Your network hasn't published anything yet, or you aren't following anyone!</p>
+                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>Your network hasn't published anything yet!</p>
                 ) : (
                   articles.slice(0, visibleCount).map((article, index) => {
                     const badge = getBadgeStyle(index);
                     return (
-                      <div key={index} className="manuscript-card" onClick={() => article._id ? navigate(`/article/${article._id}`) : window.open(article.link || article.externalLink, '_blank')}>
+                      <div key={index} className="manuscript-card" onClick={() => article._id ? navigate(`/article/${article._id}`) : window.open(article.link || article.externalLink, '_blank')} style={{ padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                          <span style={{ fontSize: '0.65rem', padding: '4px 10px', borderRadius: '12px', background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>{badge.label}</span>
+                          <span style={{ fontSize: '0.65rem', padding: '4px 10px', borderRadius: '12px', background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, fontWeight: 'bold', textTransform: 'uppercase' }}>{badge.label}</span>
                           <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>{article.authorName || article.source || 'Community'}</span>
                         </div>
                         <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: 'var(--text-main)', lineHeight: '1.4' }}>{article.title}</h4>
                         <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>{getSnippet(article.snippet, 30)}</p>
-                        <div style={{ color: 'var(--lantern-gold)', fontSize: '0.8rem', fontWeight: 'bold', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>{article._id ? 'Read Manuscript →' : 'Read External Article ↗'}</div>
                       </div>
                     );
                   })
                 )}
               </div>
-              {articles.length > visibleCount && <button onClick={() => setVisibleCount(prev => prev + 3)} style={{ width: '100%', marginTop: '20px', padding: '14px', background: 'var(--bg-deep)', border: 'none', color: 'var(--text-main)', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>Load More Articles ↓</button>}
             </div>
 
             {/* RESEARCH PAPERS */}
             <div style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
-               <h3 style={{ borderBottom: '2px solid #3498db', paddingBottom: '10px', marginBottom: '20px', color: 'var(--text-main)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                📜 Academic Journals
-              </h3>
+               <h3 style={{ borderBottom: '2px solid #3498db', paddingBottom: '10px', marginBottom: '20px', color: 'var(--text-main)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>📜 Academic Journals</h3>
               {academicPapers.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9rem' }}>Searching global archives...</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {academicPapers.map((paper) => (
-                    <div key={paper.id} className="manuscript-card" onClick={() => window.open(paper.primary_location?.landing_page_url || paper.id, '_blank')}>
+                    <div key={paper.id} className="manuscript-card" onClick={() => window.open(paper.primary_location?.landing_page_url || paper.id, '_blank')} style={{ padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span style={{ fontSize: '0.65rem', padding: '4px 10px', borderRadius: '12px', background: 'rgba(52, 152, 219, 0.1)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.3)', fontWeight: 'bold', textTransform: 'uppercase' }}>🔬 Peer Reviewed</span>
                         <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>{paper.publication_year}</span>
                       </div>
                       <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.4' }}>{cleanTitle(paper.title)}</h4>
                       <p style={{ margin: '0 0 15px 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{paper.authorships?.slice(0, 2).map(a => a.author.display_name).join(', ')} {paper.authorships?.length > 2 ? 'et al.' : ''}</p>
-                      <div style={{ color: '#3498db', fontSize: '0.8rem', fontWeight: 'bold', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>Read DOI ↗</div>
                     </div>
                   ))}
                 </div>

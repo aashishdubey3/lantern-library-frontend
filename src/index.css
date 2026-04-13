@@ -183,3 +183,112 @@ input:focus, textarea:focus, select:focus {
 .theme-daylight .manuscript-card:hover {
   box-shadow: 0 12px 24px rgba(0,0,0,0.06);
 }
+
+/* =========================================
+   📖 TRUE 3D BOOK LOGO & THEME TOGGLE
+   ========================================= */
+.aesthetic-3d-book {
+  width: 44px;
+  height: 30px;
+  position: relative;
+  perspective: 400px; /* Stronger 3D depth */
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  border-radius: 2px 6px 6px 2px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.book-spine-center {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to right, #8e6b23, #D4AF37, #8e6b23);
+  transform: translateX(-50%);
+  z-index: 5;
+  border-radius: 2px;
+}
+
+.book-static-page {
+  width: 50%;
+  height: 100%;
+  background: #fdf6e3;
+  transition: background-color 0.8s ease;
+}
+
+.book-static-page.left {
+  border-radius: 2px 0 0 2px;
+  background: linear-gradient(to right, #e0d5c1, #fdf6e3); /* Spine shadow */
+  border-left: 2px solid var(--lantern-gold);
+  border-top: 2px solid var(--lantern-gold);
+  border-bottom: 2px solid var(--lantern-gold);
+}
+
+.book-static-page.right {
+  border-radius: 0 6px 6px 0;
+  background: linear-gradient(to left, #e0d5c1, #fdf6e3); /* Spine shadow */
+  border-right: 2px solid var(--lantern-gold);
+  border-top: 2px solid var(--lantern-gold);
+  border-bottom: 2px solid var(--lantern-gold);
+}
+
+.book-flipping-page {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to left, #e0d5c1, #fdf6e3);
+  border-right: 2px solid var(--lantern-gold);
+  border-top: 2px solid var(--lantern-gold);
+  border-bottom: 2px solid var(--lantern-gold);
+  border-radius: 0 6px 6px 0;
+  transform-origin: left center;
+  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); /* Satisfying "snap" easing */
+  transform-style: preserve-3d;
+  z-index: 10;
+  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+}
+
+/* ☀️ When daylight is active, physically turn the page left! */
+.theme-daylight .book-flipping-page {
+  transform: rotateY(-180deg);
+  background: linear-gradient(to right, #FFFFFF, #f0f0f0);
+  border-left: 2px solid var(--lantern-gold);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.theme-daylight .book-static-page {
+  background: #FFFFFF;
+}
+
+/* =========================================
+   ✨ ALIVE FEATURE CARDS (Breathing Animation)
+   ========================================= */
+@keyframes magical-breathe {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 0 0 rgba(212, 175, 55, 0);
+  }
+  50% {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 12px rgba(212, 175, 55, 0.15); /* Soft gold glow */
+  }
+}
+
+.alive-card {
+  animation: magical-breathe 4s ease-in-out infinite;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* When the user hovers, pause the breathing and snap upwards */
+.alive-card:hover {
+  animation-play-state: paused;
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.12), 0 0 18px rgba(212, 175, 55, 0.3) !important;
+  border-color: var(--lantern-gold);
+}

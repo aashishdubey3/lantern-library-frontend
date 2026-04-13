@@ -19,6 +19,8 @@ import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
+import Articles from './pages/Articles';   // Make sure the import paths match where you saved them!
+import Research from './pages/Research';
 // 🔥 THIS NOW MATCHES YOUR EXACT FILENAME:
 import SummonChat from './pages/SummonChat'; 
 
@@ -51,6 +53,8 @@ function App() {
           <Route path="/verify/:token" element={<VerifyEmail />} />
 <Route path="/forgot-password" element={<ForgotPassword />} />
 <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/articles" element={<Articles />} />
+            <Route path="/research" element={<Research />} />
 
         </Routes>
       </div>

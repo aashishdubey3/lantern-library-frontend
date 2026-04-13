@@ -36,7 +36,7 @@ export default function Navbar() {
     localStorage.setItem('lantern-theme', theme);
   }, [theme]);
 
-  // 🔥 TRIGGER THE BOOK FLIP
+  // 🔥 TRIGGER THE 3D BOOK FLIP
   const toggleTheme = () => {
     setTheme(prev => prev === 'lamplight' ? 'daylight' : 'lamplight');
   };
@@ -91,15 +91,14 @@ export default function Navbar() {
   return (
     <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', padding: isMobile ? '12px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, transition: 'background 0.8s ease, border-color 0.8s ease' }}>
       
-      {/* LEFT: Book Toggle & Logo */}
+      {/* LEFT: 3D Book Logo & Theme Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '15px' }}>
         
-        {/* 🔥 The Animated Book Toggle */}
-        <div className="aesthetic-book" onClick={toggleTheme} title="Toggle Theme">
-          <div className="book-cover left"></div>
-          <div className="book-spine"></div>
-          <div className="book-page-flipping"></div>
-          <div className="book-cover right"></div>
+        <div className="aesthetic-3d-book" onClick={toggleTheme} title="Turn the page to change time">
+          <div className="book-static-page left"></div>
+          <div className="book-spine-center"></div>
+          <div className="book-flipping-page"></div>
+          <div className="book-static-page right"></div>
         </div>
         
         <Link to="/" style={{ textDecoration: 'none' }}>
