@@ -1,42 +1,52 @@
 /* =========================================
-   🏮 THE LANTERN LIBRARY: DUAL THEMES 
+   🏮 THE LANTERN LIBRARY: PREMIUM UI
    ========================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
 
+/* 🌙 DEFAULT: LAMPLIGHT (True Dark App Mode) */
 :root {
-  --bg-deep: #0f1115;        
-  --bg-panel: #1c2128;       
-  --bg-panel-hover: #252b34; 
-  --text-main: #ecf0f1;      
-  --text-muted: #95a5a6;     
-  --lantern-gold: #D4AF37;   
-  --border-color: #2c3e50;   
+  --bg-deep: #0B0E14;        
+  --bg-panel: #151A22;       
+  --bg-panel-hover: #1C222B; 
+  --text-main: #FFFFFF;      
+  --text-muted: #94A3B8;     
+  --lantern-gold: #F39C12;   
+  --border-color: #262D38;   
   
   --font-heading: 'Cinzel', serif;
   --font-body: 'Inter', sans-serif;
 }
 
+/* ☀️ OVERRIDE: DAYLIGHT (Clean Ivory Mode) */
 body.theme-daylight {
-  --bg-deep: #F9F7F3;        
+  --bg-deep: #F3F4F6;        
   --bg-panel: #FFFFFF;       
-  --bg-panel-hover: #F0EEE9;
-  --text-main: #1A1A1A;      
-  --text-muted: #737373;     
-  --lantern-gold: #C5832B;   
-  --border-color: #EAE6DF;   
+  --bg-panel-hover: #F9FAFB;
+  --text-main: #111827;      
+  --text-muted: #6B7280;     
+  --lantern-gold: #D97706;   
+  --border-color: #E5E7EB;   
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* =========================================
+   🌍 GLOBAL RESET 
+   ========================================= */
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  -webkit-tap-highlight-color: transparent; 
+}
 
 body {
   background-color: var(--bg-deep);
   color: var(--text-main);
   font-family: var(--font-body);
   line-height: 1.6;
-  transition: background-color 0.8s ease, color 0.8s ease; 
+  transition: background-color 0.4s ease, color 0.4s ease; 
   -webkit-font-smoothing: antialiased;
-  padding-bottom: 70px; /* Prevents content hiding behind bottom nav */
+  padding-bottom: 70px; 
 }
 
 h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 600; color: var(--text-main); transition: color 0.8s ease; }
@@ -46,22 +56,36 @@ html { scroll-behavior: smooth; }
 .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 .hide-scroll::-webkit-scrollbar { display: none; }
 
-button { font-family: var(--font-body); transition: all 0.2s ease-in-out; }
-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-button:active:not(:disabled) { transform: translateY(0); }
-button:disabled { opacity: 0.6; cursor: not-allowed; }
+/* =========================================
+   🖱️ GLOBAL BUTTONS & INTERACTIVE ELEMENTS
+   ========================================= */
+button, .app-card, .bottom-nav-link, .aesthetic-3d-book { 
+  font-family: var(--font-body); 
+  transition: all 0.2s ease; 
+  
+  /* 🔥 THE NATIVE APP FIX: Stops the blue highlight & Google Translate popups! */
+  -webkit-user-select: none; 
+  -moz-user-select: none; 
+  -ms-user-select: none; 
+  user-select: none; 
+}
 
-input, textarea, select { font-family: var(--font-body); background-color: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-color); transition: background-color 0.8s ease, color 0.8s ease, border-color 0.8s ease; }
-input:focus, textarea:focus, select:focus { outline: 2px solid var(--lantern-gold); border-color: transparent; }
+button:active:not(:disabled), .app-card:active, .bottom-nav-link:active { 
+  transform: scale(0.96); /* Native app "squish" effect when tapped */
+}
 
-/* 3D BOOK LOGO */
+input, textarea, select { font-family: var(--font-body); background-color: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-color); transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--lantern-gold); }
+
+/* =========================================
+   📖 3D BOOK LOGO & ALIVE CARDS
+   ========================================= */
 .aesthetic-3d-book { width: 44px; height: 30px; position: relative; perspective: 400px; cursor: pointer; display: flex; flex-shrink: 0; border-radius: 2px 6px 6px 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 .book-spine-center { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: linear-gradient(to right, #8e6b23, #D4AF37, #8e6b23); transform: translateX(-50%); z-index: 5; border-radius: 2px; }
 .book-static-page { width: 50%; height: 100%; background: #fdf6e3; transition: background-color 0.8s ease; }
 .book-static-page.left { border-radius: 2px 0 0 2px; background: linear-gradient(to right, #e0d5c1, #fdf6e3); border-left: 2px solid var(--lantern-gold); border-top: 2px solid var(--lantern-gold); border-bottom: 2px solid var(--lantern-gold); }
 .book-static-page.right { border-radius: 0 6px 6px 0; background: linear-gradient(to left, #e0d5c1, #fdf6e3); border-right: 2px solid var(--lantern-gold); border-top: 2px solid var(--lantern-gold); border-bottom: 2px solid var(--lantern-gold); }
 .book-flipping-page { position: absolute; top: 0; left: 50%; width: 50%; height: 100%; background: linear-gradient(to left, #e0d5c1, #fdf6e3); border-right: 2px solid var(--lantern-gold); border-top: 2px solid var(--lantern-gold); border-bottom: 2px solid var(--lantern-gold); border-radius: 0 6px 6px 0; transform-origin: left center; transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); transform-style: preserve-3d; z-index: 10; box-shadow: -2px 0 5px rgba(0,0,0,0.1); }
-
 .theme-daylight .book-flipping-page { transform: rotateY(-180deg); background: linear-gradient(to right, #FFFFFF, #f0f0f0); border-left: 2px solid var(--lantern-gold); border-right: none; border-radius: 6px 0 0 6px; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
 .theme-daylight .book-static-page { background: #FFFFFF; }
 
@@ -82,167 +106,20 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--lantern-gol
 .bottom-nav-link { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text-muted); font-size: 1.4rem; padding: 5px 15px; border-radius: 12px; transition: all 0.2s; }
 .bottom-nav-link:active { background: rgba(243, 156, 18, 0.1); color: var(--lantern-gold); transform: scale(0.9); }
 
-/* 🔥 KILL FOOTER ON MOBILE */
-@media (max-width: 768px) {
-  footer, .footer, #footer, [class*="footer"] {
-    display: none !important;
-  }
-}
-/* =========================================
-   💬 NATIVE CHAT ARCHITECTURE
-   ========================================= */
-
-/* The locked, full-screen container */
-.chat-layout {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 65px); /* Subtract Navbar height roughly */
-  overflow: hidden;
-  background-color: var(--bg-deep);
-}
-
-/* The fixed top header */
-.chat-header {
-  flex-shrink: 0;
-  padding: 15px 20px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-}
-
-/* The scrollable middle section */
-.chat-tunnel {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  scroll-behavior: smooth;
-}
-
-/* Hide scrollbar for the tunnel to look like a native app */
-.chat-tunnel::-webkit-scrollbar {
-  display: none;
-}
-.chat-tunnel {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* The fixed bottom input area */
-.chat-input-area {
-  flex-shrink: 0;
-  padding: 15px 20px;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-color);
-  padding-bottom: calc(15px + env(safe-area-inset-bottom)); /* iPhone notch safety */
-}
-
-/* =========================================
-   🫧 CHAT BUBBLES
-   ========================================= */
-   
-.bubble-wrapper {
-  display: flex;
-  flex-direction: column;
-  max-width: 85%;
-}
-
-.bubble-wrapper.sent {
-  align-self: flex-end;
-  align-items: flex-end;
-}
-
-.bubble-wrapper.received {
-  align-self: flex-start;
-  align-items: flex-start;
-}
-
-.chat-bubble {
-  padding: 12px 18px;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  word-wrap: break-word;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-/* User's outgoing messages */
-.chat-bubble.sent {
-  background: var(--lantern-gold);
-  color: #ffffff;
-  border-radius: 20px 20px 4px 20px;
-}
-
-/* Incoming/AI messages */
-.chat-bubble.received {
-  background: var(--bg-panel);
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
-  border-radius: 20px 20px 20px 4px;
-}
-
-.chat-timestamp {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-top: 5px;
-  padding: 0 5px;
-}
 /* =========================================
    💬 NATIVE CHAT ARCHITECTURE (WHATSAPP STYLE)
    ========================================= */
-
-.chat-layout {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 120px); /* Desktop height */
-  background-color: var(--bg-deep);
-  border-radius: 16px;
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-}
-
-.chat-header {
-  flex-shrink: 0;
-  padding: 15px 20px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-}
-
-.chat-tunnel {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  scroll-behavior: smooth;
-}
-
+.chat-layout { display: flex; flex-direction: column; height: calc(100vh - 120px); background-color: var(--bg-deep); border-radius: 16px; border: 1px solid var(--border-color); overflow: hidden; }
+.chat-header { flex-shrink: 0; padding: 15px 20px; background: var(--bg-panel); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; z-index: 10; }
+.chat-tunnel { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
 .chat-tunnel::-webkit-scrollbar { display: none; }
 .chat-tunnel { -ms-overflow-style: none; scrollbar-width: none; }
-
-.chat-input-area {
-  flex-shrink: 0;
-  padding: 12px 15px;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-color);
-  display: flex;
-  gap: 10px;
-}
+.chat-input-area { flex-shrink: 0; padding: 12px 15px; background: var(--bg-panel); border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
 
 /* 🫧 CHAT BUBBLES */
 .bubble-wrapper { display: flex; flex-direction: column; max-width: 85%; }
 .bubble-wrapper.sent { align-self: flex-end; align-items: flex-end; }
 .bubble-wrapper.received { align-self: flex-start; align-items: flex-start; }
-
 .chat-bubble { padding: 12px 16px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 .chat-bubble.sent { background: var(--lantern-gold); color: #ffffff; border-radius: 20px 20px 4px 20px; }
 .chat-bubble.received { background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 20px 20px 20px 4px; }
@@ -251,20 +128,7 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--lantern-gol
 /* 🔥 THE MOBILE FIX: Lock chat EXACTLY between top and bottom navs */
 @media (max-width: 768px) {
   .chat-layout, .mobile-fixed-chat {
-    position: fixed !important;
-    top: 55px !important;    /* Locks exactly under the top Navbar */
-    bottom: 55px !important; /* Locks exactly above the bottom Navbar */
-    left: 0;
-    right: 0;
-    width: 100vw;
-    height: auto !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    border: none !important;
-    z-index: 40;
-    background: var(--bg-deep);
+    position: fixed !important; top: 55px !important; bottom: 55px !important; left: 0; right: 0; width: 100vw; height: auto !important; margin: 0 !important; border-radius: 0 !important; border: none !important; z-index: 40; background: var(--bg-deep);
   }
-  
-  /* The foolproof class to hide the footer */
   .hide-on-mobile { display: none !important; }
 }
