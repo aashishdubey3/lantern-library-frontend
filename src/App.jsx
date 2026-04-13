@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation, Link } from "react-router-dom";
 import { useState, useEffect } from 'react';
+import { Home as HomeIcon, PenLine, MessageCircle, Users } from 'lucide-react';
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -34,12 +35,16 @@ function AppLayout() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 🔥 BULLETPROOF FIX: Only hides nav if the URL matches /messages/SOMETHING (not just /messages)
+  // Hide nav if it's a specific chat or summoning
   const isChatScreen = isMobile && (location.pathname.match(/^\/messages\/.+/) || location.pathname === '/summon');
+  
+  // Hide bottom nav on the Landing/Welcome page to keep it cinematic
+  const isWelcomePage = location.pathname === '/welcome';
 
   return (
     <>
-      <Navbar />
+      {/* Hide Top Navbar on Welcome Page for total immersion */}
+      {!isWelcomePage && <Navbar />}
 
       <div style={{ minHeight: "80vh" }}>
         <Routes>
@@ -62,20 +67,44 @@ function AppLayout() {
           <Route path="/verify/:token" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/landing" element={<Landing />} />
+          
+          {/* 🔥 FIXED: Route changed to /welcome to match Home.jsx navigate */}
+          <Route path="/welcome" element={<Landing />} />
         </Routes>
       </div>
 
       <div className="hide-on-mobile">
-        <Footer />
+        {!isWelcomePage && <Footer />}
       </div>
 
-      {isMobile && !isChatScreen && (
-        <nav style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'var(--bg-panel)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '12px 0', zIndex: 100, paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
-          <Link to="/" className="bottom-nav-link">🏠</Link>
-          <Link to="/write" className="bottom-nav-link">✏️</Link>
-          <Link to="/messages" className="bottom-nav-link">💬</Link>
-          <Link to="/community" className="bottom-nav-link">🗣️</Link>
+      {/* 📱 MOBILE BOTTOM NAV - Updated with Lucide Icons */}
+      {isMobile && !isChatScreen && !isWelcomePage && (
+        <nav style={{ 
+          position: 'fixed', 
+          bottom: 0, 
+          left: 0, 
+          width: '100%', 
+          background: 'var(--bg-panel)', 
+          borderTop: '1px solid var(--border-color)', 
+          display: 'flex', 
+          justifyContent: 'space-around', 
+          alignItems: 'center', 
+          padding: '12px 0', 
+          zIndex: 100, 
+          paddingBottom: 'env(safe-area-inset-bottom, 12px)' 
+        }}>
+          <Link to="/" className="bottom-nav-link" style={{ color: location.pathname === '/' ? 'var(--lantern-gold)' : 'var(--text-muted)' }}>
+            <HomeIcon size={24} />
+          </Link>
+          <Link to="/write" className="bottom-nav-link" style={{ color: location.pathname === '/write' ? 'var(--lantern-gold)' : 'var(--text-muted)' }}>
+            <PenLine size={24} />
+          </Link>
+          <Link to="/messages" className="bottom-nav-link" style={{ color: location.pathname.startsWith('/messages') ? 'var(--lantern-gold)' : 'var(--text-muted)' }}>
+            <MessageCircle size={24} />
+          </Link>
+          <Link to="/community" className="bottom-nav-link" style={{ color: location.pathname === '/community' ? 'var(--lantern-gold)' : 'var(--text-muted)' }}>
+            <Users size={24} />
+          </Link>
         </nav>
       )}
     </>
