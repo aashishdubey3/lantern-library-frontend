@@ -2,20 +2,23 @@
    🏮 THE LANTERN LIBRARY: PREMIUM UI
    ========================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
-/* 🌙 DEFAULT: LAMPLIGHT (True Dark App Mode) */
+/* 🌙 DEFAULT: LAMPLIGHT (Deep Charcoal & Amber) */
 :root {
-  --bg-deep: #0B0E14;        
-  --bg-panel: #151A22;       
-  --bg-panel-hover: #1C222B; 
-  --text-main: #FFFFFF;      
-  --text-muted: #94A3B8;     
-  --lantern-gold: #F39C12;   
-  --border-color: #262D38;   
+  --bg-deep: #0A0A0B;        /* Extremely dark, rich charcoal */
+  --bg-panel: #141417;       /* Slightly elevated panel */
+  --bg-panel-hover: #1C1C20; 
+  --text-main: #F3F4F6;      /* Off-white, easier on eyes */
+  --text-muted: #A1A1AA;     /* Sophisticated silver/gray */
   
-  --font-heading: 'Cinzel', serif;
-  --font-body: 'Inter', sans-serif;
+  --lantern-gold: #F59E0B;   /* Vibrant, glowing amber */
+  --lantern-glow: rgba(245, 158, 11, 0.15); /* Translucent amber for active tabs */
+  
+  --border-color: #27272A;   /* Subtle divider lines */
+  
+  --font-heading: 'Playfair Display', serif; /* Literary, classic serif */
+  --font-body: 'Inter', sans-serif;          /* Clean, geometric sans-serif */
 }
 
 /* ☀️ OVERRIDE: DAYLIGHT (Clean Ivory Mode) */
@@ -26,6 +29,7 @@ body.theme-daylight {
   --text-main: #111827;      
   --text-muted: #6B7280;     
   --lantern-gold: #D97706;   
+  --lantern-glow: rgba(217, 119, 6, 0.1);
   --border-color: #E5E7EB;   
 }
 
