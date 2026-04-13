@@ -50,27 +50,39 @@ export default function Navbar() {
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      fetchNotifications();
-      const socket = io('https://lantern-library-backend.onrender.com');
-      socket.emit('register_scholar', parsedUser.id || parsedUser._id);
-      socket.on('receive_notification_ping', () => fetchNotifications());
-      return () => socket.close();
-    } else setUser(null);
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        fetchNotifications();
+        const socket = io('https://lantern-library-backend.onrender.com');
+        socket.emit('register_scholar', parsedUser.id || parsedUser._id);
+        socket.on('receive_notification_ping', () => fetchNotifications());
+        return () => socket.close();
+      } catch (e) {
+        console.error("Parse error", e);
+      }
+    } else {
+      setUser(null);
+    }
   }, [location.pathname]);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login'; 
+  };
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
+
   if (!user) return null;
 
   return (
     <>
-      {/* 🔝 TOP NAVBAR */}
-      <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', padding: isMobile ? '12px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, transition: 'background 0.4s ease' }}>
+      <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', padding: isMobile ? '12px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, transition: 'background 0.8s ease' }}>
         
         {/* LEFT: 3D Book Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '15px' }}>
-          <div className="aesthetic-3d-book">
+          <div className="aesthetic-3d-book" onClick={toggleTheme} title="Turn the page to change time">
             <div className="book-static-page left"></div>
             <div className="book-spine-center"></div>
             <div className="book-flipping-page"></div>
@@ -84,7 +96,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* MIDDLE: Desktop Links (Hidden on mobile) */}
+        {/* MIDDLE: Desktop Links */}
         {!isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
             <Link to="/messages" style={{ textDecoration: 'none', color: 'var(--text-main)', fontSize: '1rem', fontWeight: 'bold' }}>💬 Whispers</Link>
@@ -96,7 +108,7 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '15px' : '20px' }}>
           
           {!isMobile && (
-            <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
+            <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
               ✏️ Publish
             </button>
           )}
@@ -105,12 +117,13 @@ export default function Navbar() {
             🔥 {user?.currentStreak || 0}
           </div>
 
-          {/* 🔔 NOTIFICATION BELL */}
+          {/* NOTIFICATION BELL */}
           <div style={{ position: 'relative' }} ref={notifRef}>
-            <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} style={{ background: 'transparent', border: 'none', fontSize: isMobile ? '1.4rem' : '1.5rem', cursor: 'pointer', padding: '0' }}>
+            <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} style={{ background: 'transparent', border: 'none', fontSize: isMobile ? '1.4rem' : '1.5rem', cursor: 'pointer', position: 'relative', padding: '0' }}>
               🔔
               {unreadCount > 0 && <span style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#e74c3c', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.65rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unreadCount}</span>}
             </button>
+
             {showNotifDropdown && (
                <div style={{ position: 'absolute', top: '100%', right: isMobile ? '-40px' : '0', marginTop: '15px', width: isMobile ? '260px' : '320px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
                  <div style={{ padding: '15px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-deep)' }}>
@@ -119,7 +132,7 @@ export default function Navbar() {
                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                    {notifications.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>All caught up.</p> : notifications.map(notif => (
                      <div key={notif._id} style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: '10px' }}>
-                       <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${notif.senderName || 'System'}`} alt="Avatar" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
+                       <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${notif?.senderName || 'System'}`} alt="Avatar" style={{ width: '30px', height: '30px', borderRadius: '50%' }} />
                        <div><p style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '0.85rem' }}>{notif.message}</p></div>
                      </div>
                    ))}
@@ -128,14 +141,13 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* 👤 PROFILE & THEME DROPDOWN */}
+          {/* PROFILE DROPDOWN (Crash Proof) */}
           <div style={{ position: 'relative' }} ref={profileRef}>
-            <img onClick={() => setShowProfileMenu(!showProfileMenu)} src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.username}`} alt="Profile" style={{ width: isMobile ? '34px' : '42px', height: isMobile ? '34px' : '42px', borderRadius: '50%', border: '2px solid var(--lantern-gold)', background: '#ecf0f1', cursor: 'pointer' }} />
+            <img onClick={() => setShowProfileMenu(!showProfileMenu)} src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user?.username || 'user'}`} alt="Profile" style={{ width: isMobile ? '34px' : '42px', height: isMobile ? '34px' : '42px', borderRadius: '50%', border: '2px solid var(--lantern-gold)', background: '#ecf0f1', cursor: 'pointer' }} />
             
             {showProfileMenu && (
               <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '220px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
                 
-                {/* THEME TOGGLE INSIDE PROFILE */}
                 <div onClick={toggleTheme} style={{ padding: '14px 15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontWeight: 'bold', fontSize: '0.9rem' }}>
                   <span>🌓 Appearance</span>
                   <span style={{ color: 'var(--lantern-gold)' }}>{theme === 'lamplight' ? 'Dark' : 'Light'}</span>
@@ -150,7 +162,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* 📱 QUORA-STYLE BOTTOM NAVIGATION (Only renders on phones) */}
+      {/* 📱 MOBILE BOTTOM NAV */}
       {isMobile && (
         <nav style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'var(--bg-panel)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '12px 0', zIndex: 100, paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
           <Link to="/" className="bottom-nav-link">🏠</Link>
