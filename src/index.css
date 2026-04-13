@@ -174,3 +174,27 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
   .feature-strip p { display: none; } 
   .feature-strip button { margin-top: 0 !important; padding: 8px 15px !important; font-size: 0.85rem !important; margin-left: auto; }
 }
+/* 🔥 SLEEK CARD CTA BUTTONS */
+.card-cta-btn {
+  padding: 12px 20px;
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.card-cta-btn:hover {
+  border-color: var(--lantern-gold);
+  color: var(--lantern-gold);
+  background: rgba(243, 156, 18, 0.05); /* Faint amber glow on hover */
+}
+
+.card-cta-btn:active {
+  transform: scale(0.96);
+  background: rgba(243, 156, 18, 0.1);
+}
