@@ -56,7 +56,6 @@ export default function Home() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    
     if (!token) { setLoading(false); return; }
 
     const parsedUser = JSON.parse(storedUser);
@@ -144,7 +143,7 @@ export default function Home() {
         
         {!isMobile && (
           <>
-            <h1 style={{ margin: '0 0 15px 0', fontSize: '3.5rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)', textShadow: '0 0 20px rgba(245, 158, 11, 0.15)' }}>Your Library, Brought to Life.</h1>
+            <h1 style={{ margin: '0 0 15px 0', fontSize: '3.5rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Your Library, Brought to Life.</h1>
             <p style={{ color: 'var(--text-muted)', marginBottom: '40px', fontSize: '1.1rem', maxWidth: '700px', margin: '0 auto 40px auto' }}>Track your favorite series, summon protagonists to chat, and dive into a world of curated research and articles.</p>
           </>
         )}
@@ -161,13 +160,13 @@ export default function Home() {
               onChange={(e) => setSearchQuery(e.target.value)} 
               style={{ 
                 width: '100%', padding: '18px 70px 18px 25px', borderRadius: '30px', fontSize: '1.1rem', 
-                background: 'rgba(20, 20, 23, 0.7)', backdropFilter: 'blur(15px)', WebkitBackdropFilter: 'blur(15px)',
-                border: searchFocused ? '1px solid var(--lantern-gold)' : '1px solid rgba(245, 158, 11, 0.3)', 
-                color: 'var(--text-main)', boxShadow: searchFocused ? '0 10px 40px rgba(0,0,0,0.5)' : '0 8px 32px rgba(0,0,0,0.2)',
+                background: 'var(--search-glass)', backdropFilter: 'blur(15px)', WebkitBackdropFilter: 'blur(15px)',
+                border: searchFocused ? '1px solid var(--lantern-gold)' : '1px solid var(--border-color)', 
+                color: 'var(--text-main)', boxShadow: searchFocused ? '0 10px 40px rgba(0,0,0,0.15)' : '0 8px 32px rgba(0,0,0,0.05)',
                 transition: 'all 0.3s ease'
               }} 
             />
-            {/* 🔥 UNIFIED NATIVE SEARCH ICON */}
+            {/* UNIFIED NATIVE SEARCH ICON */}
             <button 
               type="submit" 
               style={{ 
@@ -209,140 +208,179 @@ export default function Home() {
         </div>
       </div>
 
-      <div style={{ padding: isMobile ? '0 15px 20px 15px' : '0 0 60px 0' }}>
+      {/* --- CONDITIONAL RENDERING: MOBILE VS DESKTOP --- */}
+      {isMobile ? (
         
-        {/* 🔥 THE HERO CARD: SUMMONING ROOM */}
-        <div className="glass-card animate-cascade-2" style={{ padding: isMobile ? '35px 20px' : '50px 40px', borderRadius: '24px', textAlign: 'center', marginBottom: '15px', background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(20, 20, 23, 0.6) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)', width: '150px', height: '150px', background: 'var(--lantern-glow)', filter: 'blur(50px)', borderRadius: '50%', zIndex: 0 }}></div>
+        /* 🔥 MOBILE LAYOUT: Swipeable Row & Strips */
+        <div style={{ padding: '0 15px 20px 15px' }}>
           
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Sparkles size={40} color="var(--lantern-gold)" strokeWidth={1.5} />
-            <h3 style={{ margin: '15px 0 10px 0', fontSize: isMobile ? '1.8rem' : '2.2rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)', fontWeight: '700' }}>The Summoning Room</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', maxWidth: '500px', margin: '0 auto 25px auto' }}>Dialogue with the minds behind the text. Ask Elizabeth Bennet about modern dating, or debate morality with Raskolnikov.</p>
+          <div className="glass-card animate-cascade-2" style={{ padding: '35px 20px', borderRadius: '24px', textAlign: 'center', marginBottom: '15px', background: 'var(--hero-gradient)', border: '1px solid var(--border-color)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '-50px', left: '50%', transform: 'translateX(-50%)', width: '150px', height: '150px', background: 'var(--lantern-glow)', filter: 'blur(50px)', borderRadius: '50%', zIndex: 0 }}></div>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Sparkles size={40} color="var(--lantern-gold)" strokeWidth={1.5} />
+              <h3 style={{ margin: '15px 0 10px 0', fontSize: '1.8rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)', fontWeight: '700' }}>The Summoning Room</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', maxWidth: '500px', margin: '0 auto 25px auto' }}>Dialogue with the minds behind the text. Ask Elizabeth Bennet about modern dating, or debate morality with Raskolnikov.</p>
+              <button className="card-cta-btn" onClick={handleSummonClick} style={{ padding: '14px 28px', fontSize: '1.05rem', borderRadius: '30px' }}>
+                Initiate Summoning &rarr;
+              </button>
+            </div>
+          </div>
+
+          <div className="hide-scroll animate-cascade-3" style={{ display: 'flex', gap: '15px', overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: '10px', marginBottom: '15px' }}>
+            <div className="glass-card" style={{ flex: '0 0 85%', minWidth: '280px', scrollSnapAlign: 'center', padding: '25px', borderRadius: '16px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '15px' }}>
+                <Compass size={24} color="var(--lantern-gold)" strokeWidth={1.5} />
+                <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Stuck in a Slump?</h3>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 20px 0' }}>Let the Oracle generate your next obsession based on what you already love.</p>
+              <button className="card-cta-btn" onClick={() => navigate('/profile')}>Consult the Oracle &rarr;</button>
+            </div>
+
+            <div className="glass-card" style={{ flex: '0 0 85%', minWidth: '280px', scrollSnapAlign: 'center', padding: '25px', borderRadius: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              {currentMedia ? (
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                  <img src={currentMedia.coverImage} style={{ width: '70px', height: '105px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} alt="" />
+                  <div style={{ flexGrow: 1 }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--lantern-gold)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Currently Tracking</span>
+                    <h3 style={{ color: 'var(--text-main)', margin: '4px 0 12px 0', fontSize: '1.1rem', lineHeight: '1.3', fontFamily: 'var(--font-heading)' }}>{currentMedia.title}</h3>
+                    <button className="card-cta-btn" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => navigate('/profile')}>Update Log</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '15px' }}>
+                    <BookOpen size={24} color="var(--text-main)" strokeWidth={1.5} />
+                    <h3 style={{ color: 'var(--text-main)', margin: 0, fontSize: '1.15rem', fontFamily: 'var(--font-heading)' }}>The Desk is Empty</h3>
+                  </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 20px 0' }}>Your reading ledger awaits its first entry. Discover your next adventure.</p>
+                  <button className="card-cta-btn" onClick={() => navigate('/search')}>Search Archives</button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Deepstash Portals */}
+          <div className="animate-cascade-3" style={{ display: 'flex', flexDirection: 'column', gap: '15px', paddingBottom: '40px' }}>
+            <div onClick={() => navigate('/articles')} className="glass-card" style={{ padding: '25px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                 <div style={{ padding: '10px', background: 'var(--lantern-glow)', borderRadius: '12px' }}><Newspaper size={24} color="var(--lantern-gold)" /></div>
+                 <div><h3 style={{ margin: '0 0 4px 0', color: 'var(--text-main)', fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>Read Articles</h3><p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Browse the daily community feed</p></div>
+               </div>
+               <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>&rarr;</span>
+            </div>
+            <div onClick={() => navigate('/research')} className="glass-card" style={{ padding: '25px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                 <div style={{ padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px' }}><ScrollText size={24} color="#3b82f6" /></div>
+                 <div><h3 style={{ margin: '0 0 4px 0', color: 'var(--text-main)', fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>Academic Journals</h3><p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Explore global open-access research</p></div>
+               </div>
+               <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>&rarr;</span>
+            </div>
+          </div>
+        </div>
+
+      ) : (
+
+        /* 🔥 DESKTOP LAYOUT: Original Classic Grid */
+        <div style={{ marginBottom: '60px' }}>
+          
+          <div className="animate-cascade-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '40px' }}>
+            <div className="glass-card" style={{ padding: '30px', borderRadius: '16px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '15px' }}>
+                <Sparkles size={24} color="var(--lantern-gold)" strokeWidth={1.5} />
+                <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>The Summoning Room</h3>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', flexGrow: 1, margin: '0 0 20px 0' }}>Dialogue with the minds behind the text. Ask Elizabeth Bennet about modern dating, or debate morality with Raskolnikov.</p>
+              <button className="card-cta-btn" onClick={handleSummonClick}>Initiate Summoning &rarr;</button>
+            </div>
+
+            <div className="glass-card" style={{ padding: '30px', borderRadius: '16px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '15px' }}>
+                <Compass size={24} color="var(--lantern-gold)" strokeWidth={1.5} />
+                <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Stuck in a Slump?</h3>
+              </div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6', flexGrow: 1, margin: '0 0 20px 0' }}>Let the Oracle analyze your footprint to generate your next obsession based on what you already love.</p>
+              <button className="card-cta-btn" onClick={() => navigate('/profile')}>Consult the Oracle &rarr;</button>
+            </div>
+
+            <div className="glass-card" style={{ padding: '30px', borderRadius: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              {currentMedia ? (
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                  <img src={currentMedia.coverImage} style={{ width: '80px', height: '120px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} alt="" />
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--lantern-gold)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Currently Tracking</span>
+                    <h3 style={{ color: 'var(--text-main)', margin: '5px 0 15px 0', fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>{currentMedia.title}</h3>
+                    <button className="card-cta-btn" onClick={() => navigate('/profile')}>Update Log</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}><BookOpen size={32} color="var(--text-muted)" /></div>
+                  <h3 style={{ color: 'var(--text-main)', margin: '0 0 10px 0', fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>The Desk is Empty</h3>
+                  <button className="card-cta-btn" onClick={() => navigate('/search')}>Search Archives</button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="animate-cascade-3">
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+              <h2 style={{ fontSize: '2rem', color: 'var(--text-main)', margin: '0 0 10px 0', fontFamily: 'var(--font-heading)' }}>The Reading Room</h2>
+            </div>
             
-            <button className="card-cta-btn" onClick={handleSummonClick} style={{ padding: '14px 28px', fontSize: '1.05rem', borderRadius: '30px' }}>
-              Initiate Summoning &rarr;
-            </button>
-          </div>
-        </div>
-
-        {/* 🔥 SECONDARY DRAWER: ORACLE & TRACKER (Swipeable Row) */}
-        <div className="hide-scroll animate-cascade-3" style={{ display: 'flex', gap: '15px', overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: '10px' }}>
-          
-          <div className="glass-card" style={{ flex: '0 0 85%', minWidth: '280px', scrollSnapAlign: 'center', padding: '25px', borderRadius: '16px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '15px' }}>
-              <Compass size={24} color="var(--lantern-gold)" strokeWidth={1.5} />
-              <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Stuck in a Slump?</h3>
+            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '30px' }}>
+              {categories.map((cat) => {
+                const isActive = activeTab === cat.id;
+                return (
+                  <button 
+                    key={cat.id} 
+                    onClick={() => { setActiveTab(cat.id); setVisibleCount(4); }} 
+                    style={{ 
+                      padding: '6px 16px', borderRadius: '30px', 
+                      background: isActive ? 'var(--lantern-glow)' : 'transparent', 
+                      color: isActive ? 'var(--lantern-gold)' : 'var(--text-muted)', 
+                      border: '1px solid transparent', 
+                      cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s ease' 
+                    }}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
             </div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', flexGrow: 1, margin: '0 0 20px 0' }}>Let the Oracle generate your next obsession based on what you already love.</p>
-            <button className="card-cta-btn" onClick={() => navigate('/profile')}>Consult the Oracle &rarr;</button>
-          </div>
 
-          <div className="glass-card" style={{ flex: '0 0 85%', minWidth: '280px', scrollSnapAlign: 'center', padding: '25px', borderRadius: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            {currentMedia ? (
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                <img src={currentMedia.coverImage} style={{ width: '70px', height: '105px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} alt="" />
-                <div style={{ flexGrow: 1 }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--lantern-gold)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Currently Tracking</span>
-                  <h3 style={{ color: 'var(--text-main)', margin: '4px 0 12px 0', fontSize: '1.1rem', lineHeight: '1.3', fontFamily: 'var(--font-heading)' }}>{currentMedia.title}</h3>
-                  <button className="card-cta-btn" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => navigate('/profile')}>Update Log</button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '30px' }}>
+              <div className="glass-card" style={{ padding: '30px', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px' }}>
+                  <Newspaper size={20} color="var(--lantern-gold)" />
+                  <h3 style={{ margin: 0, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}>Daily Articles</h3>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {articles.slice(0, visibleCount).map((article, index) => (
+                    <div key={index} className="app-card" onClick={() => article._id ? navigate(`/article/${article._id}`) : window.open(article.link || article.externalLink, '_blank')} style={{ padding: '15px', borderRadius: '12px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--lantern-gold)' }}>{article.authorName || article.source || 'Community'}</span>
+                      <h4 style={{ margin: '8px 0', fontSize: '1.05rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>{article.title}</h4>
+                      <p style={{ margin: '0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{getSnippet(article.snippet, 20)}</p>
+                    </div>
+                  ))}
+                </div>
+                {articles.length > visibleCount && <button className="card-cta-btn" style={{ width: '100%', marginTop: '20px' }} onClick={() => setVisibleCount(prev => prev + 3)}>Load More &darr;</button>}
+              </div>
+
+              <div className="glass-card" style={{ padding: '30px', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px' }}>
+                  <ScrollText size={20} color="var(--lantern-gold)" />
+                  <h3 style={{ margin: 0, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}>Academic Journals</h3>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {academicPapers.map((paper) => (
+                    <div key={paper.id} className="app-card" onClick={() => window.open(paper.primary_location?.landing_page_url || paper.id, '_blank')} style={{ padding: '15px', borderRadius: '12px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>{paper.publication_year}</span>
+                      <h4 style={{ margin: '8px 0', color: 'var(--text-main)', fontSize: '0.95rem', fontFamily: 'var(--font-heading)' }}>{cleanTitle(paper.title)}</h4>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '15px' }}>
-                  <BookOpen size={24} color="var(--text-main)" strokeWidth={1.5} />
-                  <h3 style={{ color: 'var(--text-main)', margin: 0, fontSize: '1.15rem', fontFamily: 'var(--font-heading)' }}>The Desk is Empty</h3>
-                </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', margin: '0 0 20px 0' }}>Your reading ledger awaits its first entry. Discover your next adventure.</p>
-                <button className="card-cta-btn" onClick={() => navigate('/search')}>Search Archives</button>
-              </div>
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      {/* --- DESKTOP ONLY: FULL ARTICLES LIST --- */}
-      {!isMobile && (
-        <div className="animate-cascade-3" style={{ marginBottom: '60px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-            <h2 style={{ fontSize: '2rem', color: 'var(--text-main)', margin: '0 0 10px 0', fontFamily: 'var(--font-heading)' }}>The Reading Room</h2>
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '30px' }}>
-            {categories.map((cat) => {
-              const isActive = activeTab === cat.id;
-              return (
-                <button 
-                  key={cat.id} 
-                  onClick={() => { setActiveTab(cat.id); setVisibleCount(4); }} 
-                  style={{ 
-                    padding: '6px 16px', borderRadius: '30px', 
-                    background: isActive ? 'var(--lantern-glow)' : 'transparent', 
-                    color: isActive ? 'var(--lantern-gold)' : 'var(--text-muted)', 
-                    border: '1px solid transparent', 
-                    cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s ease' 
-                  }}
-                >
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '30px' }}>
-            <div className="glass-card" style={{ padding: '25px', borderRadius: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px' }}>
-                <Newspaper size={20} color="var(--lantern-gold)" />
-                <h3 style={{ margin: 0, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}>Daily Articles</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {articles.slice(0, visibleCount).map((article, index) => (
-                  <div key={index} className="app-card" onClick={() => article._id ? navigate(`/article/${article._id}`) : window.open(article.link || article.externalLink, '_blank')} style={{ padding: '15px', borderRadius: '12px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--lantern-gold)' }}>{article.authorName || article.source || 'Community'}</span>
-                    <h4 style={{ margin: '8px 0', fontSize: '1.05rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>{article.title}</h4>
-                    <p style={{ margin: '0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>{getSnippet(article.snippet, 20)}</p>
-                  </div>
-                ))}
-              </div>
-              {articles.length > visibleCount && <button onClick={() => setVisibleCount(prev => prev + 3)} style={{ width: '100%', marginTop: '20px', padding: '12px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'var(--text-main)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Load More &darr;</button>}
             </div>
-
-            <div className="glass-card" style={{ padding: '25px', borderRadius: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '20px' }}>
-                <ScrollText size={20} color="var(--lantern-gold)" />
-                <h3 style={{ margin: 0, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}>Academic Journals</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {academicPapers.map((paper) => (
-                  <div key={paper.id} className="app-card" onClick={() => window.open(paper.primary_location?.landing_page_url || paper.id, '_blank')} style={{ padding: '15px', borderRadius: '12px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>{paper.publication_year}</span>
-                    <h4 style={{ margin: '8px 0', color: 'var(--text-main)', fontSize: '0.95rem', fontFamily: 'var(--font-heading)' }}>{cleanTitle(paper.title)}</h4>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- MOBILE ONLY: DEEPSTASH PORTALS --- */}
-      {isMobile && (
-        <div className="animate-cascade-3" style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '0 15px 40px 15px' }}>
-          <div onClick={() => navigate('/articles')} className="glass-card" style={{ padding: '25px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-               <div style={{ padding: '10px', background: 'var(--lantern-glow)', borderRadius: '12px' }}><Newspaper size={24} color="var(--lantern-gold)" /></div>
-               <div><h3 style={{ margin: '0 0 4px 0', color: 'var(--text-main)', fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>Read Articles</h3><p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Browse the daily community feed</p></div>
-             </div>
-             <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>&rarr;</span>
-          </div>
-          <div onClick={() => navigate('/research')} className="glass-card" style={{ padding: '25px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-               <div style={{ padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px' }}><ScrollText size={24} color="#3b82f6" /></div>
-               <div><h3 style={{ margin: '0 0 4px 0', color: 'var(--text-main)', fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>Academic Journals</h3><p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>Explore global open-access research</p></div>
-             </div>
-             <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>&rarr;</span>
           </div>
         </div>
       )}

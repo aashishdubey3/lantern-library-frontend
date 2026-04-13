@@ -14,8 +14,11 @@
   
   --lantern-gold: #F59E0B;   /* Vibrant, glowing amber */
   --lantern-glow: rgba(245, 158, 11, 0.15); /* Translucent amber for active tabs */
-  
   --border-color: #27272A;   /* Subtle divider lines */
+  
+  /* 🔥 Dynamic Glass Variables (Fixes Day Mode Smudges) */
+  --search-glass: rgba(20, 20, 23, 0.7);
+  --hero-gradient: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(20, 20, 23, 0.6) 100%);
   
   --font-heading: 'Playfair Display', serif; /* Literary, classic serif */
   --font-body: 'Inter', sans-serif;          /* Clean, geometric sans-serif */
@@ -28,11 +31,19 @@ body.theme-daylight {
   --bg-panel-hover: #F9FAFB;
   --text-main: #111827;      
   --text-muted: #6B7280;     
+  
   --lantern-gold: #D97706;   
   --lantern-glow: rgba(217, 119, 6, 0.1);
   --border-color: #E5E7EB;   
+
+  /* 🔥 Clean White Glass for Day Mode */
+  --search-glass: rgba(255, 255, 255, 0.8);
+  --hero-gradient: linear-gradient(180deg, rgba(217, 119, 6, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%);
 }
 
+/* =========================================
+   🌍 GLOBAL RESET 
+   ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 body {
@@ -52,6 +63,9 @@ html { scroll-behavior: smooth; }
 .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 .hide-scroll::-webkit-scrollbar { display: none; }
 
+/* =========================================
+   🖱️ GLOBAL BUTTONS & INTERACTIVE ELEMENTS
+   ========================================= */
 button, .app-card, .bottom-nav-link, .aesthetic-3d-book { 
   font-family: var(--font-body); 
   transition: all 0.2s ease; 
@@ -63,9 +77,32 @@ button:active:not(:disabled), .app-card:active, .bottom-nav-link:active { transf
 input, textarea, select { font-family: var(--font-body); background-color: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-color); transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--lantern-gold); }
 
-/* 3D BOOK LOGO & ALIVE CARDS */
+/* 🔥 SLEEK CARD CTA BUTTONS */
+.card-cta-btn {
+  padding: 12px 20px;
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+.card-cta-btn:hover { border-color: var(--lantern-gold); color: var(--lantern-gold); background: rgba(245, 158, 11, 0.05); }
+.card-cta-btn:active { transform: scale(0.96); background: rgba(245, 158, 11, 0.1); }
+
+/* 🔥 MAGICAL GLOWING SEARCH BUTTON */
+.lantern-search-btn { background: linear-gradient(135deg, #F59E0B, #d35400); box-shadow: 0 0 15px rgba(245, 158, 11, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.3); border: none; color: white; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+.lantern-search-btn:active { transform: scale(0.96); box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+.search-container.focused .lantern-search-btn { box-shadow: 0 0 25px rgba(245, 158, 11, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.5); }
+
+/* =========================================
+   📖 3D BOOK LOGO & ALIVE CARDS
+   ========================================= */
 .aesthetic-3d-book { width: 44px; height: 30px; position: relative; perspective: 400px; cursor: pointer; display: flex; flex-shrink: 0; border-radius: 2px 6px 6px 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-.book-spine-center { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: linear-gradient(to right, #8e6b23, #D4AF37, #8e6b23); transform: translateX(-50%); z-index: 5; border-radius: 2px; }
+.book-spine-center { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: linear-gradient(to right, #8e6b23, #F59E0B, #8e6b23); transform: translateX(-50%); z-index: 5; border-radius: 2px; }
 .book-static-page { width: 50%; height: 100%; background: #fdf6e3; transition: background-color 0.8s ease; }
 .book-static-page.left { border-radius: 2px 0 0 2px; background: linear-gradient(to right, #e0d5c1, #fdf6e3); border-left: 2px solid var(--lantern-gold); border-top: 2px solid var(--lantern-gold); border-bottom: 2px solid var(--lantern-gold); }
 .book-static-page.right { border-radius: 0 6px 6px 0; background: linear-gradient(to left, #e0d5c1, #fdf6e3); border-right: 2px solid var(--lantern-gold); border-top: 2px solid var(--lantern-gold); border-bottom: 2px solid var(--lantern-gold); }
@@ -78,16 +115,18 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 .theme-daylight .manuscript-card:hover { box-shadow: 0 12px 24px rgba(0,0,0,0.06); }
 
 @keyframes magical-breathe {
-  0%, 100% { transform: translateY(0); box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 0 0 rgba(212, 175, 55, 0); }
-  50% { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 12px rgba(212, 175, 55, 0.15); }
+  0%, 100% { transform: translateY(0); box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 0 0 rgba(245, 158, 11, 0); }
+  50% { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 12px rgba(245, 158, 11, 0.15); }
 }
 .alive-card { animation: magical-breathe 4s ease-in-out infinite; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.alive-card:hover { animation-play-state: paused; transform: translateY(-6px) scale(1.02); box-shadow: 0 15px 30px rgba(0,0,0,0.12), 0 0 18px rgba(212, 175, 55, 0.3) !important; border-color: var(--lantern-gold); }
+.alive-card:hover { animation-play-state: paused; transform: translateY(-6px) scale(1.02); box-shadow: 0 15px 30px rgba(0,0,0,0.12), 0 0 18px rgba(245, 158, 11, 0.3) !important; border-color: var(--lantern-gold); }
 
 .bottom-nav-link { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text-muted); font-size: 1.4rem; padding: 5px 15px; border-radius: 12px; transition: all 0.2s; }
-.bottom-nav-link:active { background: rgba(243, 156, 18, 0.1); color: var(--lantern-gold); transform: scale(0.9); }
+.bottom-nav-link:active { background: rgba(245, 158, 11, 0.1); color: var(--lantern-gold); transform: scale(0.9); }
 
-/* NATIVE CHAT ARCHITECTURE */
+/* =========================================
+   💬 NATIVE CHAT ARCHITECTURE (WHATSAPP STYLE)
+   ========================================= */
 .chat-layout { display: flex; flex-direction: column; height: calc(100vh - 120px); background-color: var(--bg-deep); border-radius: 16px; border: 1px solid var(--border-color); overflow: hidden; }
 .chat-header { flex-shrink: 0; padding: 15px 20px; background: var(--bg-panel); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; z-index: 10; }
 .chat-tunnel { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
@@ -113,12 +152,12 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 /* =========================================
    🔮 THE DEEP AESTHETIC SUMMONING
    ========================================= */
-.magical-chat-tunnel { background: linear-gradient(180deg, #0B0E14 0%, #151A22 100%); position: relative; }
-.magical-chat-tunnel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 50% 50%, rgba(243, 156, 18, 0.04) 0%, transparent 80%); pointer-events: none; z-index: 0; }
-.glowing-avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--lantern-gold); box-shadow: 0 0 12px rgba(243, 156, 18, 0.3); animation: pulse-glow 3s infinite alternate; z-index: 1; flex-shrink: 0; }
-@keyframes pulse-glow { 0% { box-shadow: 0 0 5px rgba(243, 156, 18, 0.2); } 100% { box-shadow: 0 0 15px rgba(243, 156, 18, 0.6); } }
+.magical-chat-tunnel { background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-panel) 100%); position: relative; }
+.magical-chat-tunnel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.04) 0%, transparent 80%); pointer-events: none; z-index: 0; }
+.glowing-avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--lantern-gold); box-shadow: 0 0 12px rgba(245, 158, 11, 0.3); animation: pulse-glow 3s infinite alternate; z-index: 1; flex-shrink: 0; }
+@keyframes pulse-glow { 0% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.2); } 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); } }
 .summon-bubble { position: relative; z-index: 1; padding: 14px 18px; font-size: 1rem; line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-.summon-bubble.received { font-family: var(--font-heading); background: rgba(21, 26, 34, 0.9); border: 1px solid rgba(243, 156, 18, 0.2); color: #e8e2d5; border-radius: 20px 20px 20px 4px; }
+.summon-bubble.received { font-family: var(--font-heading); background: rgba(20, 20, 23, 0.9); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--text-main); border-radius: 20px 20px 20px 4px; }
 .summon-bubble.sent { font-family: var(--font-body); }
 
 /* =========================================
@@ -128,7 +167,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 .ql-toolbar::-webkit-scrollbar, .tox-toolbar::-webkit-scrollbar { display: none; }
 .ql-container.ql-snow { border-color: var(--border-color) !important; border-radius: 0 0 12px 12px; background: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); font-size: 1.05rem; min-height: 45vh; }
 .ql-editor.ql-blank::before { color: var(--text-muted) !important; font-style: italic; }
-.rich-text-content blockquote { border-left: 3px solid var(--lantern-gold); margin: 20px 0; padding: 15px 20px; font-style: italic; font-family: var(--font-heading); color: var(--text-muted); background: rgba(243, 156, 18, 0.05); border-radius: 0 8px 8px 0; }
+.rich-text-content blockquote { border-left: 3px solid var(--lantern-gold); margin: 20px 0; padding: 15px 20px; font-style: italic; font-family: var(--font-heading); color: var(--text-muted); background: rgba(245, 158, 11, 0.05); border-radius: 0 8px 8px 0; }
 .rich-text-content p { margin-bottom: 15px; line-height: 1.7; }
 
 /* =========================================
@@ -150,7 +189,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
   50%, 100% { transform: translateX(200%) skewX(-15deg); }
 }
 .glass-card {
-  position: relative; background: rgba(21, 26, 34, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  position: relative; background: rgba(20, 20, 23, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .theme-daylight .glass-card { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05); }
@@ -166,39 +205,10 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 .page-dimmer { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
 .page-dimmer.active { opacity: 1; pointer-events: auto; }
 
-/* 🔥 MAGICAL GLOWING SEARCH BUTTON */
-.lantern-search-btn { background: linear-gradient(135deg, #f39c12, #d35400); box-shadow: 0 0 15px rgba(243, 156, 18, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.3); border: none; color: white; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-.lantern-search-btn:active { transform: scale(0.96); box-shadow: 0 0 10px rgba(243, 156, 18, 0.4); }
-.search-container.focused .lantern-search-btn { box-shadow: 0 0 25px rgba(243, 156, 18, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.5); }
-
 /* 🔥 MOBILE TWEAK: Shrink the huge feature cards to sleek strips */
 @media (max-width: 768px) {
   .feature-strip { flex-direction: row !important; align-items: center; padding: 15px 20px !important; gap: 15px; }
   .feature-strip h3 { font-size: 1.1rem !important; margin: 0 !important; }
   .feature-strip p { display: none; } 
   .feature-strip button { margin-top: 0 !important; padding: 8px 15px !important; font-size: 0.85rem !important; margin-left: auto; }
-}
-/* 🔥 SLEEK CARD CTA BUTTONS */
-.card-cta-btn {
-  padding: 12px 20px;
-  background: transparent;
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-  display: inline-block;
-}
-
-.card-cta-btn:hover {
-  border-color: var(--lantern-gold);
-  color: var(--lantern-gold);
-  background: rgba(243, 156, 18, 0.05); /* Faint amber glow on hover */
-}
-
-.card-cta-btn:active {
-  transform: scale(0.96);
-  background: rgba(243, 156, 18, 0.1);
 }
