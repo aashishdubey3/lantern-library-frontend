@@ -22,6 +22,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SummonChat from "./pages/SummonChat";
 import Articles from "./pages/Articles"; 
 import Research from "./pages/Research";
+import Landing from './Landing';
 
 function AppLayout() {
   const location = useLocation();
@@ -61,6 +62,7 @@ function AppLayout() {
           <Route path="/verify/:token" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/landing" element={<Landing />} />
         </Routes>
       </div>
 
