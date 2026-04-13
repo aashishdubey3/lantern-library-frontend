@@ -57,10 +57,10 @@ export default function Home() {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
-    // 🔥 FIX 2: If no token or user, send them directly to login immediately.
+    // 🔥 Bouncer Logic: Send new/unauthenticated users to the epic Landing page!
     if (!token || !storedUser) { 
       setLoading(false); 
-      navigate('/login'); 
+      navigate('/welcome'); 
       return; 
     }
 
@@ -96,7 +96,7 @@ export default function Home() {
       
       fetchData();
     } catch (e) {
-      navigate('/login'); // Fallback if local storage data gets corrupted
+      navigate('/welcome'); // Fallback if local storage data gets corrupted
     }
   }, [navigate, activeTab]); 
 
@@ -177,6 +177,7 @@ export default function Home() {
                 transition: 'all 0.3s ease'
               }} 
             />
+            {/* UNIFIED NATIVE SEARCH ICON */}
             <button 
               type="submit" 
               style={{ 
@@ -194,6 +195,7 @@ export default function Home() {
             </button>
           </form>
 
+          {/* TRANSLUCENT AMBER TABS */}
           <div className="hide-scroll" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '5px', justifyContent: 'center', marginTop: '20px' }}>
             {searchCategories.map(type => {
               const isActive = searchType === type.id;
