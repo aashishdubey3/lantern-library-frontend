@@ -108,12 +108,12 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '15px' : '20px' }}>
           
           {!isMobile && (
-            <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
+            <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
               ✏️ Publish
             </button>
           )}
           
-          <div style={{ background: 'transparent', color: 'var(--lantern-gold)', fontWeight: 'bold', fontSize: isMobile ? '1rem' : '0.9rem' }}>
+          <div style={{ color: 'var(--lantern-gold)', fontWeight: 'bold', fontSize: isMobile ? '1rem' : '0.9rem' }}>
             🔥 {user?.currentStreak || 0}
           </div>
 
@@ -141,18 +141,12 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* PROFILE DROPDOWN (Crash Proof) */}
+          {/* PROFILE DROPDOWN (Theme toggle removed) */}
           <div style={{ position: 'relative' }} ref={profileRef}>
             <img onClick={() => setShowProfileMenu(!showProfileMenu)} src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user?.username || 'user'}`} alt="Profile" style={{ width: isMobile ? '34px' : '42px', height: isMobile ? '34px' : '42px', borderRadius: '50%', border: '2px solid var(--lantern-gold)', background: '#ecf0f1', cursor: 'pointer' }} />
             
             {showProfileMenu && (
               <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '220px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-                
-                <div onClick={toggleTheme} style={{ padding: '14px 15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                  <span>🌓 Appearance</span>
-                  <span style={{ color: 'var(--lantern-gold)' }}>{theme === 'lamplight' ? 'Dark' : 'Light'}</span>
-                </div>
-
                 <div onClick={() => { setShowProfileMenu(false); navigate('/profile'); }} style={{ padding: '14px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontWeight: 'bold', fontSize: '0.9rem' }}>📚 My Archives</div>
                 <div onClick={() => { setShowProfileMenu(false); navigate('/settings'); }} style={{ padding: '14px 15px', color: 'var(--text-main)', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontWeight: 'bold', fontSize: '0.9rem' }}>⚙️ Settings</div>
                 <div onClick={handleLogout} style={{ padding: '14px 15px', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold', background: 'var(--bg-deep)', fontSize: '0.9rem' }}>🚪 Log Out</div>

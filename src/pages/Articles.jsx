@@ -14,10 +14,20 @@ export default function Articles() {
     { id: 'philosophy', label: 'Philosophy' }
   ];
 
+  // 🔥 FIXED SNIPPET CLEANER (Destroys &nbsp; and HTML trash)
   const getSnippet = (text, maxWords) => {
     if (!text) return "Translating...";
-    const cleanText = text.replace(/<[^>]+>/g, '');
-    const words = cleanText.split(/\s+/);
+    let cleanText = text
+      .replace(/<[^>]+>/g, '')         // Removes tags like <p>
+      .replace(/&nbsp;/g, ' ')         // Replaces HTML spaces
+      .replace(/&#160;/g, ' ')         // Replaces alternate HTML spaces
+      .replace(/&amp;/g, '&')          // Fixes ampersands
+      .replace(/&quot;/g, '"')         // Fixes quotes
+      .replace(/&#39;/g, "'")          // Fixes apostrophes
+      .replace(/\s+/g, ' ')            // Collapses multiple spaces into one
+      .trim();
+      
+    const words = cleanText.split(' ');
     return words.length > maxWords ? words.slice(0, maxWords).join(' ') + '...' : cleanText;
   };
 
@@ -46,10 +56,25 @@ export default function Articles() {
 
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px 15px', width: '100%', boxSizing: 'border-box' }}>
         
-        {/* SWIPEABLE CATEGORIES */}
+        {/* 🔥 SLEEK IOS-STYLE CATEGORIES */}
         <div className="hide-scroll" style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '25px', paddingBottom: '5px' }}>
           {categories.map((cat) => (
-            <button key={cat.id} onClick={() => setActiveTab(cat.id)} style={{ flexShrink: 0, padding: '8px 18px', borderRadius: '25px', background: activeTab === cat.id ? 'var(--text-main)' : 'var(--bg-panel)', color: activeTab === cat.id ? 'var(--bg-deep)' : 'var(--text-muted)', border: activeTab === cat.id ? 'none' : '1px solid var(--border-color)', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
+            <button 
+              key={cat.id} 
+              onClick={() => setActiveTab(cat.id)} 
+              style={{ 
+                flexShrink: 0, 
+                padding: '6px 16px', 
+                borderRadius: '30px', 
+                background: activeTab === cat.id ? 'var(--text-main)' : 'transparent', 
+                color: activeTab === cat.id ? 'var(--bg-panel)' : 'var(--text-muted)', 
+                border: activeTab === cat.id ? 'none' : '1px solid var(--border-color)', 
+                cursor: 'pointer', 
+                fontWeight: '600', 
+                fontSize: '0.85rem',
+                transition: 'all 0.2s ease'
+              }}
+            >
               {cat.label}
             </button>
           ))}

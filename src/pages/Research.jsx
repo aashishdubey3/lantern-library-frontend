@@ -4,7 +4,17 @@ import { useNavigate } from 'react-router-dom';
 export default function Research() {
   const [papers, setPapers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('recommended');
   const navigate = useNavigate();
+
+  const categories = [
+    { id: 'recommended', label: 'Recommended' },
+    { id: 'literature', label: 'Literature' },
+    { id: 'philosophy', label: 'Philosophy' },
+    { id: 'psychology', label: 'Psychology' },
+    { id: 'technology', label: 'Technology' },
+    { id: 'history', label: 'History' }
+  ];
 
   const cleanTitle = (title) => title ? title.replace(/<[^>]+>/g, '') : '';
 
@@ -16,18 +26,24 @@ export default function Research() {
       setLoading(true);
       try {
         const user = JSON.parse(userString);
-        const userInterests = user.interests || ['Literature'];
-        const randomTopic = userInterests[Math.floor(Math.random() * userInterests.length)];
-        const res = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(randomTopic)}&per-page=15`);
+        let topicToSearch = activeTab;
+        
+        // If "recommended", use a random interest from their profile
+        if (activeTab === 'recommended') {
+          const userInterests = user.interests || ['Literature'];
+          topicToSearch = userInterests[Math.floor(Math.random() * userInterests.length)];
+        }
+        
+        const res = await fetch(`https://api.openalex.org/works?search=${encodeURIComponent(topicToSearch)}&per-page=15`);
         const data = await res.json();
         if (data.results) setPapers(data.results);
       } catch (err) { console.error("Error fetching research"); } finally { setLoading(false); }
     };
     fetchPapers();
-  }, [navigate]);
+  }, [activeTab, navigate]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-deep)', paddingBottom: '40px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-deep)', paddingBottom: '40px', overflowX: 'hidden', width: '100vw', boxSizing: 'border-box' }}>
       
       {/* 📱 NATIVE APP STICKY HEADER */}
       <div style={{ position: 'sticky', top: 0, zIndex: 50, background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', padding: '15px 20px', display: 'flex', alignItems: 'center', gap: '15px', backdropFilter: 'blur(10px)' }}>
@@ -37,7 +53,32 @@ export default function Research() {
         <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem', fontWeight: 'bold' }}>Academic Journals</h2>
       </div>
 
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px 15px' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px 15px', width: '100%', boxSizing: 'border-box' }}>
+        
+        {/* 🔥 SLEEK IOS-STYLE CATEGORIES */}
+        <div className="hide-scroll" style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '25px', paddingBottom: '5px' }}>
+          {categories.map((cat) => (
+            <button 
+              key={cat.id} 
+              onClick={() => setActiveTab(cat.id)} 
+              style={{ 
+                flexShrink: 0, 
+                padding: '6px 16px', 
+                borderRadius: '30px', 
+                background: activeTab === cat.id ? 'var(--text-main)' : 'transparent', 
+                color: activeTab === cat.id ? 'var(--bg-panel)' : 'var(--text-muted)', 
+                border: activeTab === cat.id ? 'none' : '1px solid var(--border-color)', 
+                cursor: 'pointer', 
+                fontWeight: '600', 
+                fontSize: '0.85rem',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#3498db' }}>Searching global archives...</div>
         ) : (
