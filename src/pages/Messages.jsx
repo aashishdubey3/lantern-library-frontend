@@ -21,7 +21,6 @@ export default function Messages() {
   const [socket, setSocket] = useState(null);
   const [isOnline, setIsOnline] = useState(false); 
   
-  // 🔥 3-DOTS MENU STATE
   const [showChatMenu, setShowChatMenu] = useState(false);
   const chatMenuRef = useRef(null);
 
@@ -38,7 +37,6 @@ export default function Messages() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Close 3-dots menu if user clicks outside of it
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (chatMenuRef.current && !chatMenuRef.current.contains(event.target)) setShowChatMenu(false);
@@ -106,14 +104,8 @@ export default function Messages() {
 
   useEffect(() => { fetchNetworkData(); }, [id]); 
 
-  const handleChatClick = (chatObject) => {
-    navigate(`/messages/${chatObject._id}`);
-  };
-
-  const handleBackToList = () => {
-    setActiveChat(null);
-    navigate('/messages');
-  };
+  const handleChatClick = (chatObject) => { navigate(`/messages/${chatObject._id}`); };
+  const handleBackToList = () => { setActiveChat(null); navigate('/messages'); };
 
   useEffect(() => {
     if (!activeChat) return;
@@ -177,7 +169,6 @@ export default function Messages() {
   const handleAcceptRequest = async (id) => { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/users/accept-request/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }}); fetchNetworkData(); };
   const handleDeclineRequest = async (id) => { const token = localStorage.getItem('token'); await fetch(`https://lantern-library-backend.onrender.com/api/users/remove-friend/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }}); fetchNetworkData(); };
   
-  // ACTIONS
   const handleDeleteChat = async () => { 
     if (window.confirm("Burn this conversation? This will clear all messages.")) { 
       const token = localStorage.getItem('token'); 
@@ -202,6 +193,13 @@ export default function Messages() {
       handleBackToList(); 
       fetchNetworkData(); 
     } 
+  };
+
+  // 🔥 DIRECT UNBLOCK FROM THE LIST
+  const handleUnblockDirectly = async (userId) => {
+    const token = localStorage.getItem('token'); 
+    await fetch(`https://lantern-library-backend.onrender.com/api/users/block/${userId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); 
+    fetchNetworkData(); 
   };
 
   const handleCreateGroup = async (e) => {
@@ -229,8 +227,6 @@ export default function Messages() {
             <button onClick={() => setActiveTab('friends')} style={{ flexShrink: 0, padding: '8px 16px', borderRadius: '20px', background: activeTab === 'friends' ? 'var(--text-main)' : 'var(--bg-panel)', color: activeTab === 'friends' ? 'var(--bg-deep)' : 'var(--text-muted)', border: '1px solid var(--border-color)', fontWeight: 'bold' }}>Friends</button>
             <button onClick={() => setActiveTab('groups')} style={{ flexShrink: 0, padding: '8px 16px', borderRadius: '20px', background: activeTab === 'groups' ? 'var(--text-main)' : 'var(--bg-panel)', color: activeTab === 'groups' ? 'var(--bg-deep)' : 'var(--text-muted)', border: '1px solid var(--border-color)', fontWeight: 'bold' }}>Groups</button>
             <button onClick={() => setActiveTab('requests')} style={{ flexShrink: 0, padding: '8px 16px', borderRadius: '20px', background: activeTab === 'requests' ? '#3498db' : 'var(--bg-panel)', color: activeTab === 'requests' ? 'white' : 'var(--text-muted)', border: '1px solid var(--border-color)', fontWeight: 'bold' }}>Reqs {requests.length > 0 && `(${requests.length})`}</button>
-            
-            {/* 🔥 BLOCKED TAB RESTORED */}
             <button onClick={() => setActiveTab('blocked')} style={{ flexShrink: 0, padding: '8px 16px', borderRadius: '20px', background: activeTab === 'blocked' ? '#e74c3c' : 'var(--bg-panel)', color: activeTab === 'blocked' ? 'white' : 'var(--text-muted)', border: '1px solid var(--border-color)', fontWeight: 'bold' }}>Blocked</button>
           </div>
         </div>
@@ -297,20 +293,25 @@ export default function Messages() {
             ))
           )}
 
-          {/* 🔥 BLOCKED LIST RENDERING RESTORED */}
+          {/* 🔥 DIRECT UNBLOCK BUTTON IN THE LIST */}
           {activeTab === 'blocked' && (
             blockedUsers.length === 0 ? <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '20px' }}>Nobody blocked.</p> :
             blockedUsers.map(user => (
-              <div key={user._id} className="app-card" onClick={() => handleChatClick(user)} style={{ padding: '15px', background: activeChat?._id === user._id ? 'var(--bg-deep)' : 'var(--bg-panel)', borderRadius: '12px', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px' }}>
-                <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.username}`} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#ecf0f1', border: '2px solid #e74c3c', opacity: 0.5 }} />
-                <h4 style={{ margin: 0, color: 'var(--text-muted)', fontSize: '1.05rem', textDecoration: 'line-through' }}>{user.username}</h4>
+              <div key={user._id} className="app-card" style={{ padding: '15px', background: 'var(--bg-panel)', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${user.username}`} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#ecf0f1', border: '2px solid #e74c3c', opacity: 0.5 }} />
+                  <h4 style={{ margin: 0, color: 'var(--text-muted)', fontSize: '1.05rem', textDecoration: 'line-through' }}>{user.username}</h4>
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); handleUnblockDirectly(user._id); }} style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #e74c3c', color: '#e74c3c', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  Unblock
+                </button>
               </div>
             ))
           )}
         </div>
       </div>
 
-      {/* RIGHT COLUMN: ACTIVE CHAT WINDOW (LOCKED ON MOBILE) */}
+      {/* RIGHT COLUMN: ACTIVE CHAT WINDOW */}
       <div style={rightColumnStyle} className={isMobile && activeChat ? "mobile-fixed-chat chat-layout" : "chat-layout"}>
         {!activeChat ? (
           <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
@@ -318,7 +319,6 @@ export default function Messages() {
           </div>
         ) : (
           <>
-            {/* FIXED HEADER */}
             <div className="chat-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 {isMobile && (
@@ -326,7 +326,6 @@ export default function Messages() {
                 )}
                 {!isGroupChat ? (
                   <>
-                    {/* 🔥 CLICKABLE AVATAR AND NAME TO GO TO PROFILE */}
                     <img onClick={() => navigate(`/scholar/${activeChat._id}`)} src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${activeChat.username}`} alt="Avatar" style={{ width: '35px', height: '35px', borderRadius: '50%', background: '#ecf0f1', border: '2px solid var(--lantern-gold)', cursor: 'pointer' }} />
                     <div onClick={() => navigate(`/scholar/${activeChat._id}`)} style={{ cursor: 'pointer' }}>
                       <h2 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.1rem' }}>{activeChat.username}</h2>
@@ -347,24 +346,15 @@ export default function Messages() {
               {/* 🔥 SLEEK 3-DOTS ACTION MENU */}
               {!isGroupChat && (
                 <div style={{ position: 'relative' }} ref={chatMenuRef}>
-                  <button onClick={() => setShowChatMenu(!showChatMenu)} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '1.5rem', cursor: 'pointer', padding: '0 5px' }}>
-                    ⋮
-                  </button>
-                  
+                  <button onClick={() => setShowChatMenu(!showChatMenu)} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '1.5rem', cursor: 'pointer', padding: '0 5px' }}>⋮</button>
                   {showChatMenu && (
                     <div style={{ position: 'absolute', top: '100%', right: '0', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', zIndex: 100, boxShadow: '0 5px 20px rgba(0,0,0,0.4)', width: '180px', marginTop: '10px' }}>
-                      <div onClick={() => { setShowChatMenu(false); navigate(`/scholar/${activeChat._id}`); }} style={{ padding: '14px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.95rem', color: 'var(--text-main)' }}>
-                        👤 View Profile
-                      </div>
+                      <div onClick={() => { setShowChatMenu(false); navigate(`/scholar/${activeChat._id}`); }} style={{ padding: '14px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.95rem', color: 'var(--text-main)' }}>👤 View Profile</div>
                       
                       {activeTab !== 'blocked' && (
                         <>
-                          <div onClick={() => { setShowChatMenu(false); handleDeleteChat(); }} style={{ padding: '14px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.95rem', color: 'var(--text-main)' }}>
-                            🧹 Clear Chat
-                          </div>
-                          <div onClick={() => { setShowChatMenu(false); handleUnfriend(); }} style={{ padding: '14px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.95rem', color: '#e74c3c' }}>
-                            ❌ Unfriend
-                          </div>
+                          <div onClick={() => { setShowChatMenu(false); handleDeleteChat(); }} style={{ padding: '14px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.95rem', color: 'var(--text-main)' }}>🧹 Clear Chat</div>
+                          <div onClick={() => { setShowChatMenu(false); handleUnfriend(); }} style={{ padding: '14px 15px', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.95rem', color: '#e74c3c' }}>❌ Unfriend</div>
                         </>
                       )}
 
@@ -377,7 +367,6 @@ export default function Messages() {
               )}
             </div>
 
-            {/* SCROLLING CHAT TUNNEL */}
             <div className="chat-tunnel">
               {activeTab === 'blocked' ? (
                  <div style={{ textAlign: 'center', color: '#e74c3c', marginTop: '20px', fontStyle: 'italic', padding: '20px' }}>This scholar is blocked. You cannot send or receive messages.</div>
@@ -389,16 +378,10 @@ export default function Messages() {
                   return (
                     <div key={index} className={`bubble-wrapper ${isMyMsg ? 'sent' : 'received'}`}>
                       {isGroupChat && !isMyMsg && (
-                        <div style={{ fontSize: '0.75rem', color: '#3498db', marginBottom: '4px', paddingLeft: '10px', fontWeight: 'bold' }}>
-                          {getUsernameById(msg.senderId)}
-                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#3498db', marginBottom: '4px', paddingLeft: '10px', fontWeight: 'bold' }}>{getUsernameById(msg.senderId)}</div>
                       )}
-                      <div className={`chat-bubble ${isMyMsg ? 'sent' : 'received'}`}>
-                        {msg.text}
-                      </div>
-                      <div className="chat-timestamp" style={{ textAlign: isMyMsg ? 'right' : 'left' }}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                      </div>
+                      <div className={`chat-bubble ${isMyMsg ? 'sent' : 'received'}`}>{msg.text}</div>
+                      <div className="chat-timestamp" style={{ textAlign: isMyMsg ? 'right' : 'left' }}>{new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                     </div>
                   );
                 })
@@ -406,7 +389,6 @@ export default function Messages() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* FIXED BOTTOM INPUT */}
             {activeTab !== 'blocked' && (
               <form onSubmit={handleSendMessage} className="chat-input-area">
                 <input type="text" placeholder="Message..." value={messageText} onChange={e => setMessageText(e.target.value)} style={{ flexGrow: 1, padding: '12px 20px', borderRadius: '25px', outline: 'none' }} />
