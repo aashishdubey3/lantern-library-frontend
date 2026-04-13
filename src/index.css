@@ -2,42 +2,37 @@
    🏮 THE LANTERN LIBRARY: DUAL THEMES 
    ========================================= */
 
-/* Import Google Fonts: Playfair for classic headings, Merriweather for reading */
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+/* Import Google Fonts: Cinzel for classic headings, Inter for clean reading */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap');
 
 /* 🌙 DEFAULT: LAMPLIGHT (Dark Mode) */
 :root {
-  --bg-deep: #0f1115;        /* Darker than black, sleek */
-  --bg-panel: #1c2128;       /* For cards and navigation */
+  --bg-deep: #0f1115;        
+  --bg-panel: #1c2128;       
   --bg-panel-hover: #252b34; 
+  --text-main: #ecf0f1;      
+  --text-muted: #95a5a6;     
+  --lantern-gold: #D4AF37;   /* Sleek, metallic gold */
+  --border-color: #2c3e50;   
   
-  --text-main: #ecf0f1;      /* Soft white */
-  --text-muted: #95a5a6;     /* Faded gray */
-  
-  --lantern-gold: #f39c12;   /* Glowing gold */
-  --border-color: #2c3e50;   /* Deep blue-gray borders */
-  
-  --font-body: 'Merriweather', serif;
-  --font-heading: 'Playfair Display', serif;
+  --font-heading: 'Cinzel', serif;
+  --font-body: 'Inter', sans-serif;
 }
 
-/* ☀️ OVERRIDE: DAYLIGHT (Parchment Mode) */
+/* ☀️ OVERRIDE: DAYLIGHT (Deepstash-style Clean Ivory) */
 body.theme-daylight {
-  --bg-deep: #F4ECD8;        /* Warm, vintage parchment */
-  --bg-panel: #FDFBF7;       /* Clean ivory for cards */
-  --bg-panel-hover: #F5EFE6;
-  
-  --text-main: #2C3539;      /* Deep charcoal text */
-  --text-muted: #6B705C;     /* Faded olive/gray */
-  
-  --lantern-gold: #B9770E;   /* Burnt amber/gold */
-  --border-color: #D5CABD;   /* Soft, aged border lines */
+  --bg-deep: #F9F7F3;        /* Clean, high-end cool ivory */
+  --bg-panel: #FFFFFF;       /* Pure white cards for maximum contrast */
+  --bg-panel-hover: #F0EEE9;
+  --text-main: #1A1A1A;      /* Dark charcoal text for crisp reading */
+  --text-muted: #737373;     /* Clean mid-gray */
+  --lantern-gold: #C5832B;   /* Deep, rich amber */
+  --border-color: #EAE6DF;   /* Very subtle borders */
 }
 
 /* =========================================
    🌍 GLOBAL RESET & TEXTURE 
    ========================================= */
-
 * {
   box-sizing: border-box;
   margin: 0;
@@ -52,15 +47,7 @@ body {
   transition: background-color 0.8s ease, color 0.8s ease; 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
-  /* ✨ THE MAGIC PAPER TEXTURE */
-  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  background-attachment: fixed;
 }
-
-/* =========================================
-   📜 TYPOGRAPHY & SCROLLBARS
-   ========================================= */
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
@@ -79,38 +66,34 @@ html {
 }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-deep); }
+::-webkit-scrollbar-thumb { background: var(--bg-panel-hover); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--lantern-gold); }
+
+/* Hide scrollbars for mobile swipe carousels */
+.hide-scroll {
+  -ms-overflow-style: none;  
+  scrollbar-width: none;  
 }
-::-webkit-scrollbar-track {
-  background: var(--bg-deep);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--bg-panel-hover);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--lantern-gold);
+.hide-scroll::-webkit-scrollbar {
+  display: none; 
 }
 
 /* =========================================
    🖱️ GLOBAL BUTTONS & INPUTS
    ========================================= */
-
 button {
   font-family: var(--font-body);
   transition: all 0.2s ease-in-out;
 }
-
 button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
-
 button:active:not(:disabled) {
   transform: translateY(0);
 }
-
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -123,43 +106,47 @@ input, textarea, select {
   border: 1px solid var(--border-color);
   transition: background-color 0.8s ease, color 0.8s ease, border-color 0.8s ease;
 }
-
 input:focus, textarea:focus, select:focus {
   outline: 2px solid var(--lantern-gold);
   border-color: transparent;
 }
 
 /* =========================================
-   📖 THE MAGIC BOOK ANIMATION (THEME TOGGLE)
+   📖 THE REALISTIC NAVBAR BOOK TOGGLE
    ========================================= */
-
-.magic-book-toggle {
+.aesthetic-book {
+  width: 34px;
+  height: 24px;
   position: relative;
-  width: 40px;
-  height: 28px;
+  perspective: 150px;
   cursor: pointer;
-  perspective: 1000px; 
   display: flex;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 3px;
+  flex-shrink: 0; /* Prevents squishing on mobile */
 }
-
-.book-half {
+.book-spine {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--lantern-gold);
+  transform: translateX(-50%);
+  z-index: 5;
+  transition: background-color 0.8s ease;
+}
+.book-cover {
   width: 50%;
   height: 100%;
   background: var(--bg-panel);
   border: 2px solid var(--lantern-gold);
-  border-radius: 3px 6px 6px 3px;
-  box-shadow: inset 2px 0 5px rgba(0,0,0,0.1);
-  transition: background-color 0.8s ease;
+  transition: background-color 0.8s ease, border-color 0.8s ease;
 }
-.book-half.left { 
-  border-radius: 6px 3px 3px 6px; 
-  border-right: 1px solid var(--border-color); 
-}
-.book-half.right { 
-  border-left: 1px solid var(--border-color); 
-}
+.book-cover.left { border-radius: 4px 0 0 4px; border-right: none; }
+.book-cover.right { border-radius: 0 4px 4px 0; border-left: none; }
 
-.flipping-page {
+.book-page-flipping {
   position: absolute;
   top: 0;
   left: 50%;
@@ -167,43 +154,32 @@ input:focus, textarea:focus, select:focus {
   height: 100%;
   background: var(--lantern-gold);
   border: 2px solid var(--lantern-gold);
-  border-radius: 3px 6px 6px 3px;
+  border-radius: 0 4px 4px 0;
   transform-origin: left center;
-  transition: transform 0.6s cubic-bezier(0.645, 0.045, 0.355, 1), background-color 0.6s ease;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.8s ease, border-color 0.8s ease;
   transform-style: preserve-3d;
-  z-index: 2;
+  z-index: 10;
 }
 
-/* When daylight is active, flip the page! */
-.magic-book-toggle.is-daylight .flipping-page {
+/* When daylight is active, the page flips to the left and turns white! */
+.theme-daylight .book-page-flipping {
   transform: rotateY(-180deg);
-  background: #fdf6e3;
-  border-color: var(--lantern-gold);
+  background: #FFFFFF;
+  border-radius: 4px 0 0 4px;
 }
-/* =========================================
-   📜 MANUSCRIPT CARDS (Interactive Archives)
-   ========================================= */
 
+/* =========================================
+   📜 MANUSCRIPT CARDS HOVER LOGIC
+   ========================================= */
 .manuscript-card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 20px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  text-align: left;
 }
-
 .manuscript-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
-  border-color: var(--lantern-gold);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+  border-color: var(--lantern-gold) !important;
 }
-
-/* Softer shadows for the light theme */
 .theme-daylight .manuscript-card:hover {
-  box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.06);
 }

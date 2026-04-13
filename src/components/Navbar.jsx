@@ -36,7 +36,7 @@ export default function Navbar() {
     localStorage.setItem('lantern-theme', theme);
   }, [theme]);
 
-  // 🔥 FLIP THE THEME
+  // 🔥 TRIGGER THE BOOK FLIP
   const toggleTheme = () => {
     setTheme(prev => prev === 'lamplight' ? 'daylight' : 'lamplight');
   };
@@ -89,15 +89,25 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', padding: isMobile ? '12px 10px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, transition: 'background 0.8s ease, border-color 0.8s ease' }}>
+    <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', padding: isMobile ? '12px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, transition: 'background 0.8s ease, border-color 0.8s ease' }}>
       
-      {/* LEFT: Logo */}
-      <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '10px' }}>
-        <span style={{ fontSize: isMobile ? '1.3rem' : '1.8rem' }}>🏮</span>
-        <h2 style={{ margin: 0, color: 'var(--lantern-gold)', letterSpacing: isMobile ? '0px' : '2px', textTransform: 'uppercase', fontSize: isMobile ? '0.85rem' : '1.2rem', whiteSpace: 'nowrap' }}>
-          The Lantern Library
-        </h2>
-      </Link>
+      {/* LEFT: Book Toggle & Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '15px' }}>
+        
+        {/* 🔥 The Animated Book Toggle */}
+        <div className="aesthetic-book" onClick={toggleTheme} title="Toggle Theme">
+          <div className="book-cover left"></div>
+          <div className="book-spine"></div>
+          <div className="book-page-flipping"></div>
+          <div className="book-cover right"></div>
+        </div>
+        
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <h2 style={{ margin: 0, color: 'var(--lantern-gold)', letterSpacing: isMobile ? '0px' : '1px', textTransform: 'uppercase', fontSize: isMobile ? '0.9rem' : '1.2rem', whiteSpace: 'nowrap', fontWeight: 'bold' }}>
+            The Lantern Library
+          </h2>
+        </Link>
+      </div>
 
       {/* MIDDLE: Links */}
       {!isMobile && (
@@ -111,7 +121,7 @@ export default function Navbar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '20px' }}>
         
         {!isMobile && (
-          <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
+          <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem' }}>
             ✏️ Publish
           </button>
         )}
@@ -119,27 +129,6 @@ export default function Navbar() {
         <div style={{ background: 'transparent', border: isMobile ? 'none' : '1px solid var(--lantern-gold)', color: 'var(--lantern-gold)', padding: isMobile ? '0' : '6px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: isMobile ? '1rem' : '0.9rem' }}>
           {isMobile ? `🔥 ${user?.currentStreak || 0}` : `STREAK 🔥 ${user?.currentStreak || 0}`}
         </div>
-
-        {/* 📖 THE MAGIC THEME TOGGLE (Responsive!) */}
-        {isMobile ? (
-          <button 
-            onClick={toggleTheme} 
-            style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', padding: '0' }}
-            title="Toggle Theme"
-          >
-            {theme === 'lamplight' ? '☀️' : '🌙'}
-          </button>
-        ) : (
-          <div 
-            className={`magic-book-toggle ${theme === 'daylight' ? 'is-daylight' : ''}`} 
-            onClick={toggleTheme}
-            title={theme === 'lamplight' ? "Switch to Daylight" : "Switch to Lamplight"}
-          >
-            <div className="book-half left"></div>
-            <div className="book-half right"></div>
-            <div className="flipping-page"></div>
-          </div>
-        )}
 
         {/* 🔔 NOTIFICATION BELL */}
         <div style={{ position: 'relative' }} ref={notifRef}>
@@ -153,17 +142,17 @@ export default function Navbar() {
           </button>
 
           {showNotifDropdown && (
-             <div style={{ position: 'absolute', top: '100%', right: isMobile ? '-40px' : '0', marginTop: '15px', width: isMobile ? '260px' : '320px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+             <div style={{ position: 'absolute', top: '100%', right: isMobile ? '-40px' : '0', marginTop: '15px', width: isMobile ? '260px' : '320px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-deep)' }}>
                  <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '0.95rem' }}>Notifications</h4>
-                 {unreadCount > 0 && <span onClick={markAllAsRead} style={{ fontSize: '0.75rem', color: '#3498db', cursor: 'pointer', fontWeight: 'bold' }}>Mark all read</span>}
+                 {unreadCount > 0 && <span onClick={() => {}} style={{ fontSize: '0.75rem', color: '#3498db', cursor: 'pointer', fontWeight: 'bold' }}>Mark all read</span>}
                </div>
                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                  {notifications.length === 0 ? (
                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px', fontStyle: 'italic', margin: 0 }}>All caught up.</p>
                  ) : (
                    notifications.map(notif => (
-                     <div key={notif._id} onClick={() => handleNotificationClick(notif)} style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', background: notif.isRead ? 'transparent' : 'rgba(243, 156, 18, 0.1)', cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                     <div key={notif._id} style={{ padding: '12px', borderBottom: '1px solid var(--border-color)', background: notif.isRead ? 'transparent' : 'rgba(197, 131, 43, 0.1)', cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                        <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${notif.senderName || 'System'}`} alt="Avatar" style={{ width: '30px', height: '30px', borderRadius: '50%', background: '#ecf0f1', flexShrink: 0 }} />
                        <div>
                          <p style={{ margin: '0 0 5px 0', color: 'var(--text-main)', fontSize: '0.85rem', lineHeight: '1.3' }}>{notif.message}</p>
@@ -187,7 +176,7 @@ export default function Navbar() {
           />
           
           {showProfileMenu && (
-            <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '200px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '8px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '100%', right: '0', marginTop: '15px', width: '200px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
               
               {isMobile && (
                 <>
