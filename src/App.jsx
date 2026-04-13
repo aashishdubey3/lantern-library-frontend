@@ -19,9 +19,6 @@ import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
-import Articles from "./pages/Articles"; // Make sure the import paths match where you saved them!
-import Research from "./pages/Research";
-// 🔥 THIS NOW MATCHES YOUR EXACT FILENAME:
 import SummonChat from "./pages/SummonChat";
 import Articles from "./pages/Articles"; 
 import Research from "./pages/Research";
@@ -41,20 +38,21 @@ function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/write" element={<Write />} />
 
-          {/* 🔥 THIS NOW USES THE EXACT COMPONENT NAME: */}
+          {/* 🔥 The Summoning Room */}
           <Route path="/summon" element={<SummonChat />} />
           <Route path="/settings" element={<Settings />} />
 
-          {/* 📖 THE NEW DOORWAY TO THE READING ROOM */}
+          {/* 📖 The Manuscript Reader */}
           <Route path="/article/:id" element={<Read />} />
-
           <Route path="/scholar/:id" element={<ScholarProfile />} />
           <Route path="/community" element={<Community />} />
           <Route path="/messages" element={<Messages />} />
 
+          {/* 📱 The New Mobile Deepstash Feeds */}
           <Route path="/articles" element={<Articles />} />
           <Route path="/research" element={<Research />} />
 
+          {/* 🔐 Authentication Routes */}
           <Route path="/verify/:token" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
