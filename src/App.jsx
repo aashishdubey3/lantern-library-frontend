@@ -23,6 +23,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SummonChat from "./pages/SummonChat";
 import Articles from "./pages/Articles"; 
 import Research from "./pages/Research";
+import Archive from "./pages/Archive";
 
 // 🔥 FIXED: Vercel will now look inside the 'pages' folder for this file!
 import Landing from './pages/Landing'; 
@@ -74,6 +75,7 @@ function AppLayout() {
           {/* Route matches Home.jsx navigate */}
           <Route path="/welcome" element={<Landing />} />
           <Route path="/desk" element={<Scrapbook />} />
+          <Route path="/vault" element={<Archive />} />
         </Routes>
       </div>
 
