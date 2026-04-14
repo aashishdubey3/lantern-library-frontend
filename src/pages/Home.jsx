@@ -44,6 +44,7 @@ export default function Home() {
     { id: 'technology', label: 'Technology' }
   ];
 
+  // This perfectly strips out the new Cloudinary <img /> tags so your feed stays clean!
   const getSnippet = (text, maxWords) => {
     if (!text) return "The ancient texts are currently being translated...";
     let cleanText = text.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&#160;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
@@ -68,7 +69,6 @@ export default function Home() {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
 
-      // If they haven't finished onboarding, send them there.
       if (!parsedUser.interests || parsedUser.interests.length === 0) {
         navigate('/onboarding'); 
         return;
@@ -96,7 +96,7 @@ export default function Home() {
       
       fetchData();
     } catch (e) {
-      navigate('/welcome'); // Fallback if local storage data gets corrupted
+      navigate('/welcome'); 
     }
   }, [navigate, activeTab]); 
 
@@ -110,7 +110,6 @@ export default function Home() {
     else setSummonModalState('warning');
   };
 
-  // Prevent rendering if user isn't verified to avoid crashes
   if (loading || !user) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><h2 style={{ color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)' }}>Dusting off the archives...</h2></div>;
 
   const currentMedia = userProfile?.currentlyConsuming?.[0];
@@ -195,7 +194,6 @@ export default function Home() {
             </button>
           </form>
 
-          {/* TRANSLUCENT AMBER TABS */}
           <div className="hide-scroll" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '5px', justifyContent: 'center', marginTop: '20px' }}>
             {searchCategories.map(type => {
               const isActive = searchType === type.id;

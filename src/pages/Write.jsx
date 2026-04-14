@@ -1,24 +1,84 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css'; 
+import 'react-quill-new/dist/quill.snow.css';
+import { PenTool, Send, Loader2 } from 'lucide-react';
 
 export default function Write() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const editingArticle = location.state?.article || null;
-
-  const [title, setTitle] = useState(editingArticle ? editingArticle.title : '');
-  const [content, setContent] = useState(editingArticle ? editingArticle.content : '');
-  const [tags, setTags] = useState(editingArticle && editingArticle.tags ? editingArticle.tags.join(', ') : '');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('literature');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  
+  const quillRef = useRef(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!localStorage.getItem('token')) {
-      navigate('/login');
+  // 🔥 THE CLOUDINARY INTERCEPTOR
+  const imageHandler = () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return;
+
+      setIsUploadingImage(true);
+
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Your specific Unsigned Upload Preset
+      formData.append('upload_preset', 'lantern_articles'); 
+
+      try {
+        // Your specific Cloudinary Vault URL
+        const res = await fetch('https://api.cloudinary.com/v1_1/dfugne8fq/image/upload', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+           throw new Error(data.error?.message || 'Upload failed');
+        }
+
+        const imageUrl = data.secure_url;
+
+        // Force Quill to insert the Cloudinary URL at the cursor position
+        const quill = quillRef.current.getEditor();
+        const range = quill.getSelection(true);
+        quill.insertEmbed(range.index, 'image', imageUrl);
+        
+        // Move cursor to the next line after the image
+        quill.setSelection(range.index + 1);
+      } catch (err) {
+        console.error('Image upload failed:', err);
+        alert('Failed to upload image. Please try again.');
+      } finally {
+        setIsUploadingImage(false);
+      }
+    };
+  };
+
+  // We use useMemo so Quill doesn't re-render and lose focus every time you type
+  const modules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'blockquote'],
+        [{'list': 'ordered'}, {'list': 'bullet'}],
+        ['link', 'image'], 
+        ['clean']
+      ],
+      handlers: {
+        image: imageHandler // Bind our custom Cloudinary function to the default image button
+      }
     }
-  }, [navigate]);
+  }), []);
 
   const handlePublish = async (e) => {
     e.preventDefault();
@@ -26,119 +86,104 @@ export default function Write() {
     
     setIsPublishing(true);
     const token = localStorage.getItem('token');
-    const tagArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-
-    const url = editingArticle 
-      ? `https://lantern-library-backend.onrender.com/api/articles/${editingArticle._id}` 
-      : 'https://lantern-library-backend.onrender.com/api/articles/create';
-      
-    const method = editingArticle ? 'PUT' : 'POST';
 
     try {
-      const response = await fetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ title, content, tags: tagArray })
+      const res = await fetch('https://lantern-library-backend.onrender.com/api/articles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, content, category })
       });
 
-      if (response.ok) {
-        alert(editingArticle ? "✨ Manuscript updated!" : "✨ Manuscript published to the archives!");
-        navigate('/profile'); 
+      if (res.ok) {
+        navigate('/');
       } else {
-        alert("Failed to save.");
+        alert("Failed to publish article.");
       }
-    } catch (error) {
-      alert("Server error.");
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred.");
     } finally {
       setIsPublishing(false);
     }
   };
 
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'blockquote'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link'],
-      ['clean']
-    ],
-  };
-
   return (
-    <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px', overflowX: 'hidden' }}>
+    <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
       
-      {/* 🔥 INJECTED CSS JUST FOR THE EDITOR ON THIS PAGE */}
-      <style>
-        {`
-          .ql-toolbar.ql-snow {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch;
-            background: #ecf0f1;
-            border-radius: 8px 8px 0 0;
-            border: none !important;
-          }
-          .ql-toolbar::-webkit-scrollbar { display: none; }
-          .ql-container.ql-snow {
-            border: none !important;
-            background: #fdf6e3; /* Soft parchment for typing */
-            color: #2c3e50;
-            font-size: 1.1rem;
-            border-radius: 0 0 8px 8px;
-          }
-          .ql-editor { min-height: 400px; }
-          .ql-editor.ql-blank::before { color: #95a5a6; font-style: italic; }
-        `}
-      </style>
-
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <h1 style={{ fontSize: '2.5rem', color: 'var(--lantern-gold)', marginBottom: '10px' }}>
-          {editingArticle ? 'Revise Manuscript' : 'The Scriptorium'}
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>
-          {editingArticle ? 'Make your edits below and seal the ink.' : 'Pen your thoughts, reviews, and literary theories.'}
-        </p>
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <PenTool size={40} color="var(--lantern-gold)" strokeWidth={1.5} style={{ marginBottom: '15px' }} />
+        <h1 style={{ fontSize: '2.5rem', color: 'var(--text-main)', fontFamily: 'var(--font-heading)', margin: '0 0 10px 0' }}>Draft a Manuscript</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Share your thoughts, reviews, or academic research with the archives.</p>
       </div>
 
-      <form onSubmit={handlePublish} style={{ background: 'var(--bg-panel)', padding: '25px', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+      <div className="glass-card animate-cascade-1" style={{ padding: '30px', borderRadius: '16px' }}>
         
-        <input 
-          type="text" 
-          placeholder="Title of your manuscript..." 
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          style={{ width: '100%', padding: '15px', fontSize: '1.5rem', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '20px', outline: 'none' }}
-        />
+        <form onSubmit={handlePublish} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>Manuscript Title</label>
+            <input 
+              type="text" 
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., The Symbolism of the Green Light in Gatsby..."
+              style={{ width: '100%', padding: '15px', borderRadius: '12px', fontSize: '1.1rem', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+            />
+          </div>
 
-        <input 
-          type="text" 
-          placeholder="Tags (e.g., Sci-Fi, Review, Dune) - separate with commas" 
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          style={{ width: '100%', padding: '12px', fontSize: '1rem', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '20px', outline: 'none' }}
-        />
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>Archive Category</label>
+            <select 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)}
+              style={{ width: '100%', padding: '15px', borderRadius: '12px', fontSize: '1rem', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'var(--text-main)', cursor: 'pointer' }}
+            >
+              <option value="literature">Classic Literature</option>
+              <option value="philosophy">Philosophy</option>
+              <option value="psychology">Psychology</option>
+              <option value="technology">Technology & Future</option>
+            </select>
+          </div>
 
-        <div style={{ borderRadius: '8px', overflow: 'hidden', marginBottom: '25px', border: '1px solid var(--border-color)' }}>
-          <ReactQuill 
-            theme="snow" 
-            value={content} 
-            onChange={setContent} 
-            modules={modules}
-          />
-        </div>
+          <div style={{ position: 'relative' }}>
+            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', color: 'var(--text-muted)', fontWeight: '600', fontSize: '0.9rem' }}>
+              <span>The Text</span>
+              {isUploadingImage && <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--lantern-gold)', fontSize: '0.8rem' }}><Loader2 size={14} className="lucide-spin" /> Uploading Image...</span>}
+            </label>
+            
+            <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+              <ReactQuill 
+                ref={quillRef}
+                theme="snow" 
+                value={content} 
+                onChange={setContent} 
+                modules={modules}
+                placeholder="Write your masterpiece here... Use the image icon above to insert photos."
+              />
+            </div>
+          </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-          <button 
-            type="submit" 
-            disabled={isPublishing}
-            style={{ padding: '12px 30px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: isPublishing ? 'not-allowed' : 'pointer', width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-          >
-            {isPublishing ? 'Sealing the ink...' : (editingArticle ? 'Update Manuscript' : 'Publish to Archives')}
-          </button>
-        </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+            <button 
+              type="submit" 
+              disabled={isPublishing || isUploadingImage}
+              className="lantern-search-btn"
+              style={{ 
+                padding: '14px 30px', borderRadius: '30px', fontSize: '1.05rem', fontWeight: 'bold', 
+                display: 'flex', alignItems: 'center', gap: '10px', opacity: (isPublishing || isUploadingImage) ? 0.7 : 1,
+                cursor: (isPublishing || isUploadingImage) ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isPublishing ? 'Binding Pages...' : 'Publish to Archive'} <Send size={18} />
+            </button>
+          </div>
 
-      </form>
+        </form>
+      </div>
+
     </div>
   );
 }
