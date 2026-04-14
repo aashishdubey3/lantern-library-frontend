@@ -1,18 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Trash2, Loader2, SmilePlus, X } from 'lucide-react';
+import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Trash2, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Scrapbook() {
-  const [items, setItems] = useState([]);
+  // 🔥 THE JOURNAL SYSTEM (Multiple Pages)
+  const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
+  const [activeJournalId, setActiveJournalId] = useState(journals[0].id);
+  
   const [profileData, setProfileData] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [showStickerMenu, setShowStickerMenu] = useState(false);
   const [activeZIndex, setActiveZIndex] = useState(10);
   
   const constraintsRef = useRef(null);
 
-  // Fetch user profile so they can pull their books/movies onto the desk
+  // Derived state: Get the currently active page and its items
+  const activeJournal = journals.find(j => j.id === activeJournalId);
+  const items = activeJournal ? activeJournal.items : [];
+  const currentIndex = journals.findIndex(j => j.id === activeJournalId);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -26,31 +34,32 @@ export default function Scrapbook() {
     return activeZIndex + 1;
   };
 
+  // --- PAGE NAVIGATION ---
+  const createNewPage = () => {
+    const newId = Date.now();
+    setJournals([...journals, { id: newId, name: `Page ${journals.length + 1}`, items: [] }]);
+    setActiveJournalId(newId);
+  };
+  const goToPrevPage = () => { if (currentIndex > 0) setActiveJournalId(journals[currentIndex - 1].id); };
+  const goToNextPage = () => { if (currentIndex < journals.length - 1) setActiveJournalId(journals[currentIndex + 1].id); };
+
   // --- ITEM SPAWNERS ---
-
-  const addNote = () => {
-    setItems([...items, { 
-      id: Date.now(), type: 'note', text: '', 
-      color: ['#fdf6e3', '#fcf3cf', '#f9e79f', '#e8f8f5'][Math.floor(Math.random() * 4)], 
-      zIndex: bringToFront() 
-    }]);
+  const addItemToJournal = (newItem) => {
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j));
   };
 
-  const addQuote = () => {
-    setItems([...items, { id: Date.now(), type: 'quote', text: '', author: '', zIndex: bringToFront() }]);
-  };
-
-  const addTodo = () => {
-    setItems([...items, { id: Date.now(), type: 'todo', tasks: [{ id: 1, text: '', done: false }], zIndex: bringToFront() }]);
-  };
-
+  const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', color: ['#fdf6e3', '#fcf3cf', '#f9e79f', '#e8f8f5'][Math.floor(Math.random() * 4)], zIndex: bringToFront() });
+  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', zIndex: bringToFront() }); // 🔥 Plain text!
+  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', zIndex: bringToFront() });
+  const addTodo = () => addItemToJournal({ id: Date.now(), type: 'todo', tasks: [{ id: 1, text: '', done: false }], zIndex: bringToFront() });
+  
   const addSticker = (emoji) => {
-    setItems([...items, { id: Date.now(), type: 'sticker', emoji, zIndex: bringToFront() }]);
+    addItemToJournal({ id: Date.now(), type: 'sticker', emoji, zIndex: bringToFront() });
     setShowStickerMenu(false);
   };
 
   const addMediaItem = (media) => {
-    setItems([...items, { id: Date.now(), type: 'media', media, zIndex: bringToFront() }]);
+    addItemToJournal({ id: Date.now(), type: 'media', media, displayStyle: media.mediaType === 'book' ? 'spine' : 'cover', zIndex: bringToFront() });
     setShowMediaModal(false);
   };
 
@@ -63,40 +72,50 @@ export default function Scrapbook() {
       setIsUploading(true);
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('upload_preset', 'lantern_articles'); // Your Cloudinary Preset
+      formData.append('upload_preset', 'lantern_articles'); 
       try {
         const res = await fetch('https://api.cloudinary.com/v1_1/dfugne8fq/image/upload', { method: 'POST', body: formData });
         const data = await res.json();
-        setItems(prev => [...prev, { id: Date.now(), type: 'photo', url: data.secure_url, caption: '', zIndex: bringToFront() }]);
+        addItemToJournal({ id: Date.now(), type: 'photo', url: data.secure_url, caption: '', zIndex: bringToFront() });
       } catch (err) { alert('Upload failed'); } finally { setIsUploading(false); }
     };
     input.click();
   };
 
   // --- ITEM UPDATERS ---
-
-  const deleteItem = (id) => setItems(items.filter(item => item.id !== id));
+  const deleteItem = (id) => {
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j));
+  };
   
   const updateItem = (id, updates) => {
-    setItems(items.map(item => item.id === id ? { ...item, ...updates } : item));
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j));
   };
 
   const updateTodoTask = (itemId, taskId, updates) => {
-    setItems(items.map(item => {
-      if (item.id === itemId) {
-        const newTasks = item.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t);
-        // Automatically add a new empty task if they start typing in the last one
-        if (updates.text && taskId === item.tasks[item.tasks.length - 1].id) {
-          newTasks.push({ id: Date.now(), text: '', done: false });
-        }
-        return { ...item, tasks: newTasks };
+    setJournals(journals.map(j => {
+      if (j.id === activeJournalId) {
+        return { ...j, items: j.items.map(item => {
+            if (item.id === itemId) {
+              const newTasks = item.tasks.map(t => t.id === taskId ? { ...t, ...updates } : t);
+              if (updates.text && taskId === item.tasks[item.tasks.length - 1].id) {
+                newTasks.push({ id: Date.now(), text: '', done: false });
+              }
+              return { ...item, tasks: newTasks };
+            }
+            return item;
+          })
+        };
       }
-      return item;
+      return j;
     }));
   };
 
-  // --- RENDERERS ---
+  const saveDesk = async () => {
+    setIsSaving(true);
+    setTimeout(() => { setIsSaving(false); alert("Your Journal has been saved! (Backend integration active soon)"); }, 1000);
+  };
 
+  // --- RENDERERS ---
   const renderItemContent = (item) => {
     switch (item.type) {
       
@@ -104,9 +123,18 @@ export default function Scrapbook() {
         return (
           <textarea
             value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })}
-            placeholder="Scribble your thoughts..."
-            onPointerDownCapture={(e) => e.stopPropagation()} // Allows text selection without dragging
+            placeholder="Scribble your thoughts..." onPointerDownCapture={(e) => e.stopPropagation()} 
             style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: '"Courier New", Courier, monospace', fontSize: '1.05rem', color: '#2c3e50', lineHeight: '1.5', cursor: 'text', minHeight: '150px' }}
+          />
+        );
+
+      // 🔥 NEW: PLAIN TEXT ITEM
+      case 'text':
+        return (
+          <textarea
+            value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })}
+            placeholder="Start writing..." onPointerDownCapture={(e) => e.stopPropagation()}
+            style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: '#fdf6e3', lineHeight: '1.6', cursor: 'text', minHeight: '150px', minWidth: '300px', textShadow: '0 2px 5px rgba(0,0,0,0.8)' }}
           />
         );
       
@@ -165,16 +193,16 @@ export default function Scrapbook() {
         return <div style={{ fontSize: '5rem', filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.4))' }}>{item.emoji}</div>;
 
       case 'media':
-        // Uses the CSS classes we built for Profile.jsx!
         const isBook = item.media.mediaType === 'book';
+        const isSpine = item.displayStyle === 'spine';
         return (
           <div style={{ filter: 'drop-shadow(5px 10px 15px rgba(0,0,0,0.5))' }}>
-            {isBook ? (
-              <div className="shelf-book-spine" style={{ backgroundImage: `url(${item.media.coverImage})`, width: '50px', height: '200px' }}>
+            {isBook && isSpine ? (
+              <div className="shelf-book-spine" style={{ backgroundImage: `url(${item.media.coverImage})`, width: '50px', height: '200px', margin: 0 }}>
                 <span className="spine-title">{item.media.title}</span>
               </div>
             ) : (
-              <img src={item.media.coverImage} className="film-poster" style={{ width: '140px', height: '210px', margin: 0 }} alt="Media" />
+              <img src={item.media.coverImage} className={isBook ? "shelf-book" : "film-poster"} style={{ width: '130px', height: '190px', margin: 0, borderRadius: isBook ? '2px 6px 6px 2px' : '4px' }} alt="Media" />
             )}
           </div>
         );
@@ -199,18 +227,36 @@ export default function Scrapbook() {
         }}
       >
         
-        {/* THE TOOLBAR */}
-        <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', background: 'rgba(10, 10, 12, 0.85)', backdropFilter: 'blur(15px)', padding: '15px 25px', borderRadius: '40px', border: '1px solid rgba(245, 158, 11, 0.3)', zIndex: 1000, boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+        {/* 🔥 THE JOURNAL NAVIGATOR (TOP BAR) */}
+        <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(10, 10, 12, 0.85)', backdropFilter: 'blur(15px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
+          <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer', display: 'flex' }}><ChevronLeft size={20} /></button>
+          <span style={{ color: 'var(--text-main)', fontWeight: 'bold', fontSize: '0.95rem', minWidth: '60px', textAlign: 'center' }}>{activeJournal?.name}</span>
+          <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === journals.length - 1 ? 'not-allowed' : 'pointer', display: 'flex' }}><ChevronRight size={20} /></button>
+          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
+          <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}><Plus size={18} /> New Page</button>
+        </div>
+
+        {/* THE TOOLBAR (BOTTOM BAR) */}
+        <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', background: 'rgba(10, 10, 12, 0.85)', backdropFilter: 'blur(15px)', padding: '15px 25px', borderRadius: '40px', border: '1px solid rgba(245, 158, 11, 0.3)', zIndex: 1000, boxShadow: '0 20px 40px rgba(0,0,0,0.8)', overflowX: 'auto', maxWidth: '95vw' }}>
+          
+          <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><Type size={22} /></button>
           <button onClick={addNote} title="Add Note" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><StickyNote size={22} /></button>
           <button onClick={addTodo} title="Add Checklist" style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><CheckSquare size={22} /></button>
           <button onClick={addQuote} title="Add Quote" style={{ background: 'transparent', border: 'none', color: '#9b59b6', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><Quote size={22} /></button>
           <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
+          
           <button onClick={addPhoto} title="Upload Photo" disabled={isUploading} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: isUploading ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', opacity: isUploading ? 0.5 : 1 }}>
             {isUploading ? <Loader2 size={22} className="lucide-spin" /> : <ImageIcon size={22} />}
           </button>
           <button onClick={() => setShowMediaModal(true)} title="Add Media" style={{ background: 'transparent', border: 'none', color: '#e67e22', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><BookOpen size={22} /></button>
           <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
+          
           <button onClick={() => setShowStickerMenu(!showStickerMenu)} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><SmilePlus size={22} /></button>
+          <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
+          
+          <button onClick={saveDesk} disabled={isSaving} title="Save Journal" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: isSaving ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', opacity: isSaving ? 0.5 : 1 }}>
+            {isSaving ? <Loader2 size={22} className="lucide-spin" /> : <Save size={22} />}
+          </button>
         </div>
 
         {/* STICKER POPUP MENU */}
@@ -243,17 +289,29 @@ export default function Scrapbook() {
               display: 'flex', flexDirection: 'column', cursor: 'grab',
             }}
           >
-            {/* Delete Button Header */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '5px', position: 'absolute', top: '5px', right: '5px', zIndex: 50 }}>
-              <button onPointerDown={() => deleteItem(item.id)} style={{ background: 'rgba(255,255,255,0.8)', border: 'none', borderRadius: '50%', padding: '4px', color: '#c0392b', cursor: 'pointer', opacity: 0, transition: 'opacity 0.2s' }} className="delete-btn">
-                <X size={14} strokeWidth={3} />
+            {/* ALWAYS VISIBLE CONTROLS (Delete & Toggle Book Style) */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', position: 'absolute', top: '-15px', right: '-15px', zIndex: 50 }}>
+              
+              {item.type === 'media' && item.media.mediaType === 'book' && (
+                <button 
+                  onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { displayStyle: item.displayStyle === 'spine' ? 'cover' : 'spine' }); }} 
+                  style={{ background: 'var(--lantern-gold)', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'var(--bg-deep)', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)' }}
+                  title="Toggle Spine/Cover"
+                >
+                  <RefreshCcw size={16} strokeWidth={3} />
+                </button>
+              )}
+
+              <button 
+                onPointerDownCapture={(e) => { e.stopPropagation(); deleteItem(item.id); }} 
+                style={{ background: '#e74c3c', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'white', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)' }}
+              >
+                <X size={16} strokeWidth={3} />
               </button>
             </div>
             
             {renderItemContent(item)}
 
-            {/* CSS hack to only show delete button on hover */}
-            <style>{`.delete-btn { opacity: 0; } div:hover > div > .delete-btn { opacity: 1; }`}</style>
           </motion.div>
         ))}
 
