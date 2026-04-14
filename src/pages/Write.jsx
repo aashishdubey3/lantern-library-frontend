@@ -97,18 +97,23 @@ export default function Write() {
         body: JSON.stringify({ title, content, category })
       });
 
-      // 🔥 Force the app to read the exact error message from your backend
-      const data = await res.json(); 
-
-      if (res.ok) {
-        navigate('/');
-      } else {
-        console.error("Backend Rejection Details:", data);
-        alert(`Backend Error: ${data.message || data.error || JSON.stringify(data)}`);
+      const text = await res.text(); // Read as raw text first in case backend crashes and sends HTML
+      
+      try {
+        const data = JSON.parse(text);
+        if (res.ok) {
+          navigate('/');
+        } else {
+          alert(`Backend Rejection: ${JSON.stringify(data)}`);
+        }
+      } catch (parseErr) {
+        alert(`Backend sent weird data (Not JSON). Status: ${res.status}. Data: ${text.substring(0, 100)}`);
       }
+
     } catch (err) {
-      console.error("Network/Fetch Error:", err);
-      alert("A network error occurred. Is the backend awake?");
+      console.error(err);
+      // 🔥 THIS IS THE MAGIC BULLET. It will tell us exactly why the browser killed it.
+      alert(`CRITICAL BROWSER ERROR:\n\nName: ${err.name}\nMessage: ${err.message}\nToken present: ${!!token}`);
     } finally {
       setIsPublishing(false);
     }
