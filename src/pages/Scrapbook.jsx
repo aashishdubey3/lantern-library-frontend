@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Highlighter, Inbox, Lock } from 'lucide-react';
+import { 
+  StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, 
+  SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, 
+  Palette, Inbox, Lock, AlignLeft, AlignCenter, AlignRight, Trash2
+} from 'lucide-react';
 
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
@@ -17,7 +21,9 @@ export default function Scrapbook() {
   const [showBgMenu, setShowBgMenu] = useState(false);
   const [bgTheme, setBgTheme] = useState('lined'); 
   const [activeZIndex, setActiveZIndex] = useState(10);
-  const [focusedItemId, setFocusedItemId] = useState(null); 
+  
+  // 🔥 CRITICAL: Tracks exactly which item is clicked to show its formatting tab
+  const [selectedItemId, setSelectedItemId] = useState(null); 
   
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [archiveTitle, setArchiveTitle] = useState('');
@@ -30,6 +36,7 @@ export default function Scrapbook() {
   const items = activeJournal ? activeJournal.items : [];
   const currentIndex = journals.findIndex(j => j.id === activeJournalId);
 
+  // Background Themes
   const themes = {
     lined: 'repeating-linear-gradient(transparent, transparent 31px, #e5e5e5 31px, #e5e5e5 32px), #fdf6e3',
     grid: 'linear-gradient(#e5e5e5 1px, transparent 1px), linear-gradient(90deg, #e5e5e5 1px, transparent 1px), #fdf6e3',
@@ -41,20 +48,10 @@ export default function Scrapbook() {
     blueprint: 'linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px), #1a365d',
     darkGrid: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px), #111827',
     corkboard: 'repeating-linear-gradient(45deg, #d4a373, #d4a373 10px, #cc9a6a 10px, #cc9a6a 20px)',
-    vintage: 'radial-gradient(circle at center, transparent 0%, rgba(139, 69, 19, 0.4) 100%), #faedcd',
-    slate: 'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)',
-    marble: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px), #e2e8f0',
-    midnight: 'radial-gradient(circle at 50% 50%, #1f2937 0%, #111827 100%)',
-    blossom: 'linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%)',
-    galaxy: 'radial-gradient(circle at 20% 30%, rgba(76, 29, 149, 0.4) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(30, 58, 138, 0.4) 0%, transparent 50%), #0f172a'
+    slate: 'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)'
   };
 
-  // 🔥 Swatch colors for the UI picker
-  const themeSwatches = { lined: '#fdf6e3', grid: '#e5e5e5', dotted: '#d4c4a8', leather: '#3a2318', parchment: '#f4ecd8', wood: '#4e342e', green: '#1b4332', blueprint: '#1a365d', darkGrid: '#111827', corkboard: '#d4a373', vintage: '#faedcd', slate: '#2d3748', marble: '#e2e8f0', midnight: '#1f2937', blossom: '#fdfbfb', galaxy: '#0f172a' };
-  
-  // 🔥 SMART CONTRAST
-  const isDarkTheme = ['leather', 'wood', 'green', 'blueprint', 'darkGrid', 'slate', 'midnight', 'galaxy'].includes(bgTheme);
-  const defaultTextColor = isDarkTheme ? '#fdf6e3' : '#2c3e50';
+  const themeSwatches = { lined: '#fdf6e3', grid: '#e5e5e5', dotted: '#d4c4a8', leather: '#3a2318', parchment: '#f4ecd8', wood: '#4e342e', green: '#1b4332', blueprint: '#1a365d', darkGrid: '#111827', corkboard: '#d4a373', slate: '#2d3748' };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -76,23 +73,25 @@ export default function Scrapbook() {
   }, []);
 
   const bringToFront = () => { setActiveZIndex(prev => prev + 1); return activeZIndex + 1; };
+  
+  const createNewPage = () => { const newId = Date.now(); setJournals([...journals, { id: newId, name: `Page ${journals.length + 1}`, items: [] }]); setActiveJournalId(newId); setSelectedItemId(null); };
+  const goToPrevPage = () => { if (currentIndex > 0) { setActiveJournalId(journals[currentIndex - 1].id); setSelectedItemId(null); } };
+  const goToNextPage = () => { if (currentIndex < journals.length - 1) { setActiveJournalId(journals[currentIndex + 1].id); setSelectedItemId(null); } };
 
-  const createNewPage = () => {
-    const newId = Date.now();
-    setJournals([...journals, { id: newId, name: `Page ${journals.length + 1}`, items: [] }]);
-    setActiveJournalId(newId);
+  const addItemToJournal = (newItem) => { 
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); 
+    setSelectedItemId(newItem.id); // Auto-select new items
   };
-  const goToPrevPage = () => { if (currentIndex > 0) setActiveJournalId(journals[currentIndex - 1].id); };
-  const goToNextPage = () => { if (currentIndex < journals.length - 1) setActiveJournalId(journals[currentIndex + 1].id); };
 
-  const addItemToJournal = (newItem) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); };
+  // 🔥 Default MS Word-style properties
+  const defaultFormatting = { font: 'var(--font-body)', fontSize: 16, textAlign: 'left', textColor: '#2c3e50' };
 
-  const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', x: 0, y: 0, font: '"Courier New", Courier, monospace', color: '#fdf3c6', textColor: '#2c3e50', isHighlighted: false, zIndex: bringToFront() });
-  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, font: 'var(--font-heading)', color: 'transparent', textColor: defaultTextColor, isHighlighted: false, zIndex: bringToFront() }); 
-  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, font: 'var(--font-heading)', textColor: defaultTextColor, zIndex: bringToFront() });
-  const addTodo = () => addItemToJournal({ id: Date.now(), type: 'todo', listTitle: 'Reading List', tasks: [{ id: 1, text: '', done: false }], x: 0, y: 0, zIndex: bringToFront() });
-  const addSticker = (emoji) => { addItemToJournal({ id: Date.now(), type: 'sticker', emoji, x: 0, y: 0, zIndex: bringToFront() }); setShowStickerMenu(false); };
-  const addMediaItem = (media) => { addItemToJournal({ id: Date.now(), type: 'media', media, x: 0, y: 0, displayStyle: media.mediaType === 'book' ? 'spine' : 'cover', zIndex: bringToFront() }); setShowMediaModal(false); };
+  const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', x: 100, y: 100, bgColor: '#fdf3c6', ...defaultFormatting, zIndex: bringToFront() });
+  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 100, y: 100, bgColor: 'transparent', ...defaultFormatting, fontSize: 24, font: 'var(--font-heading)', zIndex: bringToFront() }); 
+  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 100, y: 100, bgColor: 'transparent', ...defaultFormatting, font: 'var(--font-heading)', textAlign: 'center', zIndex: bringToFront() });
+  const addTodo = () => addItemToJournal({ id: Date.now(), type: 'todo', listTitle: 'New List', tasks: [{ id: 1, text: '', done: false }], x: 100, y: 100, bgColor: 'rgba(255,255,255,0.8)', ...defaultFormatting, zIndex: bringToFront() });
+  const addSticker = (emoji) => { addItemToJournal({ id: Date.now(), type: 'sticker', emoji, x: 100, y: 100, zIndex: bringToFront() }); setShowStickerMenu(false); };
+  const addMediaItem = (media) => { addItemToJournal({ id: Date.now(), type: 'media', media, x: 100, y: 100, displayStyle: media.mediaType === 'book' ? 'spine' : 'cover', zIndex: bringToFront() }); setShowMediaModal(false); };
 
   const addPhoto = () => {
     const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
@@ -103,14 +102,20 @@ export default function Scrapbook() {
       try {
         const res = await fetch('https://api.cloudinary.com/v1_1/dfugne8fq/image/upload', { method: 'POST', body: formData });
         const data = await res.json();
-        addItemToJournal({ id: Date.now(), type: 'photo', url: data.secure_url, caption: '', x: 0, y: 0, zIndex: bringToFront() });
+        addItemToJournal({ id: Date.now(), type: 'photo', url: data.secure_url, caption: '', x: 100, y: 100, zIndex: bringToFront() });
       } catch (err) { alert('Upload failed'); } finally { setIsUploading(false); }
     };
     input.click();
   };
 
-  const deleteItem = (id) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j)); setFocusedItemId(null); };
-  const updateItem = (id, updates) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j)); };
+  const deleteItem = (id) => { 
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j)); 
+    if (selectedItemId === id) setSelectedItemId(null); 
+  };
+
+  const updateItem = (id, updates) => { 
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j)); 
+  };
 
   const updateTodoTask = (itemId, taskId, updates) => {
     setJournals(journals.map(j => {
@@ -137,7 +142,7 @@ export default function Scrapbook() {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ pages: journals, theme: bgTheme }) 
       });
-      alert("Active Desk Saved!");
+      alert("Desk Layout Saved!");
     } catch (err) { alert("Network error."); } finally { setIsSaving(false); }
   };
 
@@ -145,67 +150,74 @@ export default function Scrapbook() {
     e.preventDefault();
     if (!archiveTitle.trim()) return alert("Please give your entry a title.");
     setIsArchiving(true);
-    
     const token = localStorage.getItem('token');
     try {
       const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ title: archiveTitle, theme: themes[bgTheme], items: activeJournal.items }) 
+        body: JSON.stringify({ title: archiveTitle, theme: themes[bgTheme], pages: journals }) 
       });
       if (res.ok) {
-        alert("Page securely locked in your Vault!");
-        setShowArchiveModal(false);
-        setArchiveTitle('');
-        setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [] } : j));
+        alert("Notebook securely locked in your Vault!");
+        setShowArchiveModal(false); setArchiveTitle('');
+        setJournals([{ id: Date.now(), name: 'Page 1', items: [] }]); 
       }
     } catch (err) { alert("Failed to archive page."); } finally { setIsArchiving(false); }
   };
 
+  // 🔥 CORE RENDERER: Applies Formatting to Items
   const renderItemContent = (item) => {
-    const highlightBg = item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent';
+    const commonTextStyle = {
+      fontFamily: item.font,
+      fontSize: `${item.fontSize}px`,
+      color: item.textColor,
+      textAlign: item.textAlign,
+      background: 'transparent',
+      border: 'none',
+      outline: 'none',
+      resize: 'both',
+      lineHeight: '1.5'
+    };
 
     switch (item.type) {
       case 'note':
-        return <textarea onFocus={() => setFocusedItemId(item.id)} value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Scribble your thoughts..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: highlightBg, border: 'none', outline: 'none', resize: 'both', fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#2c3e50', lineHeight: '1.5', cursor: 'text', minHeight: '150px', minWidth: '150px', borderRadius: '4px' }} />;
-      
       case 'text':
-        return <textarea onFocus={() => setFocusedItemId(item.id)} value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Start writing..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: highlightBg, border: 'none', outline: 'none', resize: 'both', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || defaultTextColor, lineHeight: '1.6', cursor: 'text', minHeight: '100px', minWidth: '200px', borderRadius: '4px' }} />;
+        return <textarea value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Start writing..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ ...commonTextStyle, flexGrow: 1, minHeight: '100px', minWidth: '150px' }} />;
       
       case 'quote':
         return (
-          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
-            <span style={{ fontSize: '4rem', color: 'rgba(245, 158, 11, 0.3)', position: 'absolute', top: '-10px', left: '10px', fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}>"</span>
-            <textarea onFocus={() => setFocusedItemId(item.id)} value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Enter a profound quote..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor || defaultTextColor, textAlign: 'center', minHeight: '100px', zIndex: 1 }} />
-            <input onFocus={() => setFocusedItemId(item.id)} value={item.author} onChange={(e) => updateItem(item.id, { author: e.target.value })} placeholder="- Author" onPointerDownCapture={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: 'var(--lantern-gold)', fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
-          </div>
-        );
-      
-      case 'photo':
-        return (
-          <div style={{ padding: '10px 10px 20px 10px', background: '#f8f9fa', borderRadius: '4px', boxShadow: '0 10px 20px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <img src={item.url} alt="Polaroid" draggable="false" style={{ width: '200px', height: '200px', objectFit: 'cover', border: '1px solid #ddd', pointerEvents: 'none' }} />
-            <input onFocus={() => setFocusedItemId(item.id)} value={item.caption} onChange={(e) => updateItem(item.id, { caption: e.target.value })} placeholder="Write a caption..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: '"Comic Sans MS", cursive, sans-serif', color: '#2c3e50', width: '100%' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
+            <span style={{ fontSize: '3em', color: 'rgba(0,0,0,0.1)', position: 'absolute', top: '-10px', left: '10px', fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}>"</span>
+            <textarea value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Enter a profound quote..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ ...commonTextStyle, fontStyle: 'italic', minHeight: '80px', zIndex: 1 }} />
+            <input value={item.author} onChange={(e) => updateItem(item.id, { author: e.target.value })} placeholder="- Author" onPointerDownCapture={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: item.textAlign, color: item.textColor, fontFamily: item.font, fontWeight: 'bold', fontSize: '0.8em', opacity: 0.8 }} />
           </div>
         );
       
       case 'todo':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px', padding: '10px' }}>
-            <input onFocus={() => setFocusedItemId(item.id)} value={item.listTitle || ''} onChange={(e) => updateItem(item.id, { listTitle: e.target.value })} placeholder="List Title..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ margin: '0 0 5px 0', fontFamily: 'var(--font-heading)', color: '#2c3e50', borderBottom: '1px solid #bdc3c7', paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+            <input value={item.listTitle || ''} onChange={(e) => updateItem(item.id, { listTitle: e.target.value })} placeholder="List Title..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ margin: '0 0 5px 0', fontFamily: item.font, color: item.textColor, borderBottom: `1px solid ${item.textColor}40`, paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: `${item.fontSize * 1.2}px`, fontWeight: 'bold', textAlign: item.textAlign }} />
             {item.tasks.map(task => (
               <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input type="checkbox" checked={task.done} onChange={(e) => updateTodoTask(item.id, task.id, { done: e.target.checked })} onPointerDownCapture={(e) => e.stopPropagation()} style={{ cursor: 'pointer', width: '18px', height: '18px' }} />
-                <input onFocus={() => setFocusedItemId(item.id)} value={task.text} onChange={(e) => updateTodoTask(item.id, task.id, { text: e.target.value })} placeholder="New item..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: '#2c3e50', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1 }} />
+                <input type="checkbox" checked={task.done} onChange={(e) => updateTodoTask(item.id, task.id, { done: e.target.checked })} onPointerDownCapture={(e) => e.stopPropagation()} style={{ cursor: 'pointer', width: '16px', height: '16px' }} />
+                <input value={task.text} onChange={(e) => updateTodoTask(item.id, task.id, { text: e.target.value })} placeholder="New item..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: `${item.fontSize}px`, fontFamily: item.font, color: item.textColor, textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.5 : 1 }} />
               </div>
             ))}
           </div>
         );
-      
-      case 'sticker': return <div style={{ fontSize: '5rem', filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.4))', cursor: 'grab' }}>{item.emoji}</div>;
+
+      case 'photo':
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src={item.url} alt="Polaroid" draggable="false" style={{ width: '200px', height: '200px', objectFit: 'cover', pointerEvents: 'none', borderRadius: '4px' }} />
+            <input value={item.caption} onChange={(e) => updateItem(item.id, { caption: e.target.value })} placeholder="Write a caption..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ marginTop: '10px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: '"Comic Sans MS", cursive', color: '#2c3e50', width: '100%' }} />
+          </div>
+        );
+
+      case 'sticker': return <div style={{ fontSize: '5rem', filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.2))' }}>{item.emoji}</div>;
       
       case 'media':
         return (
-          <div style={{ filter: 'drop-shadow(5px 10px 15px rgba(0,0,0,0.5))' }}>
+          <div>
             {item.media.mediaType === 'book' && item.displayStyle === 'spine' ? (
               <div className="shelf-book-spine" style={{ backgroundImage: `url(${item.media.coverImage})`, width: '50px', height: '200px', margin: 0, pointerEvents: 'none' }}><span className="spine-title">{item.media.title}</span></div>
             ) : (
@@ -217,140 +229,186 @@ export default function Scrapbook() {
     }
   };
 
+  const selectedItem = items.find(i => i.id === selectedItemId);
+  const showFormattingTab = selectedItem && ['text', 'note', 'quote', 'todo'].includes(selectedItem.type);
+
   if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
-      <style>{`.item-container .item-controls { opacity: 0; transition: opacity 0.2s; } .item-container:hover .item-controls { opacity: 1; } .item-container.focused .item-controls { opacity: 1; }`}</style>
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden', background: '#1e1e1e' }}>
+      
+      {/* 🟢 LEFT DOCK (Creation Tools) */}
+      <div style={{ width: '70px', background: '#2c3e50', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 0', gap: '20px', zIndex: 100, borderRight: '1px solid #34495e', boxShadow: '2px 0 10px rgba(0,0,0,0.5)' }}>
+        <button onClick={addText} title="Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer' }}><Type size={24} /></button>
+        <button onClick={addNote} title="Sticky Note" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: 'pointer' }}><StickyNote size={24} /></button>
+        <button onClick={addTodo} title="Checklist" style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer' }}><CheckSquare size={24} /></button>
+        <button onClick={addQuote} title="Quote" style={{ background: 'transparent', border: 'none', color: '#9b59b6', cursor: 'pointer' }}><Quote size={24} /></button>
+        <div style={{ width: '40px', height: '1px', background: '#455a64' }}></div>
+        <button onClick={addPhoto} title="Photo" disabled={isUploading} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: isUploading ? 'not-allowed' : 'pointer', opacity: isUploading ? 0.5 : 1 }}>{isUploading ? <Loader2 size={24} className="lucide-spin" /> : <ImageIcon size={24} />}</button>
+        <button onClick={() => setShowMediaModal(true)} title="Library Media" style={{ background: 'transparent', border: 'none', color: '#e67e22', cursor: 'pointer' }}><BookOpen size={24} /></button>
+        <button onClick={() => { setShowStickerMenu(!showStickerMenu); setShowBgMenu(false); }} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer' }}><SmilePlus size={24} /></button>
+        <div style={{ width: '40px', height: '1px', background: '#455a64' }}></div>
+        <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); }} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={24} /></button>
+      </div>
 
-      <div ref={constraintsRef} onPointerDown={() => setFocusedItemId(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: themes[bgTheme], backgroundSize: bgTheme.includes('lined') || bgTheme.includes('grid') || bgTheme.includes('blueprint') || bgTheme.includes('darkGrid') ? '100% 32px, 32px 32px' : 'auto', transition: 'background 0.5s ease' }}>
-        
-        {/* HIGH-CONTRAST TOP NAV BAR */}
-        <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(15px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.5)', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
-          <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer', display: 'flex' }}><ChevronLeft size={20} /></button>
+      {/* 🟢 CENTER CANVAS (The Desk) */}
+      <div 
+        ref={constraintsRef} 
+        onPointerDown={() => setSelectedItemId(null)} // Clicking empty space deselects
+        style={{ flex: 1, position: 'relative', background: themes[bgTheme], backgroundSize: bgTheme.includes('lined') || bgTheme.includes('grid') || bgTheme.includes('blueprint') || bgTheme.includes('darkGrid') ? '100% 32px, 32px 32px' : 'auto', transition: 'background 0.5s ease', overflow: 'hidden' }}
+      >
+        {/* TOP NAV BAR */}
+        <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.75)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 1000, boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
+          <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : '#bdc3c7', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer' }}><ChevronLeft size={20} /></button>
           <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', minWidth: '60px', textAlign: 'center' }}>{activeJournal?.name}</span>
-          <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === journals.length - 1 ? 'not-allowed' : 'pointer', display: 'flex' }}><ChevronRight size={20} /></button>
-          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.4)' }}></div>
-          <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}><Plus size={18} /> New Page</button>
-          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.4)' }}></div>
-          <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}><Lock size={18} /> Vault</button>
+          <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : '#bdc3c7', cursor: currentIndex === journals.length - 1 ? 'not-allowed' : 'pointer' }}><ChevronRight size={20} /></button>
+          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
+          <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}><Plus size={16} /> New Page</button>
+          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
+          <button onClick={saveDesk} disabled={isSaving} title="Save Draft" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: isSaving ? 'wait' : 'pointer' }}><Save size={18} /></button>
+          <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={18} /></button>
+          <button onClick={() => navigate('/vault')} title="Open Vault" style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer' }}><Lock size={18} /></button>
         </div>
 
-        {/* HIGH-CONTRAST BOTTOM TOOLBAR */}
-        <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(15px)', padding: '15px 25px', borderRadius: '40px', border: '1px solid rgba(245, 158, 11, 0.5)', zIndex: 1000, boxShadow: '0 20px 40px rgba(0,0,0,0.8)', overflowX: 'auto', maxWidth: '95vw' }}>
-          <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><Type size={22} /></button>
-          <button onClick={addNote} title="Add Note" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><StickyNote size={22} /></button>
-          <button onClick={addTodo} title="Add Checklist" style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><CheckSquare size={22} /></button>
-          <button onClick={addQuote} title="Add Quote" style={{ background: 'transparent', border: 'none', color: '#9b59b6', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><Quote size={22} /></button>
-          <div style={{ width: '1px', background: 'rgba(255,255,255,0.4)', margin: '0 5px' }}></div>
-          <button onClick={addPhoto} title="Upload Photo" disabled={isUploading} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: isUploading ? 'not-allowed' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', opacity: isUploading ? 0.5 : 1 }}>{isUploading ? <Loader2 size={22} className="lucide-spin" /> : <ImageIcon size={22} />}</button>
-          <button onClick={() => setShowMediaModal(true)} title="Add Media" style={{ background: 'transparent', border: 'none', color: '#e67e22', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><BookOpen size={22} /></button>
-          <div style={{ width: '1px', background: 'rgba(255,255,255,0.4)', margin: '0 5px' }}></div>
-          <button onClick={() => { setShowStickerMenu(!showStickerMenu); setShowBgMenu(false); }} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><SmilePlus size={22} /></button>
-          <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); }} title="Change Desk" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><Palette size={22} /></button>
-          <div style={{ width: '1px', background: 'rgba(255,255,255,0.4)', margin: '0 5px' }}></div>
-          <button onClick={saveDesk} disabled={isSaving} title="Save Active Desk" style={{ background: 'transparent', border: 'none', color: '#95a5a6', cursor: isSaving ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', opacity: isSaving ? 0.5 : 1 }}><Save size={22} /></button>
-          <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><Inbox size={22} /></button>
-        </div>
+        {/* RENDER ITEMS */}
+        {items.map(item => {
+          const isSelected = selectedItemId === item.id;
+          return (
+            <motion.div
+              key={item.id}
+              drag dragConstraints={constraintsRef} dragElastic={0} dragMomentum={false}
+              style={{ 
+                x: item.x, y: item.y, position: 'absolute', zIndex: item.zIndex, 
+                background: item.bgColor || 'transparent', 
+                padding: item.type === 'sticker' || item.type === 'media' ? '0' : '20px', 
+                borderRadius: '8px', 
+                boxShadow: item.bgColor && item.bgColor !== 'transparent' ? '0 10px 20px rgba(0,0,0,0.2)' : 'none',
+                // 🔥 Highlighting selected item
+                outline: isSelected ? '2px solid #3498db' : 'none',
+                outlineOffset: '4px'
+              }}
+              onDragEnd={(e, info) => updateItem(item.id, { x: item.x + info.offset.x, y: item.y + info.offset.y })}
+              onPointerDown={(e) => { e.stopPropagation(); updateItem(item.id, { zIndex: bringToFront() }); setSelectedItemId(item.id); }}
+              whileDrag={{ scale: 1.02, boxShadow: "0 20px 40px rgba(0,0,0,0.3)", zIndex: 10000, cursor: 'grabbing' }}
+            >
+              {renderItemContent(item)}
+            </motion.div>
+          );
+        })}
 
-        {/* 🔥 NEW THEME GRID */}
+        {/* POPUP MENUS */}
         {showBgMenu && (
-          <div style={{ position: 'absolute', bottom: '90px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(8, 40px)', gap: '10px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
+          <div style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'var(--bg-panel)', padding: '15px', borderRadius: '12px', border: '1px solid #34495e', display: 'grid', gridTemplateColumns: 'repeat(4, 40px)', gap: '10px', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
             {Object.keys(themes).map(key => (
-              <button 
-                key={key} 
-                title={key} 
-                onClick={() => { setBgTheme(key); setShowBgMenu(false); }} 
-                style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : '2px solid transparent', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }} 
-              />
+              <button key={key} title={key} onClick={() => { setBgTheme(key); setShowBgMenu(false); }} style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : '1px solid #555', cursor: 'pointer' }} />
             ))}
           </div>
         )}
-
-        {/* STICKER MENU */}
         {showStickerMenu && (
-          <div style={{ position: 'absolute', bottom: '90px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
+          <div style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'var(--bg-panel)', padding: '15px', borderRadius: '12px', border: '1px solid #34495e', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', zIndex: 1000 }}>
             {['☕', '🕯️', '🥀', '🕰️', '🎞️', '🎟️', '🖋️', '🍷', '🌿', '🗝️', '📜', '🌙', '🍂', '📌', '📎', '🔍'].map(emoji => (
-              <button key={emoji} onClick={() => addSticker(emoji)} style={{ fontSize: '2rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e => e.target.style.transform = 'scale(1.2)'} onMouseOut={e => e.target.style.transform = 'scale(1)'}>{emoji}</button>
+              <button key={emoji} onClick={() => addSticker(emoji)} style={{ fontSize: '2rem', background: 'transparent', border: 'none', cursor: 'pointer' }}>{emoji}</button>
             ))}
-          </div>
-        )}
-
-        {/* ARCHIVE MODAL */}
-        {showArchiveModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', maxWidth: '100%', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
-              <h2 style={{ margin: 0, color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)' }}>Archive this Page</h2>
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Lock this layout away in your permanent digital vault.</p>
-              <input type="text" autoFocus required placeholder="e.g., Thoughts on Gatsby, April 14" value={archiveTitle} onChange={(e) => setArchiveTitle(e.target.value)} style={{ padding: '15px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'var(--text-main)', borderRadius: '8px', fontSize: '1rem', width: '100%' }} />
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="button" onClick={() => setShowArchiveModal(false)} style={{ flex: 1, padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid #7f8c8d', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
-                <button type="submit" disabled={isArchiving} style={{ flex: 1, padding: '12px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '8px', cursor: isArchiving ? 'wait' : 'pointer', fontWeight: 'bold' }}>
-                  {isArchiving ? 'Archiving...' : 'Lock in Vault'}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* RENDER ALL DRAGGABLE ITEMS */}
-        {items.map(item => (
-          <motion.div
-            key={item.id}
-            initial={{ opacity: 0, scale: 0.5 }}  
-            animate={{ opacity: 1, scale: 1 }}    
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            drag dragConstraints={constraintsRef} dragElastic={0.1} dragMomentum={false}
-            style={{ x: item.x || 0, y: item.y || 0, position: 'absolute', top: '20%', left: '40%', zIndex: item.zIndex, background: item.type === 'note' || item.type === 'todo' ? item.color : 'transparent', padding: item.type === 'note' || item.type === 'todo' ? '15px' : '0', boxShadow: item.type === 'note' || item.type === 'todo' ? '2px 5px 15px rgba(0,0,0,0.4)' : 'none', borderRadius: item.type === 'note' || item.type === 'todo' ? '2px 10px 10px 20px' : '0', display: 'flex', flexDirection: 'column' }}
-            onDragEnd={(e, info) => { updateItem(item.id, { x: (item.x || 0) + info.offset.x, y: (item.y || 0) + info.offset.y }); }}
-            onPointerDown={(e) => { e.stopPropagation(); updateItem(item.id, { zIndex: bringToFront() }); setFocusedItemId(item.id); }}
-            whileDrag={{ scale: 1.05, boxShadow: "0 30px 60px rgba(0,0,0,0.6)", zIndex: 10000 }}
-            className={`item-container ${focusedItemId === item.id ? 'focused' : ''}`}
-          >
-            {/* 🔥 THE CONTROL PANEL WITH NEW FONT/COLOR TOOLS */}
-            <div className="item-controls" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', position: 'absolute', top: '-25px', right: '-15px', zIndex: 50 }}>
-              
-              {(item.type === 'text' || item.type === 'note' || item.type === 'quote') && (
-                <>
-                  <select title="Change Font" value={item.font || 'var(--font-heading)'} onPointerDownCapture={e => e.stopPropagation()} onChange={e => updateItem(item.id, { font: e.target.value })} style={{ background: '#fff', color: '#000', border: '2px solid var(--bg-deep)', borderRadius: '15px', padding: '4px 8px', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                    <option value="var(--font-heading)">Serif</option>
-                    <option value='"Courier New", Courier, monospace'>Typewriter</option>
-                    <option value="sans-serif">Modern</option>
-                    <option value='"Comic Sans MS", cursive, sans-serif'>Handwriting</option>
-                  </select>
-                  <div title="Text Color" style={{ background: '#fff', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '2px', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', width: '32px', height: '32px' }}>
-                    <input type="color" value={item.textColor || defaultTextColor} onPointerDownCapture={e => e.stopPropagation()} onChange={e => updateItem(item.id, { textColor: e.target.value })} style={{ width: '150%', height: '150%', border: 'none', cursor: 'pointer', background: 'transparent' }} />
-                  </div>
-                  <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { isHighlighted: !item.isHighlighted }); }} title="Toggle Highlight" style={{ background: item.isHighlighted ? '#f1c40f' : '#95a5a6', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'white', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)' }}><Highlighter size={16} strokeWidth={3} /></button>
-                </>
-              )}
-
-              <div title="Drag to Move" style={{ background: '#3498db', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'white', cursor: 'grab', boxShadow: '0 4px 10px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Move size={16} strokeWidth={3} /></div>
-              {item.type === 'media' && item.media.mediaType === 'book' && ( <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { displayStyle: item.displayStyle === 'spine' ? 'cover' : 'spine' }); }} style={{ background: 'var(--lantern-gold)', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'var(--bg-deep)', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)' }}><RefreshCcw size={16} strokeWidth={3} /></button> )}
-              <button onPointerDownCapture={(e) => { e.stopPropagation(); deleteItem(item.id); }} style={{ background: '#e74c3c', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'white', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)' }}><X size={16} strokeWidth={3} /></button>
-            </div>
-
-            {renderItemContent(item)}
-          </motion.div>
-        ))}
-
-        {/* MEDIA PICKER MODAL */}
-        {showMediaModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}><h2 style={{ margin: 0, color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Select from Archives</h2><button onClick={() => setShowMediaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button></div>
-              <div style={{ overflowY: 'auto', flexGrow: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '15px' }}>
-                {profileData ? [...profileData.finishedList, ...profileData.currentlyConsuming, ...profileData.tbrList].map((media, i) => (
-                  <div key={i} onClick={() => addMediaItem(media)} style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e=>e.currentTarget.style.transform='scale(1.05)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'}>
-                    <img src={media.coverImage || 'https://via.placeholder.com/100'} alt={media.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #444' }} />
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', marginTop: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{media.title}</p>
-                  </div>
-                )) : <p style={{ color: 'var(--lantern-gold)' }}>Loading archives...</p>}
-              </div>
-            </div>
           </div>
         )}
       </div>
+
+      {/* 🟢 RIGHT PANEL (MS Word-Style Formatting Tab) */}
+      {selectedItemId && (
+        <div style={{ width: '280px', background: '#2c3e50', borderLeft: '1px solid #34495e', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', zIndex: 100, overflowY: 'auto', boxShadow: '-2px 0 10px rgba(0,0,0,0.5)', color: '#ecf0f1' }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: '#bdc3c7', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #34495e', paddingBottom: '10px' }}>Properties</h3>
+          
+          {showFormattingTab ? (
+            <>
+              {/* FONT FAMILY */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px', color: '#95a5a6' }}>Font Style</label>
+                <select value={selectedItem.font || 'var(--font-body)'} onChange={e => updateItem(selectedItem.id, { font: e.target.value })} style={{ width: '100%', padding: '8px', background: '#34495e', border: '1px solid #455a64', color: '#fff', borderRadius: '6px', cursor: 'pointer' }}>
+                  <option value="var(--font-body)">Standard Sans</option>
+                  <option value="var(--font-heading)">Classic Serif</option>
+                  <option value='"Courier New", Courier, monospace'>Typewriter</option>
+                  <option value='"Comic Sans MS", cursive, sans-serif'>Handwriting</option>
+                </select>
+              </div>
+
+              {/* FONT SIZE & ALIGNMENT */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px', color: '#95a5a6' }}>Size</label>
+                  <input type="number" value={selectedItem.fontSize || 16} onChange={e => updateItem(selectedItem.id, { fontSize: Number(e.target.value) })} style={{ width: '100%', padding: '8px', background: '#34495e', border: '1px solid #455a64', color: '#fff', borderRadius: '6px', textAlign: 'center' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px', color: '#95a5a6' }}>Align</label>
+                  <div style={{ display: 'flex', background: '#34495e', borderRadius: '6px', overflow: 'hidden', border: '1px solid #455a64' }}>
+                    <button onClick={() => updateItem(selectedItem.id, { textAlign: 'left' })} style={{ flex: 1, padding: '8px 0', background: selectedItem.textAlign === 'left' ? '#3498db' : 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><AlignLeft size={16} style={{ margin: '0 auto' }}/></button>
+                    <button onClick={() => updateItem(selectedItem.id, { textAlign: 'center' })} style={{ flex: 1, padding: '8px 0', background: selectedItem.textAlign === 'center' ? '#3498db' : 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><AlignCenter size={16} style={{ margin: '0 auto' }}/></button>
+                    <button onClick={() => updateItem(selectedItem.id, { textAlign: 'right' })} style={{ flex: 1, padding: '8px 0', background: selectedItem.textAlign === 'right' ? '#3498db' : 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><AlignRight size={16} style={{ margin: '0 auto' }}/></button>
+                  </div>
+                </div>
+              </div>
+
+              {/* COLORS */}
+              <div style={{ display: 'flex', gap: '15px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px', color: '#95a5a6' }}>Text Color</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input type="color" value={selectedItem.textColor || '#000000'} onChange={e => updateItem(selectedItem.id, { textColor: e.target.value })} style={{ width: '35px', height: '35px', padding: '0', border: 'none', background: 'transparent', cursor: 'pointer' }} />
+                    <span style={{ fontSize: '0.8rem' }}>{selectedItem.textColor || '#000000'}</span>
+                  </div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px', color: '#95a5a6' }}>Background</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input type="color" value={selectedItem.bgColor !== 'transparent' ? selectedItem.bgColor : '#ffffff'} onChange={e => updateItem(selectedItem.id, { bgColor: e.target.value })} style={{ width: '35px', height: '35px', padding: '0', border: 'none', background: 'transparent', cursor: 'pointer' }} />
+                    <button onClick={() => updateItem(selectedItem.id, { bgColor: 'transparent' })} style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#e74c3c', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Clear</button>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p style={{ fontSize: '0.9rem', color: '#95a5a6', fontStyle: 'italic' }}>Formatting not available for this item type.</p>
+          )}
+
+          {selectedItem.type === 'media' && selectedItem.media.mediaType === 'book' && (
+            <button onClick={() => updateItem(selectedItem.id, { displayStyle: selectedItem.displayStyle === 'spine' ? 'cover' : 'spine' })} style={{ padding: '10px', background: '#34495e', color: '#fff', border: '1px solid #455a64', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><RefreshCcw size={16} /> Toggle Spine/Cover</button>
+          )}
+
+          <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid #34495e' }}>
+            <button onClick={() => deleteItem(selectedItem.id)} style={{ width: '100%', padding: '12px', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', border: '1px solid rgba(231, 76, 60, 0.3)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold' }}><Trash2 size={18} /> Delete Item</button>
+          </div>
+
+        </div>
+      )}
+
+      {/* MODALS */}
+      {showArchiveModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <h2 style={{ margin: 0, color: 'var(--lantern-gold)' }}>Archive Notebook</h2>
+            <input type="text" required placeholder="Title..." value={archiveTitle} onChange={e => setArchiveTitle(e.target.value)} style={{ padding: '15px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px' }} />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" onClick={() => setShowArchiveModal(false)} style={{ flex: 1, padding: '12px', background: 'transparent', color: '#fff', border: '1px solid #555', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={isArchiving} style={{ flex: 1, padding: '12px', background: 'var(--lantern-gold)', color: '#000', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Lock in Vault</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {showMediaModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2 style={{ margin: 0, color: 'white' }}>Archives</h2><button onClick={() => setShowMediaModal(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}>X</button></div>
+            <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '15px' }}>
+              {profileData && [...profileData.finishedList, ...profileData.currentlyConsuming, ...profileData.tbrList].map((media, i) => (
+                <div key={i} onClick={() => addMediaItem(media)} style={{ cursor: 'pointer' }}>
+                  <img src={media.coverImage || 'https://via.placeholder.com/100'} alt={media.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px' }} />
+                  <p style={{ color: '#ccc', fontSize: '0.75rem', textAlign: 'center', margin: '5px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{media.title}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

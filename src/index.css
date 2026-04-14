@@ -369,3 +369,40 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
   overflow-wrap: break-word;
   word-wrap: break-word;
 }
+/* =========================================
+   🖋️ MODERN DESK & QUILL EDITOR STYLES
+   ========================================= */
+/* Make the Quill editor blend seamlessly into the notes */
+.desk-quill .ql-container.ql-snow {
+  border: none !important;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.desk-quill .ql-editor {
+  padding: 15px;
+  min-height: 150px;
+}
+
+/* Hide the MS Word toolbar UNLESS the note is actively clicked/focused */
+.desk-quill .ql-toolbar.ql-snow {
+  display: none;
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+  padding: 8px;
+}
+
+.item-container.focused .desk-quill .ql-toolbar.ql-snow {
+  display: block;
+}
+
+/* Modern, minimalist floating dock */
+.modern-dock {
+  background: rgba(20, 20, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}

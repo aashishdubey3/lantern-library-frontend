@@ -1,43 +1,64 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Lock } from 'lucide-react';
+import { ChevronLeft, Lock, Trash2, Edit3, ChevronRight } from 'lucide-react';
 
 export default function Archive() {
   const [archives, setArchives] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [viewingArchive, setViewingArchive] = useState(null); // The one currently being viewed
+  const [viewingArchive, setViewingArchive] = useState(null); 
+  const [pageIndex, setPageIndex] = useState(0); // Flip through vault pages
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const fetchArchives = () => {
     const token = localStorage.getItem('token');
-    if (!token) return navigate('/login');
+    fetch('https://lantern-library-backend.onrender.com/api/journals/archive', { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(res => res.json()).then(data => { setArchives(data); setLoading(false); }).catch(() => setLoading(false));
+  };
 
-    fetch('https://lantern-library-backend.onrender.com/api/journals/archive', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(res => res.json())
-    .then(data => {
-      setArchives(data);
-      setLoading(false);
-    })
-    .catch(() => setLoading(false));
+  useEffect(() => {
+    if (!localStorage.getItem('token')) return navigate('/login');
+    fetchArchives();
   }, [navigate]);
+
+  const deleteArchive = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to permanently burn this journal?")) return;
+    const token = localStorage.getItem('token');
+    await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    fetchArchives();
+  };
+
+  const restoreToDesk = async () => {
+    const token = localStorage.getItem('token');
+    await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    navigate('/desk'); // Or whatever your Scrapbook route is!
+  };
 
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Unlocking the Vault...</h2>;
 
-  // If a specific archive is clicked, render it full screen (Read-Only)
   if (viewingArchive) {
+    const activePage = viewingArchive.pages[pageIndex] || viewingArchive.pages[0];
+    const items = activePage?.items || [];
+
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100000, overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 100001 }}>
-          <button onClick={() => setViewingArchive(null)} style={{ padding: '10px 20px', background: 'rgba(0,0,0,0.8)', color: 'var(--lantern-gold)', border: '1px solid var(--lantern-gold)', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}>
-            <ChevronLeft size={18} /> Back to Vault
-          </button>
+        
+        {/* VAULT TOP NAV */}
+        <div style={{ position: 'absolute', top: '20px', left: '20px', right: '20px', display: 'flex', justifyContent: 'space-between', zIndex: 100001 }}>
+          <button onClick={() => setViewingArchive(null)} style={{ padding: '10px 20px', background: 'rgba(0,0,0,0.8)', color: 'var(--lantern-gold)', border: '1px solid var(--lantern-gold)', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}><ChevronLeft size={18} /> Close Vault</button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0,0,0,0.8)', padding: '5px 20px', borderRadius: '30px', border: '1px solid var(--border-color)', color: '#fff' }}>
+            <button onClick={() => setPageIndex(Math.max(0, pageIndex - 1))} disabled={pageIndex === 0} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><ChevronLeft size={20} /></button>
+            <span style={{ fontWeight: 'bold' }}>{activePage.name}</span>
+            <button onClick={() => setPageIndex(Math.min(viewingArchive.pages.length - 1, pageIndex + 1))} disabled={pageIndex === viewingArchive.pages.length - 1} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><ChevronRight size={20} /></button>
+          </div>
+
+          <button onClick={restoreToDesk} style={{ padding: '10px 20px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}><Edit3 size={18} /> Edit on Desk</button>
         </div>
         
-        {/* Render the Desk Background */}
+        {/* DESK BACKGROUND */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: viewingArchive.theme.includes('gradient') || viewingArchive.theme.includes('#') ? viewingArchive.theme : '#111' }}>
-          {viewingArchive.items.map(item => (
+          {items.map(item => (
             <div key={item.id} style={{ position: 'absolute', top: '20%', left: '40%', transform: `translate(${item.x}px, ${item.y}px)`, zIndex: item.zIndex, background: item.type === 'note' || item.type === 'todo' ? item.color : 'transparent', padding: item.type === 'note' || item.type === 'todo' ? '15px' : '0', boxShadow: item.type === 'note' || item.type === 'todo' ? '2px 5px 15px rgba(0,0,0,0.4)' : 'none', borderRadius: item.type === 'note' || item.type === 'todo' ? '2px 10px 10px 20px' : '0', display: 'flex', flexDirection: 'column' }}>
               
               {/* READ ONLY ITEM RENDERING */}
@@ -58,11 +79,11 @@ export default function Archive() {
               )}
               {item.type === 'todo' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px', padding: '10px' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontFamily: 'var(--font-heading)', color: '#2c3e50', borderBottom: '1px solid #bdc3c7', paddingBottom: '5px' }}>{item.listTitle || 'Reading List'}</h4>
+                  <h4 style={{ margin: '0 0 10px 0', fontFamily: 'var(--font-heading)', color: item.textColor || '#2c3e50', borderBottom: '1px solid #bdc3c7', paddingBottom: '5px' }}>{item.listTitle || 'Reading List'}</h4>
                   {item.tasks.map(task => (
                     <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <input type="checkbox" checked={task.done} readOnly style={{ width: '18px', height: '18px' }} />
-                      <span style={{ fontSize: '0.95rem', color: '#2c3e50', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1 }}>{task.text}</span>
+                      <span style={{ fontSize: '0.95rem', color: item.textColor || '#2c3e50', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1 }}>{task.text}</span>
                     </div>
                   ))}
                 </div>
@@ -98,12 +119,13 @@ export default function Archive() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
           {archives.map(archive => (
-            <div key={archive._id} onClick={() => setViewingArchive(archive)} className="glass-card" style={{ padding: '20px', borderRadius: '12px', cursor: 'pointer', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '4px solid var(--lantern-gold)' }} onMouseOver={e=>e.currentTarget.style.transform='translateY(-5px)'} onMouseOut={e=>e.currentTarget.style.transform='translateY(0)'}>
-              <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem' }}>{archive.title}</h3>
+            <div key={archive._id} onClick={() => { setViewingArchive(archive); setPageIndex(0); }} className="glass-card" style={{ padding: '20px', borderRadius: '12px', cursor: 'pointer', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column', gap: '10px', borderLeft: '4px solid var(--lantern-gold)', position: 'relative' }} onMouseOver={e=>e.currentTarget.style.transform='translateY(-5px)'} onMouseOut={e=>e.currentTarget.style.transform='translateY(0)'}>
+              <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem', paddingRight: '30px' }}>{archive.title}</h3>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Locked on {new Date(archive.createdAt).toLocaleDateString()}</span>
               <div style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', alignSelf: 'flex-start', color: '#bdc3c7' }}>
-                {archive.items.length} items placed
+                {archive.pages.length} Pages Saved
               </div>
+              <button onClick={(e) => deleteArchive(archive._id, e)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer' }}><Trash2 size={20} /></button>
             </div>
           ))}
         </div>
