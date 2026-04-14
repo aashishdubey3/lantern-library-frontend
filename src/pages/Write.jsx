@@ -97,14 +97,18 @@ export default function Write() {
         body: JSON.stringify({ title, content, category })
       });
 
+      // 🔥 Force the app to read the exact error message from your backend
+      const data = await res.json(); 
+
       if (res.ok) {
         navigate('/');
       } else {
-        alert("Failed to publish article.");
+        console.error("Backend Rejection Details:", data);
+        alert(`Backend Error: ${data.message || data.error || JSON.stringify(data)}`);
       }
     } catch (err) {
-      console.error(err);
-      alert("An error occurred.");
+      console.error("Network/Fetch Error:", err);
+      alert("A network error occurred. Is the backend awake?");
     } finally {
       setIsPublishing(false);
     }
