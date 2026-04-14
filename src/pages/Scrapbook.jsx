@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette } from 'lucide-react';
+import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move } from 'lucide-react'; // 🔥 Move Icon Added!
 
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
@@ -24,14 +24,14 @@ export default function Scrapbook() {
   const items = activeJournal ? activeJournal.items : [];
   const currentIndex = journals.findIndex(j => j.id === activeJournalId);
 
+  // 🔥 CSS BACKGROUND FIX: Fused gradients into single strings so they don't overwrite each other
   const themes = {
-    leather: { bg: 'linear-gradient(135deg, #1e130c 0%, #3a2318 100%)', overlay: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px)' },
-    parchment: { bg: '#f4ecd8', overlay: 'linear-gradient(rgba(0,0,0,0.03) 2px, transparent 2px)' },
-    wood: { bg: 'repeating-linear-gradient(to right, #3e2723, #4e342e 20px, #3e2723 40px)', overlay: 'none' },
-    green: { bg: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)', overlay: 'radial-gradient(circle, rgba(0,0,0,0.1) 2px, transparent 2px)' }
+    leather: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px), linear-gradient(135deg, #1e130c 0%, #3a2318 100%)',
+    parchment: 'linear-gradient(rgba(0,0,0,0.03) 2px, transparent 2px), #f4ecd8',
+    wood: 'repeating-linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px), repeating-linear-gradient(to right, #3e2723, #4e342e 20px, #3e2723 40px)',
+    green: 'radial-gradient(circle, rgba(0,0,0,0.1) 2px, transparent 2px), radial-gradient(circle at center, #1b4332 0%, #081c15 100%)'
   };
 
-  // 🔥 FETCH DESK DATA ON LOAD
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -48,7 +48,7 @@ export default function Scrapbook() {
       if (data && data.pages && data.pages.length > 0) {
         setJournals(data.pages);
         setActiveJournalId(data.pages[0].id);
-        if (data.theme) setBgTheme(data.theme); // LOAD THEME
+        if (data.theme) setBgTheme(data.theme); 
       } else {
         setActiveJournalId(journals[0].id);
       }
@@ -136,7 +136,6 @@ export default function Scrapbook() {
     }));
   };
 
-  // 🔥 SAVE DESK TO MONGODB (Now includes theme!)
   const saveDesk = async () => {
     setIsSaving(true);
     const token = localStorage.getItem('token');
@@ -155,25 +154,26 @@ export default function Scrapbook() {
     }
   };
 
+  // 🔥 ADDED onFocus to all inputs so they trigger the "Focused" state on Mobile
   const renderItemContent = (item) => {
     switch (item.type) {
       case 'note':
-        return <textarea value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Scribble your thoughts..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: '"Courier New", Courier, monospace', fontSize: '1.05rem', color: '#2c3e50', lineHeight: '1.5', cursor: 'text', minHeight: '150px', minWidth: '150px' }} />;
+        return <textarea onFocus={() => setFocusedItemId(item.id)} value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Scribble your thoughts..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: '"Courier New", Courier, monospace', fontSize: '1.05rem', color: '#2c3e50', lineHeight: '1.5', cursor: 'text', minHeight: '150px', minWidth: '150px' }} />;
       case 'text':
-        return <textarea value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Start writing..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: item.color, lineHeight: '1.6', cursor: 'text', minHeight: '100px', minWidth: '200px', textShadow: bgTheme === 'parchment' ? 'none' : '0 2px 5px rgba(0,0,0,0.8)' }} />;
+        return <textarea onFocus={() => setFocusedItemId(item.id)} value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Start writing..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: item.color, lineHeight: '1.6', cursor: 'text', minHeight: '100px', minWidth: '200px', textShadow: bgTheme === 'parchment' ? 'none' : '0 2px 5px rgba(0,0,0,0.8)' }} />;
       case 'quote':
         return (
           <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
             <span style={{ fontSize: '4rem', color: 'rgba(245, 158, 11, 0.3)', position: 'absolute', top: '-10px', left: '10px', fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}>"</span>
-            <textarea value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Enter a profound quote..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: bgTheme === 'parchment' ? '#2c3e50' : 'var(--text-main)', textAlign: 'center', minHeight: '100px', zIndex: 1, textShadow: bgTheme === 'parchment' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)' }} />
-            <input value={item.author} onChange={(e) => updateItem(item.id, { author: e.target.value })} placeholder="- Author" onPointerDownCapture={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: 'var(--lantern-gold)', fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
+            <textarea onFocus={() => setFocusedItemId(item.id)} value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder="Enter a profound quote..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: bgTheme === 'parchment' ? '#2c3e50' : 'var(--text-main)', textAlign: 'center', minHeight: '100px', zIndex: 1, textShadow: bgTheme === 'parchment' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)' }} />
+            <input onFocus={() => setFocusedItemId(item.id)} value={item.author} onChange={(e) => updateItem(item.id, { author: e.target.value })} placeholder="- Author" onPointerDownCapture={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: 'var(--lantern-gold)', fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
           </div>
         );
       case 'photo':
         return (
           <div style={{ padding: '10px 10px 20px 10px', background: '#f8f9fa', borderRadius: '4px', boxShadow: '0 10px 20px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <img src={item.url} alt="Polaroid" draggable="false" style={{ width: '200px', height: '200px', objectFit: 'cover', border: '1px solid #ddd', pointerEvents: 'none' }} />
-            <input value={item.caption} onChange={(e) => updateItem(item.id, { caption: e.target.value })} placeholder="Write a caption..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: '"Comic Sans MS", cursive, sans-serif', color: '#2c3e50', width: '100%' }} />
+            <input onFocus={() => setFocusedItemId(item.id)} value={item.caption} onChange={(e) => updateItem(item.id, { caption: e.target.value })} placeholder="Write a caption..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: '"Comic Sans MS", cursive, sans-serif', color: '#2c3e50', width: '100%' }} />
           </div>
         );
       case 'todo':
@@ -183,7 +183,7 @@ export default function Scrapbook() {
             {item.tasks.map(task => (
               <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input type="checkbox" checked={task.done} onChange={(e) => updateTodoTask(item.id, task.id, { done: e.target.checked })} onPointerDownCapture={(e) => e.stopPropagation()} style={{ cursor: 'pointer', width: '18px', height: '18px' }} />
-                <input value={task.text} onChange={(e) => updateTodoTask(item.id, task.id, { text: e.target.value })} placeholder="New item..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: '#2c3e50', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1 }} />
+                <input onFocus={() => setFocusedItemId(item.id)} value={task.text} onChange={(e) => updateTodoTask(item.id, task.id, { text: e.target.value })} placeholder="New item..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: '#2c3e50', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1 }} />
               </div>
             ))}
           </div>
@@ -223,9 +223,8 @@ export default function Scrapbook() {
         onPointerDown={() => setFocusedItemId(null)}
         style={{ 
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
-          background: themes[bgTheme].bg, 
+          background: themes[bgTheme], 
           boxShadow: 'inset 0 0 100px rgba(0,0,0,0.8)',
-          backgroundImage: themes[bgTheme].overlay,
           backgroundSize: '30px 30px',
           transition: 'background 0.5s ease'
         }}
@@ -263,10 +262,10 @@ export default function Scrapbook() {
         {/* BACKGROUND THEME MENU */}
         {showBgMenu && (
           <div style={{ position: 'absolute', bottom: '90px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
-            <button onClick={() => setBgTheme('leather')} style={{ padding: '8px 15px', background: '#3a2318', color: '#fff', border: '1px solid #1e130c', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Leather</button>
-            <button onClick={() => setBgTheme('parchment')} style={{ padding: '8px 15px', background: '#f4ecd8', color: '#2c3e50', border: '1px solid #bdc3c7', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Parchment</button>
-            <button onClick={() => setBgTheme('wood')} style={{ padding: '8px 15px', background: '#4e342e', color: '#fff', border: '1px solid #3e2723', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Mahogany</button>
-            <button onClick={() => setBgTheme('green')} style={{ padding: '8px 15px', background: '#1b4332', color: '#fff', border: '1px solid #081c15', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Library Green</button>
+            <button onClick={() => { setBgTheme('leather'); setShowBgMenu(false); }} style={{ padding: '8px 15px', background: '#3a2318', color: '#fff', border: '1px solid #1e130c', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Leather</button>
+            <button onClick={() => { setBgTheme('parchment'); setShowBgMenu(false); }} style={{ padding: '8px 15px', background: '#f4ecd8', color: '#2c3e50', border: '1px solid #bdc3c7', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Parchment</button>
+            <button onClick={() => { setBgTheme('wood'); setShowBgMenu(false); }} style={{ padding: '8px 15px', background: '#4e342e', color: '#fff', border: '1px solid #3e2723', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Mahogany</button>
+            <button onClick={() => { setBgTheme('green'); setShowBgMenu(false); }} style={{ padding: '8px 15px', background: '#1b4332', color: '#fff', border: '1px solid #081c15', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Library Green</button>
           </div>
         )}
 
@@ -279,7 +278,7 @@ export default function Scrapbook() {
           </div>
         )}
 
-        {/* RENDER ALL DRAGGABLE ITEMS (🔥 Physics Engine Updated) */}
+        {/* RENDER ALL DRAGGABLE ITEMS */}
         {items.map(item => (
           <motion.div
             key={item.id}
@@ -301,12 +300,21 @@ export default function Scrapbook() {
             whileDrag={{ scale: 1.05, boxShadow: "0 30px 60px rgba(0,0,0,0.6)", zIndex: 10000 }}
             className={`item-container ${focusedItemId === item.id ? 'focused' : ''}`}
           >
+            {/* 🔥 THE NEW CONTROL PANEL (MOVE & DELETE) */}
             <div className="item-controls" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', position: 'absolute', top: '-15px', right: '-15px', zIndex: 50 }}>
+              
+              {/* THE MOVE HANDLE (No stopPropagation, so grabbing this drags the item!) */}
+              <div title="Drag to Move" style={{ background: '#3498db', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'white', cursor: 'grab', boxShadow: '0 4px 10px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Move size={16} strokeWidth={3} />
+              </div>
+
               {item.type === 'media' && item.media.mediaType === 'book' && (
                 <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { displayStyle: item.displayStyle === 'spine' ? 'cover' : 'spine' }); }} style={{ background: 'var(--lantern-gold)', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'var(--bg-deep)', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)' }}><RefreshCcw size={16} strokeWidth={3} /></button>
               )}
+              
               <button onPointerDownCapture={(e) => { e.stopPropagation(); deleteItem(item.id); }} style={{ background: '#e74c3c', border: '2px solid var(--bg-deep)', borderRadius: '50%', padding: '6px', color: 'white', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.4)' }}><X size={16} strokeWidth={3} /></button>
             </div>
+
             {renderItemContent(item)}
           </motion.div>
         ))}
