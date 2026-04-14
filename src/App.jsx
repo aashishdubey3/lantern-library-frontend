@@ -26,6 +26,7 @@ import Research from "./pages/Research";
 
 // 🔥 FIXED: Vercel will now look inside the 'pages' folder for this file!
 import Landing from './pages/Landing'; 
+import Scrapbook from "./pages/Scrapbook";
 
 function AppLayout() {
   const location = useLocation();
@@ -72,6 +73,7 @@ function AppLayout() {
           
           {/* Route matches Home.jsx navigate */}
           <Route path="/welcome" element={<Landing />} />
+          <Route path="/desk" element={<Scrapbook />} />
         </Routes>
       </div>
 
