@@ -6,7 +6,7 @@ export default function Archive() {
   const [archives, setArchives] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewingArchive, setViewingArchive] = useState(null); 
-  const [pageIndex, setPageIndex] = useState(0); // Flip through vault pages
+  const [pageIndex, setPageIndex] = useState(0); 
   const navigate = useNavigate();
 
   const fetchArchives = () => {
@@ -22,7 +22,7 @@ export default function Archive() {
 
   const deleteArchive = async (id, e) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to permanently burn this journal?")) return;
+    if (!window.confirm("Are you sure you want to permanently burn this notebook?")) return;
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
     fetchArchives();
@@ -31,13 +31,18 @@ export default function Archive() {
   const restoreToDesk = async () => {
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-    navigate('/desk'); // Or whatever your Scrapbook route is!
+    navigate('/scrapbook'); // Make sure this matches your Route path for Scrapbook!
   };
 
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Unlocking the Vault...</h2>;
 
   if (viewingArchive) {
-    const activePage = viewingArchive.pages[pageIndex] || viewingArchive.pages[0];
+    // 🔥 FIX: Backwards compatibility for older vaults that only used 'items'
+    const pages = viewingArchive.pages && viewingArchive.pages.length > 0 
+      ? viewingArchive.pages 
+      : [{ name: 'Legacy Page', items: viewingArchive.items || [] }];
+      
+    const activePage = pages[pageIndex] || pages[0];
     const items = activePage?.items || [];
 
     return (
@@ -50,7 +55,7 @@ export default function Archive() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0,0,0,0.8)', padding: '5px 20px', borderRadius: '30px', border: '1px solid var(--border-color)', color: '#fff' }}>
             <button onClick={() => setPageIndex(Math.max(0, pageIndex - 1))} disabled={pageIndex === 0} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><ChevronLeft size={20} /></button>
             <span style={{ fontWeight: 'bold' }}>{activePage.name}</span>
-            <button onClick={() => setPageIndex(Math.min(viewingArchive.pages.length - 1, pageIndex + 1))} disabled={pageIndex === viewingArchive.pages.length - 1} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><ChevronRight size={20} /></button>
+            <button onClick={() => setPageIndex(Math.min(pages.length - 1, pageIndex + 1))} disabled={pageIndex === pages.length - 1} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><ChevronRight size={20} /></button>
           </div>
 
           <button onClick={restoreToDesk} style={{ padding: '10px 20px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}><Edit3 size={18} /> Edit on Desk</button>
@@ -59,7 +64,7 @@ export default function Archive() {
         {/* DESK BACKGROUND */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: viewingArchive.theme.includes('gradient') || viewingArchive.theme.includes('#') ? viewingArchive.theme : '#111' }}>
           {items.map(item => (
-            <div key={item.id} style={{ position: 'absolute', top: '20%', left: '40%', transform: `translate(${item.x}px, ${item.y}px)`, zIndex: item.zIndex, background: item.type === 'note' || item.type === 'todo' ? item.color : 'transparent', padding: item.type === 'note' || item.type === 'todo' ? '15px' : '0', boxShadow: item.type === 'note' || item.type === 'todo' ? '2px 5px 15px rgba(0,0,0,0.4)' : 'none', borderRadius: item.type === 'note' || item.type === 'todo' ? '2px 10px 10px 20px' : '0', display: 'flex', flexDirection: 'column' }}>
+            <div key={item.id} style={{ position: 'absolute', top: '30%', left: '40%', transform: `translate(${item.x}px, ${item.y}px)`, zIndex: item.zIndex, background: item.type === 'note' || item.type === 'todo' ? item.color : 'transparent', padding: item.type === 'note' || item.type === 'todo' ? '15px' : '0', boxShadow: item.type === 'note' || item.type === 'todo' ? '2px 5px 15px rgba(0,0,0,0.4)' : 'none', borderRadius: item.type === 'note' || item.type === 'todo' ? '2px 10px 10px 20px' : '0', display: 'flex', flexDirection: 'column' }}>
               
               {/* READ ONLY ITEM RENDERING */}
               {item.type === 'note' && <div style={{ flexGrow: 1, fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#2c3e50', lineHeight: '1.5', minHeight: '150px', minWidth: '150px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', padding: '10px', borderRadius: '4px' }}>{item.text}</div>}
@@ -98,7 +103,6 @@ export default function Archive() {
                   )}
                 </div>
               )}
-
             </div>
           ))}
         </div>
@@ -123,7 +127,7 @@ export default function Archive() {
               <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem', paddingRight: '30px' }}>{archive.title}</h3>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Locked on {new Date(archive.createdAt).toLocaleDateString()}</span>
               <div style={{ fontSize: '0.8rem', padding: '4px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', alignSelf: 'flex-start', color: '#bdc3c7' }}>
-                {archive.pages.length} Pages Saved
+                {archive.pages?.length || 1} Pages Saved
               </div>
               <button onClick={(e) => deleteArchive(archive._id, e)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer' }}><Trash2 size={20} /></button>
             </div>

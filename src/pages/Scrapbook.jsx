@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet } from 'lucide-react';
+import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox } from 'lucide-react';
 
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
@@ -19,6 +19,10 @@ export default function Scrapbook() {
   const [activeZIndex, setActiveZIndex] = useState(10);
   const [focusedItemId, setFocusedItemId] = useState(null); 
   
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archiveTitle, setArchiveTitle] = useState('');
+  const [isArchiving, setIsArchiving] = useState(false);
+
   const constraintsRef = useRef(null);
   const navigate = useNavigate();
 
@@ -26,7 +30,6 @@ export default function Scrapbook() {
   const items = activeJournal ? activeJournal.items : [];
   const currentIndex = journals.findIndex(j => j.id === activeJournalId);
 
-  // 🔥 PREMIUM PHYSICAL DESK THEMES
   const themes = {
     lined: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px), #fdf6e3',
     grid: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px), #fdf6e3',
@@ -65,7 +68,6 @@ export default function Scrapbook() {
 
   const addItemToJournal = (newItem) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); };
 
-  // 🔥 RESTORED CLASSIC YELLOW NOTES & SMART DEFAULTS
   const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', x: 0, y: 0, font: '"Courier New", Courier, monospace', bgColor: '#fdf3c6', textColor: '#2c3e50', zIndex: bringToFront() });
   const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, font: 'var(--font-heading)', bgColor: 'transparent', textColor: '#2c3e50', zIndex: bringToFront() }); 
   const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, font: 'var(--font-heading)', bgColor: 'transparent', textColor: '#2c3e50', zIndex: bringToFront() });
@@ -82,7 +84,6 @@ export default function Scrapbook() {
       try {
         const res = await fetch('https://api.cloudinary.com/v1_1/dfugne8fq/image/upload', { method: 'POST', body: formData });
         const data = await res.json();
-        // Photos have a locked physical background, so no bgColor needed
         addItemToJournal({ id: Date.now(), type: 'photo', url: data.secure_url, caption: '', x: 0, y: 0, font: '"Comic Sans MS", cursive, sans-serif', textColor: '#2c3e50', zIndex: bringToFront() });
       } catch (err) { alert('Upload failed'); } finally { setIsUploading(false); }
     };
@@ -121,6 +122,24 @@ export default function Scrapbook() {
     } catch (err) { alert("Network error."); } finally { setIsSaving(false); }
   };
 
+  const archiveCurrentPage = async (e) => {
+    e.preventDefault();
+    if (!archiveTitle.trim()) return alert("Please give your entry a title.");
+    setIsArchiving(true);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title: archiveTitle, theme: themes[bgTheme], pages: journals }) 
+      });
+      if (res.ok) {
+        alert("Notebook securely locked in your Vault!");
+        setShowArchiveModal(false); setArchiveTitle('');
+        setJournals([{ id: Date.now(), name: 'Page 1', items: [] }]); 
+      }
+    } catch (err) { alert("Failed to archive page."); } finally { setIsArchiving(false); }
+  };
+
   const renderItemContent = (item) => {
     switch (item.type) {
       case 'note':
@@ -136,7 +155,6 @@ export default function Scrapbook() {
           </div>
         );
       
-      // 🔥 RESTORED CLASSIC POLAROID
       case 'photo':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -182,7 +200,7 @@ export default function Scrapbook() {
 
       <div ref={constraintsRef} onPointerDown={() => setFocusedItemId(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: themes[bgTheme], backgroundSize: bgTheme.includes('lined') || bgTheme.includes('grid') ? '100% 32px, 32px 32px' : 'auto', transition: 'background 0.5s ease' }}>
         
-        {/* RENDER ALL DRAGGABLE ITEMS */}
+        {/* 🔥 ITEMS RENDERED HERE (Notice: top: '30%', left: '40%' anchors them to the center) */}
         {items.map(item => (
           <motion.div
             key={item.id}
@@ -190,14 +208,12 @@ export default function Scrapbook() {
             animate={{ opacity: 1, scale: 1 }}    
             drag dragConstraints={constraintsRef} dragElastic={0} dragMomentum={false}
             style={{ 
-              x: item.x || 0, y: item.y || 0, position: 'absolute', zIndex: item.zIndex, 
-              // 🔥 Dynamic Item Backgrounds
+              x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: '40%', zIndex: item.zIndex, 
               background: item.type === 'photo' ? '#f8f9fa' : (item.bgColor || 'transparent'), 
               padding: item.type === 'sticker' || item.type === 'media' ? '0' : (item.type === 'photo' ? '10px 10px 25px 10px' : '20px'), 
               boxShadow: (item.bgColor && item.bgColor !== 'transparent') || item.type === 'photo' ? '0 10px 25px rgba(0,0,0,0.3)' : 'none', 
               borderRadius: item.type === 'note' ? '2px 10px 10px 20px' : '8px', 
               display: 'flex', flexDirection: 'column',
-              // Active outline logic
               outline: focusedItemId === item.id ? '2px dashed rgba(245, 158, 11, 0.5)' : 'none',
               outlineOffset: '4px'
             }}
@@ -206,10 +222,9 @@ export default function Scrapbook() {
             whileDrag={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.4)", zIndex: 10000 }}
             className={`item-container ${focusedItemId === item.id ? 'focused' : ''}`}
           >
-            {/* 🔥 THE RESTORED FLOATING CONTROL PILL */}
+            {/* FLOATING CONTROL PILL */}
             <div className="item-controls" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', borderRadius: '30px', padding: '6px 12px', gap: '10px', position: 'absolute', top: '-45px', right: '0px', zIndex: 50, boxShadow: '0 5px 15px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
               
-              {/* Font Picker */}
               {['note', 'text', 'quote', 'todo', 'photo'].includes(item.type) && (
                 <select title="Font" value={item.font || 'var(--font-heading)'} onPointerDownCapture={e => e.stopPropagation()} onChange={e => updateItem(item.id, { font: e.target.value })} style={{ background: 'transparent', color: '#fff', border: 'none', outline: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>
                   <option value="var(--font-heading)">Serif</option>
@@ -219,7 +234,6 @@ export default function Scrapbook() {
                 </select>
               )}
 
-              {/* Text Color Picker */}
               {['note', 'text', 'quote', 'todo', 'photo'].includes(item.type) && (
                 <div title="Text Color" style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
                   <Type size={14} color="#fff" />
@@ -227,7 +241,6 @@ export default function Scrapbook() {
                 </div>
               )}
 
-              {/* Background Color Picker & Transparent Button */}
               {['note', 'text', 'quote', 'todo'].includes(item.type) && (
                 <div title="Background Color" style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '10px' }}>
                   <Palette size={14} color="#fff" />
@@ -236,12 +249,10 @@ export default function Scrapbook() {
                 </div>
               )}
 
-              {/* Spine/Cover Toggle for Books */}
               {item.type === 'media' && item.media.mediaType === 'book' && ( 
                 <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { displayStyle: item.displayStyle === 'spine' ? 'cover' : 'spine' }); }} style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer', borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '10px' }}><RefreshCcw size={16} /></button> 
               )}
 
-              {/* Drag Handle & Delete */}
               <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
               <div title="Drag to Move" style={{ color: '#3498db', cursor: 'grab', display: 'flex', alignItems: 'center' }}><Move size={16} /></div>
               <button onPointerDownCapture={(e) => { e.stopPropagation(); deleteItem(item.id); }} style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={18} /></button>
@@ -251,10 +262,9 @@ export default function Scrapbook() {
           </motion.div>
         ))}
 
-        {/* 🟢 UNIFIED BOTTOM DOCK (Clears up the screen!) */}
+        {/* 🟢 UNIFIED BOTTOM DOCK */}
         <div style={{ position: 'absolute', bottom: '30px', left: '20px', right: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1000, pointerEvents: 'none' }}>
           
-          {/* Left: Page Navigation */}
           <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
             <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer' }}><ChevronLeft size={20} /></button>
             <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', minWidth: '60px', textAlign: 'center' }}>{activeJournal?.name}</span>
@@ -263,7 +273,6 @@ export default function Scrapbook() {
             <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Plus size={16} /> New Page</button>
           </div>
 
-          {/* Center: Tools */}
           <div style={{ pointerEvents: 'auto', display: 'flex', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '15px 25px', borderRadius: '40px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
             <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer' }}><Type size={22} /></button>
             <button onClick={addNote} title="Sticky Note" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: 'pointer' }}><StickyNote size={22} /></button>
@@ -277,9 +286,11 @@ export default function Scrapbook() {
             <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); }} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
             <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
             <button onClick={saveDesk} disabled={isSaving} title="Save Desk Layout" style={{ background: 'transparent', border: 'none', color: '#95a5a6', cursor: isSaving ? 'wait' : 'pointer', opacity: isSaving ? 0.5 : 1 }}><Save size={22} /></button>
+            
+            {/* 🔥 VAULT INBOX BUTTON RESTORED */}
+            <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
           </div>
 
-          {/* Right: Vault Access */}
           <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
             <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}><Lock size={18} /> Vault</button>
           </div>
@@ -319,6 +330,21 @@ export default function Scrapbook() {
             </div>
           </div>
         )}
+
+        {/* ARCHIVE MODAL */}
+        {showArchiveModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <h2 style={{ margin: 0, color: 'var(--lantern-gold)' }}>Archive Notebook</h2>
+              <input type="text" required placeholder="Title..." value={archiveTitle} onChange={e => setArchiveTitle(e.target.value)} style={{ padding: '15px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px' }} />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="button" onClick={() => setShowArchiveModal(false)} style={{ flex: 1, padding: '12px', background: 'transparent', color: '#fff', border: '1px solid #555', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={isArchiving} style={{ flex: 1, padding: '12px', background: 'var(--lantern-gold)', color: '#000', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Lock in Vault</button>
+              </div>
+            </form>
+          </div>
+        )}
+
       </div>
     </div>
   );
