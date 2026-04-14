@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Trash2, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Trash2, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette } from 'lucide-react';
 
 export default function Scrapbook() {
-  // 🔥 THE JOURNAL SYSTEM (Multiple Pages)
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
   const [activeJournalId, setActiveJournalId] = useState(journals[0].id);
   
@@ -12,14 +11,24 @@ export default function Scrapbook() {
   const [isSaving, setIsSaving] = useState(false);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [showStickerMenu, setShowStickerMenu] = useState(false);
+  const [showBgMenu, setShowBgMenu] = useState(false);
+  const [bgTheme, setBgTheme] = useState('leather'); // 🔥 Background State
   const [activeZIndex, setActiveZIndex] = useState(10);
+  const [focusedItemId, setFocusedItemId] = useState(null); // 🔥 Mobile Focus State
   
   const constraintsRef = useRef(null);
 
-  // Derived state: Get the currently active page and its items
   const activeJournal = journals.find(j => j.id === activeJournalId);
   const items = activeJournal ? activeJournal.items : [];
   const currentIndex = journals.findIndex(j => j.id === activeJournalId);
+
+  // 🔥 DESK THEMES
+  const themes = {
+    leather: { bg: 'linear-gradient(135deg, #1e130c 0%, #3a2318 100%)', overlay: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px)' },
+    parchment: { bg: '#f4ecd8', overlay: 'linear-gradient(rgba(0,0,0,0.03) 2px, transparent 2px)' },
+    wood: { bg: 'repeating-linear-gradient(to right, #3e2723, #4e342e 20px, #3e2723 40px)', overlay: 'none' },
+    green: { bg: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)', overlay: 'radial-gradient(circle, rgba(0,0,0,0.1) 2px, transparent 2px)' }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -48,8 +57,9 @@ export default function Scrapbook() {
     setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j));
   };
 
-  const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', color: ['#fdf6e3', '#fcf3cf', '#f9e79f', '#e8f8f5'][Math.floor(Math.random() * 4)], zIndex: bringToFront() });
-  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', zIndex: bringToFront() }); // 🔥 Plain text!
+  // 🔥 FIXED: Classic Yellow Notes
+  const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', color: ['#fdf3c6', '#fff9d6', '#fcf0b3'][Math.floor(Math.random() * 3)], zIndex: bringToFront() });
+  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', color: bgTheme === 'parchment' ? '#2c3e50' : '#fdf6e3', zIndex: bringToFront() }); 
   const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', zIndex: bringToFront() });
   const addTodo = () => addItemToJournal({ id: Date.now(), type: 'todo', tasks: [{ id: 1, text: '', done: false }], zIndex: bringToFront() });
   
@@ -85,6 +95,7 @@ export default function Scrapbook() {
   // --- ITEM UPDATERS ---
   const deleteItem = (id) => {
     setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j));
+    setFocusedItemId(null);
   };
   
   const updateItem = (id, updates) => {
@@ -124,17 +135,18 @@ export default function Scrapbook() {
           <textarea
             value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })}
             placeholder="Scribble your thoughts..." onPointerDownCapture={(e) => e.stopPropagation()} 
-            style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: '"Courier New", Courier, monospace', fontSize: '1.05rem', color: '#2c3e50', lineHeight: '1.5', cursor: 'text', minHeight: '150px' }}
+            // 🔥 FIXED: resize: 'both' allows full horizontal/vertical expansion!
+            style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: '"Courier New", Courier, monospace', fontSize: '1.05rem', color: '#2c3e50', lineHeight: '1.5', cursor: 'text', minHeight: '150px', minWidth: '150px' }}
           />
         );
 
-      // 🔥 NEW: PLAIN TEXT ITEM
       case 'text':
         return (
           <textarea
             value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })}
             placeholder="Start writing..." onPointerDownCapture={(e) => e.stopPropagation()}
-            style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: '#fdf6e3', lineHeight: '1.6', cursor: 'text', minHeight: '150px', minWidth: '300px', textShadow: '0 2px 5px rgba(0,0,0,0.8)' }}
+            // 🔥 FIXED: resize: 'both' + dynamic text color based on background
+            style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: 'var(--font-heading)', fontSize: '1.4rem', color: item.color, lineHeight: '1.6', cursor: 'text', minHeight: '100px', minWidth: '200px', textShadow: bgTheme === 'parchment' ? 'none' : '0 2px 5px rgba(0,0,0,0.8)' }}
           />
         );
       
@@ -145,7 +157,7 @@ export default function Scrapbook() {
             <textarea
               value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })}
               placeholder="Enter a profound quote..." onPointerDownCapture={(e) => e.stopPropagation()}
-              style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: 'var(--text-main)', textAlign: 'center', minHeight: '100px', zIndex: 1, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
+              style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: bgTheme === 'parchment' ? '#2c3e50' : 'var(--text-main)', textAlign: 'center', minHeight: '100px', zIndex: 1, textShadow: bgTheme === 'parchment' ? 'none' : '0 2px 4px rgba(0,0,0,0.5)' }}
             />
             <input 
               value={item.author} onChange={(e) => updateItem(item.id, { author: e.target.value })}
@@ -190,7 +202,7 @@ export default function Scrapbook() {
         );
 
       case 'sticker':
-        return <div style={{ fontSize: '5rem', filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.4))' }}>{item.emoji}</div>;
+        return <div style={{ fontSize: '5rem', filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.4))', cursor: 'grab' }}>{item.emoji}</div>;
 
       case 'media':
         const isBook = item.media.mediaType === 'book';
@@ -198,11 +210,11 @@ export default function Scrapbook() {
         return (
           <div style={{ filter: 'drop-shadow(5px 10px 15px rgba(0,0,0,0.5))' }}>
             {isBook && isSpine ? (
-              <div className="shelf-book-spine" style={{ backgroundImage: `url(${item.media.coverImage})`, width: '50px', height: '200px', margin: 0 }}>
+              <div className="shelf-book-spine" style={{ backgroundImage: `url(${item.media.coverImage})`, width: '50px', height: '200px', margin: 0, pointerEvents: 'none' }}>
                 <span className="spine-title">{item.media.title}</span>
               </div>
             ) : (
-              <img src={item.media.coverImage} className={isBook ? "shelf-book" : "film-poster"} style={{ width: '130px', height: '190px', margin: 0, borderRadius: isBook ? '2px 6px 6px 2px' : '4px' }} alt="Media" />
+              <img src={item.media.coverImage} className={isBook ? "shelf-book" : "film-poster"} style={{ width: '130px', height: '190px', margin: 0, borderRadius: isBook ? '2px 6px 6px 2px' : '4px', pointerEvents: 'none' }} alt="Media" />
             )}
           </div>
         );
@@ -211,23 +223,32 @@ export default function Scrapbook() {
     }
   };
 
-  // 🎨 MAIN UI
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#111' }}>
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
       
-      {/* The Textured Desk Mat */}
+      <style>{`
+        /* Hover class for desktop */
+        .item-container .item-controls { opacity: 0; transition: opacity 0.2s; }
+        .item-container:hover .item-controls { opacity: 1; }
+        /* Focus class for mobile */
+        .item-container.focused .item-controls { opacity: 1; }
+      `}</style>
+
+      {/* The Dynamic Desk Background */}
       <div 
         ref={constraintsRef} 
+        onPointerDown={() => setFocusedItemId(null)} // Clicking the desk clears item focus
         style={{ 
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
-          background: 'linear-gradient(135deg, #1e130c 0%, #3a2318 100%)', 
+          background: themes[bgTheme].bg, 
           boxShadow: 'inset 0 0 100px rgba(0,0,0,0.8)',
-          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px)',
-          backgroundSize: '30px 30px'
+          backgroundImage: themes[bgTheme].overlay,
+          backgroundSize: '30px 30px',
+          transition: 'background 0.5s ease'
         }}
       >
         
-        {/* 🔥 THE JOURNAL NAVIGATOR (TOP BAR) */}
+        {/* TOP NAV BAR */}
         <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(10, 10, 12, 0.85)', backdropFilter: 'blur(15px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', zIndex: 1000, boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
           <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer', display: 'flex' }}><ChevronLeft size={20} /></button>
           <span style={{ color: 'var(--text-main)', fontWeight: 'bold', fontSize: '0.95rem', minWidth: '60px', textAlign: 'center' }}>{activeJournal?.name}</span>
@@ -236,7 +257,7 @@ export default function Scrapbook() {
           <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}><Plus size={18} /> New Page</button>
         </div>
 
-        {/* THE TOOLBAR (BOTTOM BAR) */}
+        {/* BOTTOM TOOLBAR */}
         <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', background: 'rgba(10, 10, 12, 0.85)', backdropFilter: 'blur(15px)', padding: '15px 25px', borderRadius: '40px', border: '1px solid rgba(245, 158, 11, 0.3)', zIndex: 1000, boxShadow: '0 20px 40px rgba(0,0,0,0.8)', overflowX: 'auto', maxWidth: '95vw' }}>
           
           <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><Type size={22} /></button>
@@ -251,7 +272,8 @@ export default function Scrapbook() {
           <button onClick={() => setShowMediaModal(true)} title="Add Media" style={{ background: 'transparent', border: 'none', color: '#e67e22', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><BookOpen size={22} /></button>
           <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
           
-          <button onClick={() => setShowStickerMenu(!showStickerMenu)} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><SmilePlus size={22} /></button>
+          <button onClick={() => { setShowStickerMenu(!showStickerMenu); setShowBgMenu(false); }} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><SmilePlus size={22} /></button>
+          <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); }} title="Change Desk" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}><Palette size={22} /></button>
           <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
           
           <button onClick={saveDesk} disabled={isSaving} title="Save Journal" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: isSaving ? 'wait' : 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', opacity: isSaving ? 0.5 : 1 }}>
@@ -259,7 +281,17 @@ export default function Scrapbook() {
           </button>
         </div>
 
-        {/* STICKER POPUP MENU */}
+        {/* BACKGROUND THEME MENU */}
+        {showBgMenu && (
+          <div style={{ position: 'absolute', bottom: '90px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
+            <button onClick={() => setBgTheme('leather')} style={{ padding: '8px 15px', background: '#3a2318', color: '#fff', border: '1px solid #1e130c', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Leather</button>
+            <button onClick={() => setBgTheme('parchment')} style={{ padding: '8px 15px', background: '#f4ecd8', color: '#2c3e50', border: '1px solid #bdc3c7', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Parchment</button>
+            <button onClick={() => setBgTheme('wood')} style={{ padding: '8px 15px', background: '#4e342e', color: '#fff', border: '1px solid #3e2723', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Mahogany</button>
+            <button onClick={() => setBgTheme('green')} style={{ padding: '8px 15px', background: '#1b4332', color: '#fff', border: '1px solid #081c15', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Library Green</button>
+          </div>
+        )}
+
+        {/* STICKER MENU */}
         {showStickerMenu && (
           <div style={{ position: 'absolute', bottom: '90px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
             {['☕', '🕯️', '🥀', '🕰️', '🎞️', '🎟️', '🖋️', '🍷', '🌿', '🗝️', '📜', '🌙'].map(emoji => (
@@ -278,19 +310,21 @@ export default function Scrapbook() {
             dragConstraints={constraintsRef}
             dragElastic={0.1}
             dragMomentum={false}
-            onPointerDown={() => updateItem(item.id, { zIndex: bringToFront() })}
+            // 🔥 Mobile Fix: Tapping an item brings it to front AND sets it as the "focused" item to reveal delete buttons
+            onPointerDown={(e) => { e.stopPropagation(); updateItem(item.id, { zIndex: bringToFront() }); setFocusedItemId(item.id); }}
             whileDrag={{ scale: 1.05, boxShadow: "0 30px 60px rgba(0,0,0,0.6)" }}
+            className={`item-container ${focusedItemId === item.id ? 'focused' : ''}`}
             style={{
               position: 'absolute', top: '20%', left: '40%', zIndex: item.zIndex,
-              background: item.type === 'note' || item.type === 'todo' ? item.color || '#fdf6e3' : 'transparent',
+              background: item.type === 'note' || item.type === 'todo' ? item.color : 'transparent',
               padding: item.type === 'note' || item.type === 'todo' ? '15px' : '0',
               boxShadow: item.type === 'note' || item.type === 'todo' ? '2px 5px 15px rgba(0,0,0,0.4)' : 'none',
               borderRadius: item.type === 'note' || item.type === 'todo' ? '2px 10px 10px 20px' : '0',
-              display: 'flex', flexDirection: 'column', cursor: 'grab',
+              display: 'flex', flexDirection: 'column'
             }}
           >
-            {/* ALWAYS VISIBLE CONTROLS (Delete & Toggle Book Style) */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', position: 'absolute', top: '-15px', right: '-15px', zIndex: 50 }}>
+            {/* 🔥 HOVER / FOCUS CONTROLS */}
+            <div className="item-controls" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', position: 'absolute', top: '-15px', right: '-15px', zIndex: 50 }}>
               
               {item.type === 'media' && item.media.mediaType === 'book' && (
                 <button 
