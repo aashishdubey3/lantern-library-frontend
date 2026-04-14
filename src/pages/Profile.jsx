@@ -22,7 +22,7 @@ export default function Profile() {
   const [myArticles, setMyArticles] = useState([]);
 
   // Network & Discovery States
-  const [networkModal, setNetworkModal] = useState(null); // 'followers', 'following', or 'discover'
+  const [networkModal, setNetworkModal] = useState(null); 
   const [networkUsers, setNetworkUsers] = useState([]);
   const [isNetworkLoading, setIsNetworkLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,7 +57,6 @@ export default function Profile() {
     fetchProfile();
   }, [navigate]);
 
-  // Open Network Modal for Followers/Following
   const openNetworkModal = async (type) => {
     setNetworkModal(type);
     setSearchQuery('');
@@ -84,7 +83,6 @@ export default function Profile() {
     }
   };
 
-  // Search the database for new scholars
   const handleSearchScholars = async () => {
     if (!searchQuery.trim()) return;
     setIsNetworkLoading(true);
@@ -103,7 +101,6 @@ export default function Profile() {
     }
   };
 
-  // Toggle Follow
   const handleToggleFollow = async (targetId, action) => {
     if (action === 'unfollow' && !window.confirm("Are you sure you want to unfollow this scholar?")) return;
     
@@ -116,15 +113,11 @@ export default function Profile() {
       
       if (res.ok) {
         const data = await res.json();
-        
-        // Update local memory so buttons change instantly
         setProfileData(prev => ({ ...prev, following: data.followingList }));
-        
         const storedUser = JSON.parse(localStorage.getItem('user'));
         storedUser.following = data.followingList;
         localStorage.setItem('user', JSON.stringify(storedUser));
         
-        // If we were looking at our following list, remove them visually
         if (networkModal === 'following') {
           setNetworkUsers(prev => prev.filter(u => u._id !== targetId));
         }
@@ -252,104 +245,123 @@ export default function Profile() {
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Dusting off your archives...</h2>;
   if (!profileData) return <h2 style={{ textAlign: 'center', color: 'var(--danger)' }}>Error loading profile.</h2>;
 
+
+  // 🔥 NEW AESTHETIC RENDER FUNCTION 🔥
   const renderList = (list, currentListName) => {
     const filteredList = mediaFilter === 'all' ? list : list.filter(item => item.mediaType === mediaFilter);
     if (filteredList.length === 0) return <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px', fontSize: '1.1rem', fontStyle: 'italic' }}>These shelves are currently empty.</p>;
 
+    const books = filteredList.filter(item => item.mediaType === 'book');
+    const moviesAndSeries = filteredList.filter(item => item.mediaType === 'movie' || item.mediaType === 'series');
+
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '25px' }}>
-        {filteredList.map((item) => (
-          <div 
-            key={item._id} 
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-8px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            style={{ border: '1px solid #34495e', borderRadius: '10px', padding: '15px', background: 'var(--bg-panel)', position: 'relative', minHeight: '380px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', transition: 'transform 0.2s ease-in-out' }}
-          >
-            
-            {flippedCardId !== item._id ? (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                <img src={item.coverImage || 'https://via.placeholder.com/150'} alt={item.title} style={{ width: '100%', height: '240px', objectFit: 'cover', borderRadius: '6px', borderBottom: '2px solid var(--lantern-gold)' }} />
-                <h4 style={{ margin: '15px 0 10px 0', fontSize: '1.05rem', flexGrow: 1, color: 'var(--text-main)', lineHeight: '1.3' }}>{item.title}</h4>
-                
-                <select value={currentListName} onChange={(e) => handleMove(item._id, currentListName, e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '12px', fontSize: '0.85rem', background: 'var(--bg-deep)', color: 'var(--lantern-gold)', border: '1px solid #34495e', borderRadius: '4px', cursor: 'pointer' }}>
-                  <option value="tbrList">To Be Read/Watched</option>
-                  <option value="currentlyConsuming">Currently Consuming</option>
-                  <option value="finishedList">Finished</option>
-                </select>
-
-                {currentListName === 'tbrList' && (
-                  <div style={{ marginTop: 'auto' }}>
-                    <button 
-                      onClick={() => handleGetSummary(item)}
-                      style={{ width: '100%', padding: '10px', background: 'transparent', color: '#3498db', border: '1px solid #3498db', cursor: 'pointer', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s' }}
-                    >
-                      ✨ Ask AI Summary
-                    </button>
-                    {activeSummaryId === item._id && (
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-main)', fontStyle: 'italic', marginTop: '10px', background: 'var(--bg-deep)', padding: '12px', borderRadius: '6px', borderLeft: '3px solid #3498db', lineHeight: '1.5' }}>
-                        {summaryText}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {currentListName === 'finishedList' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
-                    <button 
-                      onClick={() => navigate('/summon', { state: { title: item.title } })} 
-                      style={{ width: '100%', padding: '10px', background: 'transparent', color: 'var(--magic-purple)', border: '1px solid var(--magic-purple)', cursor: 'pointer', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s' }}
-                    >
-                      ✨ Summon Protagonist
-                    </button>
-
-                    <button 
-                      onClick={() => handleFlipCard(item)} 
-                      style={{ width: '100%', padding: '10px', background: profileData.personalReviews?.[item._id] ? 'var(--success)' : 'var(--lantern-gold)', color: profileData.personalReviews?.[item._id] ? 'white' : 'var(--bg-deep)', border: 'none', cursor: 'pointer', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}
-                    >
-                      {profileData.personalReviews?.[item._id] ? 'View Review ↩️' : 'Rate & Review ↩️'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between', background: 'var(--bg-deep)', padding: '15px', borderRadius: '6px', border: '1px solid var(--lantern-gold)' }}>
-                <h4 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', borderBottom: '1px solid #34495e', paddingBottom: '10px', color: 'var(--text-main)' }}>{item.title}</h4>
-                
-                {!isEditing && profileData.personalReviews?.[item._id] ? (
-                  <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ textAlign: 'center', fontSize: '28px', color: 'var(--lantern-gold)', marginBottom: '15px' }}>
-                      {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
-                    </div>
-                    <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontStyle: 'italic', overflowY: 'auto', flexGrow: 1, lineHeight: '1.6' }}>"{reviewText}"</p>
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                      <button onClick={() => setFlippedCardId(null)} style={{ flex: 1, padding: '10px', background: '#7f8c8d', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Close</button>
-                      <button onClick={() => setIsEditing(true)} style={{ flex: 1, padding: '10px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Edit</button>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ marginBottom: '15px', textAlign: 'center' }}>
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <span key={star} onClick={() => setRating(star)} style={{ cursor: 'pointer', fontSize: '28px', color: star <= rating ? 'var(--lantern-gold)' : '#34495e', transition: 'color 0.2s' }}>★</span>
-                      ))}
-                    </div>
-                    <textarea 
-                      placeholder="Pen your thoughts here..." value={reviewText} onChange={(e) => setReviewText(e.target.value)}
-                      style={{ flexGrow: 1, padding: '12px', resize: 'none', borderRadius: '6px', border: '1px solid #34495e', marginBottom: '15px', background: 'var(--bg-panel)', color: 'var(--text-main)', fontSize: '0.9rem', lineHeight: '1.5' }}
-                    />
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button onClick={() => { setFlippedCardId(null); setIsEditing(false); }} style={{ flex: 1, padding: '10px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid #7f8c8d', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Cancel</button>
-                      <button onClick={() => handleReviewSubmit(item._id)} style={{ flex: 1, padding: '10px', background: 'var(--success)', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 'bold' }}>Save</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
+        
+        {/* 📚 1. THE WOODEN BOOKSHELF */}
+        {books.length > 0 && (
+          <div>
+            <h3 style={{ color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>The Library</h3>
+            <div className="wooden-shelf-container">
+              {books.map(item => renderInteractiveCard(item, currentListName, 'book'))}
+              {/* This empty div forms the front lip of the 3D shelf */}
+              <div className="shelf-lip"></div>
+            </div>
           </div>
-        ))}
+        )}
+
+        {/* 🎞️ 2. THE FILM STRIP */}
+        {moviesAndSeries.length > 0 && (
+          <div>
+            <h3 style={{ color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>The Screening Room</h3>
+            <div className="film-strip-container hide-scroll">
+              {moviesAndSeries.map(item => renderInteractiveCard(item, currentListName, 'film'))}
+            </div>
+          </div>
+        )}
+
       </div>
     );
   };
+
+  // 🔥 Helper function to render the actual interactive card depending on its aesthetic container
+  const renderInteractiveCard = (item, currentListName, displayStyle) => {
+    
+    // Check if the card is flipped over to show the action menu / reviews
+    const isFlipped = flippedCardId === item._id;
+
+    return (
+      <div 
+        key={item._id} 
+        style={{ position: 'relative', width: displayStyle === 'book' ? '120px' : '150px' }}
+      >
+        {!isFlipped ? (
+          // The Front of the Poster/Book
+          <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img 
+              src={item.coverImage || 'https://via.placeholder.com/150'} 
+              alt={item.title} 
+              className={displayStyle === 'book' ? 'shelf-book' : 'film-poster'}
+              onClick={() => handleFlipCard(item)}
+            />
+            {/* Display title below for books so they know what it is */}
+            {displayStyle === 'book' && <p style={{ color: '#aaa', fontSize: '0.7rem', marginTop: '5px', textAlign: 'center', lineHeight: '1.2' }}>{item.title}</p>}
+          </div>
+        ) : (
+          // The Back of the Poster/Book (Action Menu & Reviews)
+          <div style={{ 
+            background: 'var(--bg-panel)', padding: '15px', borderRadius: '8px', 
+            border: '1px solid var(--lantern-gold)', zIndex: 100, position: 'absolute', 
+            top: 0, left: 0, width: '220px', minHeight: '300px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+            display: 'flex', flexDirection: 'column' 
+          }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '1rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>{item.title}</h4>
+            
+            {/* The Actions (Move Lists, AI Summaries, etc) */}
+            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <select value={currentListName} onChange={(e) => handleMove(item._id, currentListName, e.target.value)} style={{ width: '100%', padding: '6px', fontSize: '0.8rem', background: 'var(--bg-deep)', color: 'var(--lantern-gold)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}>
+                <option value="tbrList">To Be Read/Watched</option>
+                <option value="currentlyConsuming">Currently Consuming</option>
+                <option value="finishedList">Finished</option>
+              </select>
+
+              {currentListName === 'tbrList' && (
+                <button onClick={() => handleGetSummary(item)} style={{ padding: '8px', background: 'transparent', color: '#3498db', border: '1px solid #3498db', cursor: 'pointer', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                  Ask AI Summary
+                </button>
+              )}
+
+              {currentListName === 'finishedList' && (
+                <>
+                  <button onClick={() => navigate('/summon', { state: { title: item.title } })} style={{ padding: '8px', background: 'transparent', color: '#9b59b6', border: '1px solid #9b59b6', cursor: 'pointer', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                    Summon Character
+                  </button>
+                  <button onClick={() => setIsEditing(true)} style={{ padding: '8px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', cursor: 'pointer', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                    {profileData.personalReviews?.[item._id] ? 'Edit Notes' : 'Add Notes'}
+                  </button>
+                </>
+              )}
+
+              {/* The Notes Editor */}
+              {isEditing && (
+                <div style={{ marginTop: '10px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '5px' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <span key={star} onClick={() => setRating(star)} style={{ cursor: 'pointer', fontSize: '20px', color: star <= rating ? 'var(--lantern-gold)' : '#555' }}>★</span>
+                    ))}
+                  </div>
+                  <textarea placeholder="Write notes..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} style={{ width: '100%', padding: '8px', height: '60px', resize: 'none', borderRadius: '4px', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', fontSize: '0.8rem' }} />
+                  <button onClick={() => handleReviewSubmit(item._id)} style={{ width: '100%', padding: '8px', marginTop: '5px', background: '#2ecc71', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Save Notes</button>
+                </div>
+              )}
+            </div>
+
+            <button onClick={() => { setFlippedCardId(null); setIsEditing(false); }} style={{ marginTop: '15px', padding: '8px', background: '#555', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Close</button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
 
   const renderMyWorks = () => {
     if (myArticles.length === 0) return <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px', fontSize: '1.1rem', fontStyle: 'italic' }}>You have not published any manuscripts yet.</p>;
@@ -409,7 +421,6 @@ export default function Profile() {
           "{profileData.bio || 'A wandering scholar of the archives.'}"
         </p>
 
-        {/* The Search (+) Button added next to stats */}
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', marginTop: '10px', marginBottom: '10px' }}>
           <div onClick={() => openNetworkModal('followers')} style={{ textAlign: 'center', cursor: 'pointer' }}>
             <h4 style={{ margin: '0 0 5px 0', color: 'var(--lantern-gold)', fontSize: '1.5rem' }}>{profileData?.followers?.length || 0}</h4>
@@ -420,7 +431,6 @@ export default function Profile() {
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Following</span>
           </div>
           
-          {/* THE NEW DISCOVER BUTTON */}
           <div 
             onClick={() => { setNetworkModal('discover'); setSearchResults([]); setSearchQuery(''); }} 
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', background: 'transparent', border: '2px dashed var(--lantern-gold)', color: 'var(--lantern-gold)', fontSize: '1.5rem', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -490,7 +500,7 @@ export default function Profile() {
         {activeTab === 'myWorks' ? renderMyWorks() : renderList(profileData[activeTab], activeTab)}
       </div>
 
-      {/* 🔥 THE MASTER NETWORK MODAL (Handles Followers, Following, AND Discover) */}
+      {/* NETWORK MODAL */}
       {networkModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '12px', width: '450px', maxWidth: '90%', border: '1px solid var(--lantern-gold)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
@@ -502,7 +512,6 @@ export default function Profile() {
               <button onClick={() => setNetworkModal(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = '#e74c3c'} onMouseOut={(e) => e.target.style.color = 'var(--text-muted)'}>×</button>
             </div>
 
-            {/* SEARCH BAR (Only shows in 'discover' mode) */}
             {networkModal === 'discover' && (
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 <input 
@@ -519,7 +528,6 @@ export default function Profile() {
               </div>
             )}
 
-            {/* LIST OF SCHOLARS */}
             <div style={{ flexGrow: 1, overflowY: 'auto' }}>
               {isNetworkLoading ? (
                 <p style={{ textAlign: 'center', color: 'var(--lantern-gold)' }}>Consulting the network...</p>
@@ -530,8 +538,6 @@ export default function Profile() {
               ) : (
                 (networkModal === 'discover' ? searchResults : networkUsers).map(user => {
                   const isFollowingThisUser = profileData.following?.includes(user._id);
-                  
-                  // 🔥 THE FIX: Identify if this row is the current user
                   const isSelf = user._id === profileData._id;
 
                   return (
@@ -544,7 +550,6 @@ export default function Profile() {
                         </div>
                       </div>
                       
-                      {/* Dynamic Button (Follow / Unfollow) - Now Hidden for "Self" */}
                       {!isSelf && (networkModal === 'following' || networkModal === 'discover') ? (
                         <button 
                           onClick={() => handleToggleFollow(user._id, isFollowingThisUser ? 'unfollow' : 'follow')} 

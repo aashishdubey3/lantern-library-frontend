@@ -23,7 +23,9 @@ import ResetPassword from "./pages/ResetPassword";
 import SummonChat from "./pages/SummonChat";
 import Articles from "./pages/Articles"; 
 import Research from "./pages/Research";
-import Landing from './Landing';
+
+// 🔥 FIXED: Vercel will now look inside the 'pages' folder for this file!
+import Landing from './pages/Landing'; 
 
 function AppLayout() {
   const location = useLocation();
@@ -68,7 +70,7 @@ function AppLayout() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           
-          {/* 🔥 FIXED: Route changed to /welcome to match Home.jsx navigate */}
+          {/* Route matches Home.jsx navigate */}
           <Route path="/welcome" element={<Landing />} />
         </Routes>
       </div>

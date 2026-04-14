@@ -207,3 +207,98 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 /* 🔥 FIX: Changed 100vw to 100% to stop scrollbar glitching */
 .page-dimmer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
 .page-dimmer.active { opacity: 1; pointer-events: auto; }
+/* =========================================
+   📚 THE AESTHETIC ARCHIVES
+   ========================================= */
+
+/* --- 1. THE MAHOGANY BOOKSHELF --- */
+.wooden-shelf-container {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20px 20px 0 20px;
+  /* Dark wood base with a subtle vertical grain pattern */
+  background-color: #3e2723;
+  background-image: repeating-linear-gradient(to right, rgba(0,0,0,0.05) 0px, transparent 2px, rgba(0,0,0,0.05) 4px);
+  border-radius: 8px 8px 0 0;
+  box-shadow: inset 0 20px 30px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.3);
+  position: relative;
+  gap: 20px;
+  justify-content: center;
+}
+
+/* The actual 3D shelf the books sit on */
+.shelf-lip {
+  width: 100%;
+  height: 25px;
+  background: linear-gradient(to bottom, #5d4037, #3e2723);
+  border-top: 2px solid #795548;
+  border-radius: 3px;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.5);
+  margin-bottom: 30px;
+  margin-top: -5px;
+}
+
+.shelf-book {
+  width: 110px;
+  height: 165px;
+  object-fit: cover;
+  border-radius: 2px 5px 5px 2px;
+  /* Simulates the spine and page depth */
+  box-shadow: -4px 0 10px rgba(0,0,0,0.5), inset 4px 0 8px rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-origin: bottom center;
+  align-self: flex-end; /* Keeps books sitting flat on the shelf */
+}
+
+.shelf-book:hover {
+  transform: translateY(-10px) scale(1.05) rotate(-2deg);
+}
+
+/* --- 2. THE VINTAGE FILM STRIP --- */
+.film-strip-container {
+  display: flex;
+  gap: 15px;
+  padding: 35px 20px;
+  background-color: #050505;
+  position: relative;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+  border-radius: 4px;
+}
+
+/* Pure CSS Magic: Creating the film sprocket holes using dashed borders */
+.film-strip-container::before,
+.film-strip-container::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 15px;
+  background-image: repeating-linear-gradient(90deg, transparent 0px, transparent 15px, rgba(255,255,255,0.8) 15px, rgba(255,255,255,0.8) 25px);
+}
+
+.film-strip-container::before { top: 8px; }
+.film-strip-container::after { bottom: 8px; }
+
+.film-poster {
+  scroll-snap-align: center;
+  width: 140px;
+  height: 210px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid #111;
+  /* Cinematic color grading effect */
+  filter: sepia(0.3) contrast(1.2) brightness(0.9);
+  transition: filter 0.3s, transform 0.3s;
+  cursor: pointer;
+  position: relative;
+  z-index: 10;
+}
+
+.film-poster:hover {
+  filter: sepia(0) contrast(1) brightness(1.1);
+  transform: scale(1.08);
+  border-color: var(--lantern-gold);
+}
