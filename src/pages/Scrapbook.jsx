@@ -138,7 +138,8 @@ export default function Scrapbook() {
     try {
       const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ title: archiveTitle, theme: bgTheme, pages: journals }) // 🔥 Saves the short key, NOT the long CSS string!
+        // 🔥 BULLETPROOF SAVE: Sends both arrays so old schemas don't panic!
+        body: JSON.stringify({ title: archiveTitle, theme: bgTheme, pages: journals, items: activeJournal.items }) 
       });
       if (res.ok) {
         alert("Notebook securely locked in your Vault!");

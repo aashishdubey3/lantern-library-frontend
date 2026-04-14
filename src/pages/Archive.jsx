@@ -21,24 +21,33 @@ export default function Archive() {
     fetchArchives();
   }, [navigate]);
 
-  // 🔥 OPTIMISTIC DELETE: Instantly removes the vault from the screen so it feels snappy!
+  // 🔥 AGGRESSIVE DELETE: Will alert you if the backend refuses to delete it
   const deleteArchive = async (id, e) => {
     e.stopPropagation();
     if (!window.confirm("Are you sure you want to permanently burn this notebook?")) return;
     
-    setArchives(prev => prev.filter(archive => archive._id !== id)); // Instantly hide it
+    const previousArchives = [...archives];
+    setArchives(prev => prev.filter(archive => archive._id !== id)); // Hide instantly
     
-    const token = localStorage.getItem('token');
-    await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/${id}`, { 
+        method: 'DELETE', 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      if (!res.ok) throw new Error("Server refused deletion");
+    } catch(err) {
+      alert("Backend error! Failed to delete.");
+      setArchives(previousArchives); // Put it back if backend failed
+    }
   };
 
-  // 🔥 ROUTER STATE: Tells the Desk exactly which page index to open!
   const restoreToDesk = async () => {
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
     
-    // Pass the current pageIndex to the Desk so it opens exactly here
-    navigate('/', { state: { targetPageIndex: pageIndex } }); 
+    // 🔥 FIX: Navigates to your scrapbook, not the home page! (Change '/scrapbook' if your route is different)
+    navigate('/scrapbook', { state: { targetPageIndex: pageIndex } }); 
   };
 
   const themes = {
@@ -54,12 +63,13 @@ export default function Archive() {
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Unlocking the Vault...</h2>;
 
   if (viewingArchive) {
-    const pages = viewingArchive.pages && viewingArchive.pages.length > 0 ? viewingArchive.pages : [{ name: 'Legacy Page', items: viewingArchive.items || [] }];
+    // 🔥 SAFE FALLBACK: If pages array is missing, load the items backup!
+    const pages = viewingArchive.pages && viewingArchive.pages.length > 0 ? viewingArchive.pages : [{ name: 'Page 1', items: viewingArchive.items || [] }];
     const activePage = pages[pageIndex] || pages[0];
     const items = activePage?.items || [];
     
-    // Safely load either the new short-theme name or an older saved CSS string
-    const vaultBg = themes[viewingArchive.theme] || viewingArchive.theme;
+    // 🔥 SAFELY LOAD BACKGROUND
+    const vaultBg = themes[viewingArchive.theme] || viewingArchive.theme || themes['parchment'];
 
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100000, overflow: 'hidden' }}>
@@ -80,11 +90,10 @@ export default function Archive() {
         {/* DESK BACKGROUND */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: vaultBg, backgroundSize: vaultBg.includes('lined') || vaultBg.includes('grid') ? '100% 32px, 32px 32px' : 'auto' }}>
           
-          {/* 🔥 100% IDENTICAL FRAMER MOTION RENDERER */}
           {items.map(item => (
             <motion.div
               key={item.id}
-              drag={false} // Locks items in place in the vault
+              drag={false} 
               style={{ 
                 x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: '40%', zIndex: item.zIndex, 
                 background: item.type === 'photo' ? '#f8f9fa' : (item.bgColor || 'transparent'), 
