@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox, Sparkles } from 'lucide-react';
 
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
@@ -25,6 +25,7 @@ export default function Scrapbook() {
 
   const constraintsRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation(); // 🔥 Reads messages passed from the Vault!
 
   const activeJournal = journals.find(j => j.id === activeJournalId) || journals[0];
   const items = activeJournal ? activeJournal.items : [];
@@ -41,6 +42,8 @@ export default function Scrapbook() {
   };
 
   const themeSwatches = { lined: '#fdf6e3', grid: '#e5e5e5', leather: '#2b170c', parchment: '#f4ecd8', wood: '#4e342e', slate: '#2c3e50', green: '#1b4332' };
+  const isDarkTheme = ['leather', 'wood', 'slate', 'green'].includes(bgTheme);
+  const defaultTextColor = isDarkTheme ? '#fdf6e3' : '#2c3e50';
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -54,12 +57,17 @@ export default function Scrapbook() {
     .then(data => {
       if (data && data.pages && data.pages.length > 0) {
         setJournals(data.pages);
-        setActiveJournalId(data.pages[0].id);
+        
+        // 🔥 MAGIC: Checks if the Vault told us to open a specific page!
+        const targetIndex = location.state?.targetPageIndex !== undefined ? location.state.targetPageIndex : 0;
+        const targetPage = data.pages[targetIndex] || data.pages[0];
+        setActiveJournalId(targetPage.id);
+        
         if (data.theme) setBgTheme(data.theme); 
       } else { setActiveJournalId(journals[0].id); }
       setIsLoadingDesk(false);
     }).catch(() => setIsLoadingDesk(false));
-  }, []);
+  }, [location.state]);
 
   const bringToFront = () => { setActiveZIndex(prev => prev + 1); return activeZIndex + 1; };
   const createNewPage = () => { const newId = Date.now(); setJournals([...journals, { id: newId, name: `Page ${journals.length + 1}`, items: [] }]); setActiveJournalId(newId); };
@@ -69,8 +77,8 @@ export default function Scrapbook() {
   const addItemToJournal = (newItem) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); };
 
   const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', x: 0, y: 0, font: '"Courier New", Courier, monospace', bgColor: '#fdf3c6', textColor: '#2c3e50', zIndex: bringToFront() });
-  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, font: 'var(--font-heading)', bgColor: 'transparent', textColor: '#2c3e50', zIndex: bringToFront() }); 
-  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, font: 'var(--font-heading)', bgColor: 'transparent', textColor: '#2c3e50', zIndex: bringToFront() });
+  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() }); 
+  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() });
   const addTodo = () => addItemToJournal({ id: Date.now(), type: 'todo', listTitle: 'Checklist', tasks: [{ id: 1, text: '', done: false }], x: 0, y: 0, bgColor: 'rgba(253, 246, 227, 0.9)', textColor: '#2c3e50', font: 'var(--font-body)', zIndex: bringToFront() });
   const addSticker = (emoji) => { addItemToJournal({ id: Date.now(), type: 'sticker', emoji, x: 0, y: 0, zIndex: bringToFront() }); setShowStickerMenu(false); };
   const addMediaItem = (media) => { addItemToJournal({ id: Date.now(), type: 'media', media, x: 0, y: 0, displayStyle: media.mediaType === 'book' ? 'spine' : 'cover', zIndex: bringToFront() }); setShowMediaModal(false); };
@@ -130,7 +138,7 @@ export default function Scrapbook() {
     try {
       const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ title: archiveTitle, theme: themes[bgTheme], pages: journals }) 
+        body: JSON.stringify({ title: archiveTitle, theme: bgTheme, pages: journals }) // 🔥 Saves the short key, NOT the long CSS string!
       });
       if (res.ok) {
         alert("Notebook securely locked in your Vault!");
@@ -144,7 +152,7 @@ export default function Scrapbook() {
     switch (item.type) {
       case 'note':
       case 'text':
-        return <textarea onFocus={() => setFocusedItemId(item.id)} value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder={item.type === 'note' ? "Scribble thoughts..." : "Type here..."} onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: item.font, fontSize: item.type === 'note' ? '1.05rem' : '1.4rem', color: item.textColor, lineHeight: '1.5', cursor: 'text', minHeight: '100px', minWidth: '150px' }} />;
+        return <textarea onFocus={() => setFocusedItemId(item.id)} value={item.text} onChange={(e) => updateItem(item.id, { text: e.target.value })} placeholder={item.type === 'note' ? "Scribble thoughts..." : "Type here..."} onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: item.font, fontSize: item.type === 'note' ? '1.05rem' : '1.4rem', color: item.textColor, lineHeight: '1.5', cursor: 'text', minHeight: '100px', minWidth: '150px' }} />;
       
       case 'quote':
         return (
@@ -286,9 +294,9 @@ export default function Scrapbook() {
             <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); }} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
             <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
             <button onClick={saveDesk} disabled={isSaving} title="Save Desk Layout" style={{ background: 'transparent', border: 'none', color: '#95a5a6', cursor: isSaving ? 'wait' : 'pointer', opacity: isSaving ? 0.5 : 1 }}><Save size={22} /></button>
-            
-            {/* 🔥 VAULT INBOX BUTTON RESTORED */}
             <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
+            <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
+            <button onClick={() => alert("Oracle Lens coming next!")} title="Ask Oracle AI" style={{ background: 'transparent', border: 'none', color: '#a29bfe', cursor: 'pointer' }}><Sparkles size={22} /></button>
           </div>
 
           <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>

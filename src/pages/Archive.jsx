@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ChevronLeft, Lock, Trash2, Edit3, ChevronRight } from 'lucide-react';
 
 export default function Archive() {
@@ -20,30 +21,45 @@ export default function Archive() {
     fetchArchives();
   }, [navigate]);
 
+  // 🔥 OPTIMISTIC DELETE: Instantly removes the vault from the screen so it feels snappy!
   const deleteArchive = async (id, e) => {
     e.stopPropagation();
     if (!window.confirm("Are you sure you want to permanently burn this notebook?")) return;
+    
+    setArchives(prev => prev.filter(archive => archive._id !== id)); // Instantly hide it
+    
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
-    fetchArchives();
   };
 
+  // 🔥 ROUTER STATE: Tells the Desk exactly which page index to open!
   const restoreToDesk = async () => {
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-    navigate('/scrapbook'); // Make sure this matches your Route path for Scrapbook!
+    
+    // Pass the current pageIndex to the Desk so it opens exactly here
+    navigate('/', { state: { targetPageIndex: pageIndex } }); 
+  };
+
+  const themes = {
+    lined: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px), #fdf6e3',
+    grid: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px), #fdf6e3',
+    leather: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px), linear-gradient(135deg, #2b170c 0%, #1e130c 100%)',
+    parchment: 'radial-gradient(#e0d5c1 1px, transparent 1px), #f4ecd8',
+    wood: 'repeating-linear-gradient(to right, #4e342e, #3e2723 20px, #4e342e 40px)',
+    slate: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
+    green: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)'
   };
 
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Unlocking the Vault...</h2>;
 
   if (viewingArchive) {
-    // 🔥 FIX: Backwards compatibility for older vaults that only used 'items'
-    const pages = viewingArchive.pages && viewingArchive.pages.length > 0 
-      ? viewingArchive.pages 
-      : [{ name: 'Legacy Page', items: viewingArchive.items || [] }];
-      
+    const pages = viewingArchive.pages && viewingArchive.pages.length > 0 ? viewingArchive.pages : [{ name: 'Legacy Page', items: viewingArchive.items || [] }];
     const activePage = pages[pageIndex] || pages[0];
     const items = activePage?.items || [];
+    
+    // Safely load either the new short-theme name or an older saved CSS string
+    const vaultBg = themes[viewingArchive.theme] || viewingArchive.theme;
 
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100000, overflow: 'hidden' }}>
@@ -62,38 +78,49 @@ export default function Archive() {
         </div>
         
         {/* DESK BACKGROUND */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: viewingArchive.theme.includes('gradient') || viewingArchive.theme.includes('#') ? viewingArchive.theme : '#111' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: vaultBg, backgroundSize: vaultBg.includes('lined') || vaultBg.includes('grid') ? '100% 32px, 32px 32px' : 'auto' }}>
+          
+          {/* 🔥 100% IDENTICAL FRAMER MOTION RENDERER */}
           {items.map(item => (
-            <div key={item.id} style={{ position: 'absolute', top: '30%', left: '40%', transform: `translate(${item.x}px, ${item.y}px)`, zIndex: item.zIndex, background: item.type === 'note' || item.type === 'todo' ? item.color : 'transparent', padding: item.type === 'note' || item.type === 'todo' ? '15px' : '0', boxShadow: item.type === 'note' || item.type === 'todo' ? '2px 5px 15px rgba(0,0,0,0.4)' : 'none', borderRadius: item.type === 'note' || item.type === 'todo' ? '2px 10px 10px 20px' : '0', display: 'flex', flexDirection: 'column' }}>
-              
-              {/* READ ONLY ITEM RENDERING */}
-              {item.type === 'note' && <div style={{ flexGrow: 1, fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#2c3e50', lineHeight: '1.5', minHeight: '150px', minWidth: '150px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', padding: '10px', borderRadius: '4px' }}>{item.text}</div>}
-              {item.type === 'text' && <div style={{ flexGrow: 1, fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || '#fdf6e3', lineHeight: '1.6', minHeight: '100px', minWidth: '200px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', padding: '10px', borderRadius: '4px' }}>{item.text}</div>}
+            <motion.div
+              key={item.id}
+              drag={false} // Locks items in place in the vault
+              style={{ 
+                x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: '40%', zIndex: item.zIndex, 
+                background: item.type === 'photo' ? '#f8f9fa' : (item.bgColor || 'transparent'), 
+                padding: item.type === 'sticker' || item.type === 'media' ? '0' : (item.type === 'photo' ? '10px 10px 25px 10px' : '20px'), 
+                boxShadow: (item.bgColor && item.bgColor !== 'transparent') || item.type === 'photo' ? '0 10px 25px rgba(0,0,0,0.3)' : 'none', 
+                borderRadius: item.type === 'note' ? '2px 10px 10px 20px' : '8px', 
+                display: 'flex', flexDirection: 'column'
+              }}
+            >
+              {item.type === 'note' && <textarea readOnly value={item.text} style={{ flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#2c3e50', lineHeight: '1.5', minHeight: '150px', minWidth: '150px' }} />}
+              {item.type === 'text' && <textarea readOnly value={item.text} style={{ flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || '#2c3e50', lineHeight: '1.6', minHeight: '100px', minWidth: '200px' }} />}
               {item.type === 'quote' && (
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
-                  <span style={{ fontSize: '4rem', color: 'rgba(245, 158, 11, 0.3)', position: 'absolute', top: '-10px', left: '10px', fontFamily: 'var(--font-heading)' }}>"</span>
-                  <div style={{ fontFamily: item.font || 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor || '#2c3e50', textAlign: 'center', zIndex: 1 }}>{item.text}</div>
-                  <div style={{ textAlign: 'center', color: 'var(--lantern-gold)', fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }}>- {item.author}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
+                  <span style={{ fontSize: '4rem', color: 'rgba(0, 0, 0, 0.1)', position: 'absolute', top: '-15px', left: '5px', fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}>"</span>
+                  <textarea readOnly value={item.text} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: item.font, fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor, textAlign: 'center', minHeight: '80px', zIndex: 1 }} />
+                  <input readOnly value={item.author} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: item.textColor, opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
                 </div>
               )}
               {item.type === 'photo' && (
-                <div style={{ padding: '10px 10px 20px 10px', background: '#f8f9fa', borderRadius: '4px', boxShadow: '0 10px 20px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <img src={item.url} alt="Polaroid" style={{ width: '200px', height: '200px', objectFit: 'cover', border: '1px solid #ddd' }} />
-                  <div style={{ marginTop: '15px', textAlign: 'center', fontFamily: '"Comic Sans MS", cursive, sans-serif', color: '#2c3e50', width: '100%' }}>{item.caption}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <img src={item.url} alt="Polaroid" draggable="false" style={{ width: '200px', height: '200px', objectFit: 'cover', border: '1px solid #ddd' }} />
+                  <input readOnly value={item.caption} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: item.font, color: item.textColor, width: '100%', fontSize: '1rem' }} />
                 </div>
               )}
               {item.type === 'todo' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px', padding: '10px' }}>
-                  <h4 style={{ margin: '0 0 10px 0', fontFamily: 'var(--font-heading)', color: item.textColor || '#2c3e50', borderBottom: '1px solid #bdc3c7', paddingBottom: '5px' }}>{item.listTitle || 'Reading List'}</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+                  <input readOnly value={item.listTitle || ''} style={{ margin: '0 0 5px 0', fontFamily: item.font, color: item.textColor, borderBottom: `1px solid ${item.textColor}40`, paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold' }} />
                   {item.tasks.map(task => (
                     <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <input type="checkbox" checked={task.done} readOnly style={{ width: '18px', height: '18px' }} />
-                      <span style={{ fontSize: '0.95rem', color: item.textColor || '#2c3e50', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1 }}>{task.text}</span>
+                      <input readOnly value={task.text} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: item.textColor, textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }} />
                     </div>
                   ))}
                 </div>
               )}
-              {item.type === 'sticker' && <div style={{ fontSize: '5rem', filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.4))' }}>{item.emoji}</div>}
+              {item.type === 'sticker' && <div style={{ fontSize: '5rem', filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.3))' }}>{item.emoji}</div>}
               {item.type === 'media' && (
                 <div style={{ filter: 'drop-shadow(5px 10px 15px rgba(0,0,0,0.5))' }}>
                   {item.media.mediaType === 'book' && item.displayStyle === 'spine' ? (
@@ -103,7 +130,7 @@ export default function Archive() {
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
