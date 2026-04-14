@@ -352,3 +352,20 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
   transform: scale(1.08);
   border-color: var(--lantern-gold);
 }
+/* =========================================
+   📝 ARTICLE IMAGE CONSTRAINTS
+   ========================================= */
+.article-content-body img {
+  max-width: 100%;
+  height: auto !important;
+  border-radius: 8px;
+  display: block;
+  margin: 20px auto; /* Centers the image nicely between paragraphs */
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Also ensures long text or links don't break the layout */
+.article-content-body {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}

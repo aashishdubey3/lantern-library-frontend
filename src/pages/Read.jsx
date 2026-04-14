@@ -225,7 +225,7 @@ export default function Read() {
         </div>
       )}
 
-      {/* THE CSS FIX FOR BEAUTIFUL QUOTES! */}
+      {/* THE CSS FIX FOR BEAUTIFUL QUOTES & IMAGES! */}
       <style>
         {`
           .parchment-content {
@@ -257,6 +257,15 @@ export default function Read() {
           .parchment-content a:hover {
             color: #b9770e;
             border-bottom: 1px solid #b9770e;
+          }
+          /* 🔥 RESPONSIVE IMAGE FIX */
+          .parchment-content img {
+            max-width: 100%;
+            height: auto !important;
+            border-radius: 8px;
+            display: block;
+            margin: 20px auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
           }
         `}
       </style>
