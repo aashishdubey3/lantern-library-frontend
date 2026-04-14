@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PenTool } from 'lucide-react'; // 🔥 Imported the icon for the Desk button
 
 export default function Profile() {
   const [profileData, setProfileData] = useState(null);
@@ -7,7 +8,6 @@ export default function Profile() {
   const [mediaFilter, setMediaFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   
-  // 🔥 NEW: Master Media Modal State (Replaced flippedCardId)
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [rating, setRating] = useState(0);
@@ -22,7 +22,6 @@ export default function Profile() {
   
   const [myArticles, setMyArticles] = useState([]);
 
-  // Network & Discovery States
   const [networkModal, setNetworkModal] = useState(null); 
   const [networkUsers, setNetworkUsers] = useState([]);
   const [isNetworkLoading, setIsNetworkLoading] = useState(false);
@@ -136,7 +135,7 @@ export default function Profile() {
       });
       if (response.ok) {
         await fetchProfile(); 
-        setSelectedMedia(null); // Close the modal smoothly after moving
+        setSelectedMedia(null);
       }
     } catch (error) { alert("Failed to move item."); }
   };
@@ -157,7 +156,6 @@ export default function Profile() {
     } catch (error) { alert("Server error while saving."); }
   };
 
-  // 🔥 NEW: Opens the detailed "Off the Shelf" modal
   const openMediaModal = (item) => {
     setSelectedMedia(item);
     const existingReview = profileData.personalReviews?.[item._id];
@@ -252,8 +250,6 @@ export default function Profile() {
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Dusting off your archives...</h2>;
   if (!profileData) return <h2 style={{ textAlign: 'center', color: 'var(--danger)' }}>Error loading profile.</h2>;
 
-
-  // 🔥 THE NEW AESTHETIC RENDER FUNCTION 🔥
   const renderList = (list) => {
     const filteredList = mediaFilter === 'all' ? list : list.filter(item => item.mediaType === mediaFilter);
     if (filteredList.length === 0) return <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px', fontSize: '1.1rem', fontStyle: 'italic' }}>These shelves are currently empty.</p>;
@@ -280,7 +276,6 @@ export default function Profile() {
                   <span className="spine-title">{item.title}</span>
                 </div>
               ))}
-              {/* This empty div forms the front lip of the 3D shelf */}
               <div className="shelf-lip"></div>
             </div>
           </div>
@@ -361,6 +356,16 @@ export default function Profile() {
         <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem', maxWidth: '600px', fontStyle: 'italic', margin: '0 0 15px 0' }}>
           "{profileData.bio || 'A wandering scholar of the archives.'}"
         </p>
+
+        {/* 🔥 NEW: The Open Desk Button */}
+        <button 
+          onClick={() => navigate('/desk')}
+          style={{ padding: '10px 24px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '30px', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)', transition: 'transform 0.2s' }}
+          onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <PenTool size={18} /> Open My Desk
+        </button>
 
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '30px', marginTop: '10px', marginBottom: '10px' }}>
           <div onClick={() => openNetworkModal('followers')} style={{ textAlign: 'center', cursor: 'pointer' }}>
@@ -519,17 +524,27 @@ export default function Profile() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(5px)' }}>
           <div style={{ background: 'var(--bg-panel)', borderRadius: '16px', display: 'flex', flexDirection: window.innerWidth <= 768 ? 'column' : 'row', maxWidth: '800px', width: '100%', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', border: '1px solid var(--lantern-gold)' }}>
             
-            {/* Left Column: The Full Cover */}
-            <div style={{ flex: '0 0 250px', background: '#000', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src={selectedMedia.coverImage || 'https://via.placeholder.com/150'} alt={selectedMedia.title} style={{ width: '100%', height: 'auto', borderRadius: '8px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)', border: '2px solid #222' }} />
+            {/* Left Column: The Full Cover (🔥 FIXED FOR MOBILE) */}
+            <div style={{ flex: window.innerWidth <= 768 ? 'none' : '0 0 250px', background: '#000', padding: window.innerWidth <= 768 ? '15px' : '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: window.innerWidth <= 768 ? '1px solid #333' : 'none' }}>
+              <img 
+                src={selectedMedia.coverImage || 'https://via.placeholder.com/150'} 
+                alt={selectedMedia.title} 
+                style={{ 
+                  width: window.innerWidth <= 768 ? '120px' : '100%', 
+                  height: 'auto', 
+                  borderRadius: '8px', 
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.5)', 
+                  border: '2px solid #222' 
+                }} 
+              />
             </div>
 
             {/* Right Column: The Features & Notes */}
-            <div style={{ flexGrow: 1, padding: '30px', display: 'flex', flexDirection: 'column', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ flexGrow: 1, padding: window.innerWidth <= 768 ? '20px' : '30px', display: 'flex', flexDirection: 'column', maxHeight: window.innerWidth <= 768 ? '65vh' : '80vh', overflowY: 'auto' }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
                 <h2 style={{ margin: 0, color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', fontSize: '1.8rem', lineHeight: '1.2' }}>{selectedMedia.title}</h2>
-                <button onClick={() => setSelectedMedia(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '2rem', cursor: 'pointer' }}>×</button>
+                <button onClick={() => setSelectedMedia(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '2rem', cursor: 'pointer', lineHeight: '1' }}>×</button>
               </div>
 
               {/* Action Buttons Container */}
