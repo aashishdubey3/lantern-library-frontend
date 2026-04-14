@@ -7,7 +7,8 @@ export default function Profile() {
   const [mediaFilter, setMediaFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   
-  const [flippedCardId, setFlippedCardId] = useState(null);
+  // 🔥 NEW: Master Media Modal State (Replaced flippedCardId)
+  const [selectedMedia, setSelectedMedia] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
@@ -133,7 +134,10 @@ export default function Profile() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ mediaId, currentList, targetList })
       });
-      if (response.ok) fetchProfile(); 
+      if (response.ok) {
+        await fetchProfile(); 
+        setSelectedMedia(null); // Close the modal smoothly after moving
+      }
     } catch (error) { alert("Failed to move item."); }
   };
 
@@ -153,8 +157,9 @@ export default function Profile() {
     } catch (error) { alert("Server error while saving."); }
   };
 
-  const handleFlipCard = (item) => {
-    setFlippedCardId(item._id);
+  // 🔥 NEW: Opens the detailed "Off the Shelf" modal
+  const openMediaModal = (item) => {
+    setSelectedMedia(item);
     const existingReview = profileData.personalReviews?.[item._id];
     
     if (existingReview) {
@@ -166,6 +171,8 @@ export default function Profile() {
       setReviewText('');
       setIsEditing(true); 
     }
+    setSummaryText('');
+    setActiveSummaryId(null);
   };
 
   const handleGetRecommendations = async () => {
@@ -246,8 +253,8 @@ export default function Profile() {
   if (!profileData) return <h2 style={{ textAlign: 'center', color: 'var(--danger)' }}>Error loading profile.</h2>;
 
 
-  // 🔥 NEW AESTHETIC RENDER FUNCTION 🔥
-  const renderList = (list, currentListName) => {
+  // 🔥 THE NEW AESTHETIC RENDER FUNCTION 🔥
+  const renderList = (list) => {
     const filteredList = mediaFilter === 'all' ? list : list.filter(item => item.mediaType === mediaFilter);
     if (filteredList.length === 0) return <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px', fontSize: '1.1rem', fontStyle: 'italic' }}>These shelves are currently empty.</p>;
 
@@ -257,12 +264,22 @@ export default function Profile() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
         
-        {/* 📚 1. THE WOODEN BOOKSHELF */}
+        {/* 📚 1. THE WOODEN BOOKSHELF WITH SPINES */}
         {books.length > 0 && (
           <div>
             <h3 style={{ color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>The Library</h3>
             <div className="wooden-shelf-container">
-              {books.map(item => renderInteractiveCard(item, currentListName, 'book'))}
+              {books.map(item => (
+                <div 
+                  key={item._id} 
+                  className="shelf-book-spine" 
+                  style={{ backgroundImage: `url(${item.coverImage || 'https://via.placeholder.com/150'})` }}
+                  onClick={() => openMediaModal(item)}
+                  title={item.title}
+                >
+                  <span className="spine-title">{item.title}</span>
+                </div>
+              ))}
               {/* This empty div forms the front lip of the 3D shelf */}
               <div className="shelf-lip"></div>
             </div>
@@ -274,94 +291,18 @@ export default function Profile() {
           <div>
             <h3 style={{ color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>The Screening Room</h3>
             <div className="film-strip-container hide-scroll">
-              {moviesAndSeries.map(item => renderInteractiveCard(item, currentListName, 'film'))}
-            </div>
-          </div>
-        )}
-
-      </div>
-    );
-  };
-
-  // 🔥 Helper function to render the actual interactive card depending on its aesthetic container
-  const renderInteractiveCard = (item, currentListName, displayStyle) => {
-    
-    // Check if the card is flipped over to show the action menu / reviews
-    const isFlipped = flippedCardId === item._id;
-
-    return (
-      <div 
-        key={item._id} 
-        style={{ position: 'relative', width: displayStyle === 'book' ? '120px' : '150px' }}
-      >
-        {!isFlipped ? (
-          // The Front of the Poster/Book
-          <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <img 
-              src={item.coverImage || 'https://via.placeholder.com/150'} 
-              alt={item.title} 
-              className={displayStyle === 'book' ? 'shelf-book' : 'film-poster'}
-              onClick={() => handleFlipCard(item)}
-            />
-            {/* Display title below for books so they know what it is */}
-            {displayStyle === 'book' && <p style={{ color: '#aaa', fontSize: '0.7rem', marginTop: '5px', textAlign: 'center', lineHeight: '1.2' }}>{item.title}</p>}
-          </div>
-        ) : (
-          // The Back of the Poster/Book (Action Menu & Reviews)
-          <div style={{ 
-            background: 'var(--bg-panel)', padding: '15px', borderRadius: '8px', 
-            border: '1px solid var(--lantern-gold)', zIndex: 100, position: 'absolute', 
-            top: 0, left: 0, width: '220px', minHeight: '300px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-            display: 'flex', flexDirection: 'column' 
-          }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '1rem', color: 'var(--text-main)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>{item.title}</h4>
-            
-            {/* The Actions (Move Lists, AI Summaries, etc) */}
-            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <select value={currentListName} onChange={(e) => handleMove(item._id, currentListName, e.target.value)} style={{ width: '100%', padding: '6px', fontSize: '0.8rem', background: 'var(--bg-deep)', color: 'var(--lantern-gold)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}>
-                <option value="tbrList">To Be Read/Watched</option>
-                <option value="currentlyConsuming">Currently Consuming</option>
-                <option value="finishedList">Finished</option>
-              </select>
-
-              {currentListName === 'tbrList' && (
-                <button onClick={() => handleGetSummary(item)} style={{ padding: '8px', background: 'transparent', color: '#3498db', border: '1px solid #3498db', cursor: 'pointer', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                  Ask AI Summary
-                </button>
-              )}
-
-              {currentListName === 'finishedList' && (
-                <>
-                  <button onClick={() => navigate('/summon', { state: { title: item.title } })} style={{ padding: '8px', background: 'transparent', color: '#9b59b6', border: '1px solid #9b59b6', cursor: 'pointer', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                    Summon Character
-                  </button>
-                  <button onClick={() => setIsEditing(true)} style={{ padding: '8px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', cursor: 'pointer', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                    {profileData.personalReviews?.[item._id] ? 'Edit Notes' : 'Add Notes'}
-                  </button>
-                </>
-              )}
-
-              {/* The Notes Editor */}
-              {isEditing && (
-                <div style={{ marginTop: '10px' }}>
-                  <div style={{ textAlign: 'center', marginBottom: '5px' }}>
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <span key={star} onClick={() => setRating(star)} style={{ cursor: 'pointer', fontSize: '20px', color: star <= rating ? 'var(--lantern-gold)' : '#555' }}>★</span>
-                    ))}
-                  </div>
-                  <textarea placeholder="Write notes..." value={reviewText} onChange={(e) => setReviewText(e.target.value)} style={{ width: '100%', padding: '8px', height: '60px', resize: 'none', borderRadius: '4px', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', fontSize: '0.8rem' }} />
-                  <button onClick={() => handleReviewSubmit(item._id)} style={{ width: '100%', padding: '8px', marginTop: '5px', background: '#2ecc71', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Save Notes</button>
+              {moviesAndSeries.map(item => (
+                <div key={item._id} style={{ position: 'relative' }}>
+                  <img src={item.coverImage || 'https://via.placeholder.com/150'} alt={item.title} className="film-poster" onClick={() => openMediaModal(item)} />
                 </div>
-              )}
+              ))}
             </div>
-
-            <button onClick={() => { setFlippedCardId(null); setIsEditing(false); }} style={{ marginTop: '15px', padding: '8px', background: '#555', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Close</button>
           </div>
         )}
+
       </div>
     );
   };
-
 
   const renderMyWorks = () => {
     if (myArticles.length === 0) return <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px', fontSize: '1.1rem', fontStyle: 'italic' }}>You have not published any manuscripts yet.</p>;
@@ -497,7 +438,7 @@ export default function Profile() {
 
       {/* LIST CONTENT */}
       <div style={{ minHeight: '300px' }}>
-        {activeTab === 'myWorks' ? renderMyWorks() : renderList(profileData[activeTab], activeTab)}
+        {activeTab === 'myWorks' ? renderMyWorks() : renderList(profileData[activeTab])}
       </div>
 
       {/* NETWORK MODAL */}
@@ -569,6 +510,95 @@ export default function Profile() {
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 THE NEW "PULL OFF SHELF" MEDIA MODAL 🔥 */}
+      {selectedMedia && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(5px)' }}>
+          <div style={{ background: 'var(--bg-panel)', borderRadius: '16px', display: 'flex', flexDirection: window.innerWidth <= 768 ? 'column' : 'row', maxWidth: '800px', width: '100%', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.8)', border: '1px solid var(--lantern-gold)' }}>
+            
+            {/* Left Column: The Full Cover */}
+            <div style={{ flex: '0 0 250px', background: '#000', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={selectedMedia.coverImage || 'https://via.placeholder.com/150'} alt={selectedMedia.title} style={{ width: '100%', height: 'auto', borderRadius: '8px', boxShadow: '0 10px 20px rgba(0,0,0,0.5)', border: '2px solid #222' }} />
+            </div>
+
+            {/* Right Column: The Features & Notes */}
+            <div style={{ flexGrow: 1, padding: '30px', display: 'flex', flexDirection: 'column', maxHeight: '80vh', overflowY: 'auto' }}>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                <h2 style={{ margin: 0, color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', fontSize: '1.8rem', lineHeight: '1.2' }}>{selectedMedia.title}</h2>
+                <button onClick={() => setSelectedMedia(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '2rem', cursor: 'pointer' }}>×</button>
+              </div>
+
+              {/* Action Buttons Container */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '25px', paddingBottom: '25px', borderBottom: '1px solid var(--border-color)' }}>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Current Location</label>
+                  <select value={activeTab} onChange={(e) => handleMove(selectedMedia._id, activeTab, e.target.value)} style={{ padding: '10px', fontSize: '0.9rem', background: 'var(--bg-deep)', color: 'var(--lantern-gold)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer' }}>
+                    <option value="tbrList">To Be Read/Watched</option>
+                    <option value="currentlyConsuming">Currently Consuming</option>
+                    <option value="finishedList">Finished Shelf</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', justifyContent: 'flex-end' }}>
+                  {activeTab === 'tbrList' && (
+                    <button onClick={() => handleGetSummary(selectedMedia)} style={{ padding: '10px', background: 'rgba(52, 152, 219, 0.1)', color: '#3498db', border: '1px solid #3498db', cursor: 'pointer', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                      {isSummarizing ? 'Consulting Oracle...' : 'Ask AI Summary ✨'}
+                    </button>
+                  )}
+                  {activeTab === 'finishedList' && (
+                    <button onClick={() => navigate('/summon', { state: { title: selectedMedia.title } })} style={{ padding: '10px', background: 'rgba(155, 89, 182, 0.1)', color: '#9b59b6', border: '1px solid #9b59b6', cursor: 'pointer', borderRadius: '8px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                      Summon Character 🔮
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* AI Summary Display Box */}
+              {activeSummaryId === selectedMedia._id && summaryText && (
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', fontStyle: 'italic', marginBottom: '25px', background: 'var(--bg-deep)', padding: '15px', borderRadius: '8px', borderLeft: '3px solid #3498db', lineHeight: '1.6' }}>
+                  {summaryText}
+                </div>
+              )}
+
+              {/* Personal Notes Section */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem', fontFamily: 'var(--font-heading)' }}>My Marginalia</h3>
+                {!isEditing && <button onClick={() => setIsEditing(true)} style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}>Edit Notes</button>}
+              </div>
+
+              {!isEditing && profileData.personalReviews?.[selectedMedia._id] ? (
+                <div style={{ background: 'var(--bg-deep)', padding: '20px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '24px', color: 'var(--lantern-gold)', marginBottom: '10px' }}>
+                    {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
+                  </div>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: '1.6', margin: 0 }}>"{reviewText}"</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ marginBottom: '15px' }}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <span key={star} onClick={() => setRating(star)} style={{ cursor: 'pointer', fontSize: '28px', color: star <= rating ? 'var(--lantern-gold)' : '#34495e', transition: 'color 0.2s' }}>★</span>
+                    ))}
+                  </div>
+                  <textarea 
+                    placeholder="Pen your thoughts here..." 
+                    value={reviewText} 
+                    onChange={(e) => setReviewText(e.target.value)}
+                    style={{ padding: '15px', resize: 'vertical', minHeight: '100px', borderRadius: '8px', border: '1px solid #34495e', marginBottom: '15px', background: 'var(--bg-deep)', color: 'var(--text-main)', fontSize: '0.95rem', lineHeight: '1.5' }}
+                  />
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={() => { if(!profileData.personalReviews?.[selectedMedia._id]) setIsEditing(false); }} style={{ flex: 1, padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: '1px solid #7f8c8d', cursor: 'pointer', borderRadius: '8px', fontWeight: 'bold' }}>Cancel</button>
+                    <button onClick={() => handleReviewSubmit(selectedMedia._id)} style={{ flex: 1, padding: '12px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', cursor: 'pointer', borderRadius: '8px', fontWeight: 'bold' }}>Save Marginalia</button>
+                  </div>
+                </div>
+              )}
+
+            </div>
           </div>
         </div>
       )}

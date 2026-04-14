@@ -225,6 +225,56 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
   gap: 20px;
   justify-content: center;
 }
+/* --- 1.b THE BOOK SPINES --- */
+.shelf-book-spine {
+  width: 45px;
+  height: 180px;
+  background-size: cover;
+  background-position: left center; /* Uses the left edge of the cover to simulate the binding */
+  border-radius: 4px 2px 2px 4px;
+  box-shadow: inset -5px 0 10px rgba(0,0,0,0.6), inset 2px 0 5px rgba(255,255,255,0.2), 5px 5px 15px rgba(0,0,0,0.5);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-origin: bottom center;
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-left: 2px solid rgba(255,255,255,0.1);
+}
+
+.shelf-book-spine::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); /* Darkens the spine so the gold text is readable */
+  z-index: 1;
+}
+
+.shelf-book-spine:hover {
+  transform: translateY(-15px) rotate(-4deg) scale(1.05); /* Simulates pulling the book out */
+  box-shadow: inset -5px 0 10px rgba(0,0,0,0.6), inset 2px 0 5px rgba(255,255,255,0.2), 10px 15px 25px rgba(0,0,0,0.6);
+}
+
+.spine-title {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg); /* Makes text read top-to-bottom like a real book */
+  color: var(--lantern-gold);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+  z-index: 2;
+  padding: 10px 0;
+  max-height: 95%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* The actual 3D shelf the books sit on */
 .shelf-lip {
