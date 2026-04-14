@@ -80,7 +80,7 @@ export default function Write() {
     }
   }), []);
 
-  const handlePublish = async (e) => {
+ const handlePublish = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return alert("Title and content are required.");
     
@@ -88,32 +88,26 @@ export default function Write() {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch('https://lantern-library-backend.onrender.com/api/articles', {
+      // 🔥 FIX 1: Added "/create" to the URL!
+      const res = await fetch('https://lantern-library-backend.onrender.com/api/articles/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ title, content, category })
+        // 🔥 FIX 2: Mapped 'category' to 'tags' so your backend recognizes it!
+        body: JSON.stringify({ title, content, tags: category })
       });
 
-      const text = await res.text(); // Read as raw text first in case backend crashes and sends HTML
-      
-      try {
-        const data = JSON.parse(text);
-        if (res.ok) {
-          navigate('/');
-        } else {
-          alert(`Backend Rejection: ${JSON.stringify(data)}`);
-        }
-      } catch (parseErr) {
-        alert(`Backend sent weird data (Not JSON). Status: ${res.status}. Data: ${text.substring(0, 100)}`);
+      if (res.ok) {
+        navigate('/'); // Success! Send them back to the Home feed.
+      } else {
+        const text = await res.text();
+        alert(`Failed to publish. Server said: ${text.substring(0, 100)}`);
       }
-
     } catch (err) {
       console.error(err);
-      // 🔥 THIS IS THE MAGIC BULLET. It will tell us exactly why the browser killed it.
-      alert(`CRITICAL BROWSER ERROR:\n\nName: ${err.name}\nMessage: ${err.message}\nToken present: ${!!token}`);
+      alert("Network error. Could not reach the archives.");
     } finally {
       setIsPublishing(false);
     }
