@@ -103,15 +103,15 @@ export default function Archive() {
                 display: 'flex', flexDirection: 'column'
               }}
             >
-              {item.type === 'note' && <textarea readOnly value={item.text} style={{ flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#2c3e50', lineHeight: '1.5', minHeight: '150px', minWidth: '150px' }} />}
-              {item.type === 'text' && <textarea readOnly value={item.text} style={{ flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || '#2c3e50', lineHeight: '1.6', minHeight: '100px', minWidth: '200px' }} />}
-              {item.type === 'quote' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
-                  <span style={{ fontSize: '4rem', color: 'rgba(0, 0, 0, 0.1)', position: 'absolute', top: '-15px', left: '5px', fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}>"</span>
-                  <textarea readOnly value={item.text} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: item.font, fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor, textAlign: 'center', minHeight: '80px', zIndex: 1 }} />
-                  <input readOnly value={item.author} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: item.textColor, opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
-                </div>
-              )}
+              {item.type === 'note' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#2c3e50', lineHeight: '1.5', minHeight: '150px', minWidth: '150px', padding: '10px', borderRadius: '4px' }}>{item.text}</div>}
+{item.type === 'text' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || '#fdf6e3', lineHeight: '1.6', minHeight: '100px', minWidth: '200px', padding: '10px', borderRadius: '4px' }}>{item.text}</div>}
+{item.type === 'quote' && (
+  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
+    <span style={{ fontSize: '4rem', color: 'rgba(245, 158, 11, 0.3)', position: 'absolute', top: '-10px', left: '10px', fontFamily: 'var(--font-heading)' }}>"</span>
+    <div style={{ fontFamily: item.font || 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor || '#2c3e50', textAlign: 'center', zIndex: 1, whiteSpace: 'pre-wrap' }}>{item.text}</div>
+    <div style={{ textAlign: 'center', color: 'var(--lantern-gold)', fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }}>- {item.author}</div>
+  </div>
+)}
               {item.type === 'photo' && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <img src={item.url} alt="Polaroid" draggable="false" style={{ width: '200px', height: '200px', objectFit: 'cover', border: '1px solid #ddd' }} />

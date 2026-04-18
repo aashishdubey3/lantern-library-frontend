@@ -7,12 +7,35 @@ import {
   Sparkles, Settings2, Trash2, ZoomIn, ZoomOut, Move, Undo, Redo
 } from 'lucide-react';
 
+// 🔥 THE SMART AUTO-EXPANDING TEXT BOX
+// This guarantees your paragraphs are never trapped in a scroll box!
+const AutoExpandingTextarea = ({ item, updateItemText, onFocus, isMobile, textStyle, placeholder }) => {
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [item.text]);
+
+  return (
+    <textarea 
+      ref={textareaRef}
+      onFocus={onFocus} 
+      value={item.text} 
+      onChange={(e) => updateItemText(item.id, { text: e.target.value })} 
+      placeholder={placeholder} 
+      onPointerDownCapture={(e) => e.stopPropagation()} 
+      style={{ ...textStyle, overflow: 'hidden', resize: 'none' }} // Removes scrollbars & manual resize
+    />
+  );
+};
+
 export default function Scrapbook() {
-  // 🔥 STATE
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
   const [activeJournalId, setActiveJournalId] = useState(null);
   
-  // 🔥 UNDO / REDO HISTORY ENGINE
   const [past, setPast] = useState([]);
   const [future, setFuture] = useState([]);
   
@@ -20,7 +43,7 @@ export default function Scrapbook() {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingDesk, setIsLoadingDesk] = useState(true); 
   
-  const [activeSheet, setActiveSheet] = useState(null); // Mobile bottom sheets
+  const [activeSheet, setActiveSheet] = useState(null); 
   
   const [bgTheme, setBgTheme] = useState('lined'); 
   const [activeZIndex, setActiveZIndex] = useState(10);
@@ -40,16 +63,15 @@ export default function Scrapbook() {
   const items = activeJournal ? activeJournal.items : [];
   const currentIndex = journals.findIndex(j => j.id === activeJournalId);
 
-  // 🔥 THEMES (Restored Grid, Lined, and Dotted!)
   const themes = {
-    lined: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px), #fdf6e3',
-    grid: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px), #fdf6e3',
-    dotted: 'radial-gradient(#d4c4a8 2px, transparent 2px), #fdf6e3',
-    leather: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px), linear-gradient(135deg, #2b170c 0%, #1e130c 100%)',
-    parchment: 'radial-gradient(#e0d5c1 1px, transparent 1px), #f4ecd8',
-    wood: 'repeating-linear-gradient(to right, #4e342e, #3e2723 20px, #4e342e 40px)',
-    slate: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
-    green: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)'
+    lined: { bg: '#fdf6e3', img: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px)', size: '100% 32px' },
+    grid: { bg: '#fdf6e3', img: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px)', size: '32px 32px' },
+    dotted: { bg: '#fdf6e3', img: 'radial-gradient(#d4c4a8 2px, transparent 2px)', size: '20px 20px' },
+    leather: { bg: '#1e130c', img: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px), linear-gradient(135deg, #2b170c 0%, #1e130c 100%)', size: 'auto' },
+    parchment: { bg: '#f4ecd8', img: 'radial-gradient(#e0d5c1 1px, transparent 1px)', size: '20px 20px' },
+    wood: { bg: '#3e2723', img: 'repeating-linear-gradient(to right, #4e342e, #3e2723 20px, #4e342e 40px)', size: 'auto' },
+    slate: { bg: '#1a252f', img: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)', size: 'auto' },
+    green: { bg: '#081c15', img: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)', size: 'auto' }
   };
   const themeSwatches = { lined: '#fdf6e3', grid: '#e5e5e5', dotted: '#d4c4a8', leather: '#2b170c', parchment: '#f4ecd8', wood: '#4e342e', slate: '#2c3e50', green: '#1b4332' };
 
@@ -79,7 +101,7 @@ export default function Scrapbook() {
     }).catch(() => setIsLoadingDesk(false));
   }, [location.state]);
 
-  // INVISIBLE BACKGROUND AUTO-SAVE
+  // INVISIBLE AUTO-SAVE
   useEffect(() => {
     if (isLoadingDesk) return;
     const token = localStorage.getItem('token');
@@ -90,7 +112,6 @@ export default function Scrapbook() {
     return () => clearTimeout(autoSaveTimer);
   }, [journals, bgTheme, isLoadingDesk]);
 
-  // 🔥 UNDO / REDO LOGIC
   const commitHistory = (newJournals) => {
     setPast([...past, journals]);
     setFuture([]);
@@ -145,16 +166,12 @@ export default function Scrapbook() {
     input.click();
   };
 
-  // 🔥 Safe Update for Typing (Doesn't trigger Undo history)
   const updateItemText = (id, updates) => {
     setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j));
   };
-
-  // 🔥 Committed Update for Drags/Color Changes (Triggers Undo History)
   const updateItemCommitted = (id, updates) => {
     commitHistory(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j));
   };
-
   const deleteItem = (id) => { 
     commitHistory(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j)); 
     setFocusedItemId(null); 
@@ -187,31 +204,39 @@ export default function Scrapbook() {
       const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title: archiveTitle, theme: bgTheme, pages: journals, items: activeJournal.items }) });
       if (res.ok) {
         alert("Notebook locked in Vault!");
-        setShowArchiveModal(false); setArchiveTitle('');
+        setShowArchiveModal(false); setArchiveTitle(''); setActiveSheet(null);
         commitHistory([{ id: Date.now(), name: 'Page 1', items: [] }]); 
       }
     } catch (err) { alert("Failed to archive page."); } finally { setIsArchiving(false); }
   };
 
   const renderItemContent = (item) => {
-    // 🔥 CRASH-FREE AUTO RESIZE
-    const autoResize = (e) => {
-      e.target.style.height = 'inherit';
-      e.target.style.height = `${e.target.scrollHeight}px`;
-    };
-
-    const textStyle = { flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: item.font, color: item.textColor || '#000', lineHeight: '1.5', cursor: 'text', minHeight: '100px', minWidth: '150px', maxHeight: '40vh', overflowY: 'auto' };
+    const textStyle = { flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', fontFamily: item.font, color: item.textColor || '#000', lineHeight: '1.5', cursor: 'text', minHeight: '100px', minWidth: '150px' };
 
     switch (item.type) {
       case 'note':
       case 'text':
-        return <textarea onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={item.text} onChange={(e) => updateItemText(item.id, { text: e.target.value })} onInput={autoResize} placeholder={item.type === 'note' ? "Scribble thoughts..." : "Type here..."} onPointerDownCapture={(e) => e.stopPropagation()} style={{ ...textStyle, fontSize: item.type === 'note' ? '1.05rem' : '1.4rem' }} />;
+        return <AutoExpandingTextarea 
+                 item={item} 
+                 updateItemText={updateItemText} 
+                 onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} 
+                 isMobile={isMobile} 
+                 textStyle={{ ...textStyle, fontSize: item.type === 'note' ? '1.05rem' : '1.4rem' }} 
+                 placeholder={item.type === 'note' ? "Scribble thoughts..." : "Type here..."} 
+               />;
       
       case 'quote':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
             <span style={{ fontSize: '4rem', color: 'rgba(0, 0, 0, 0.1)', position: 'absolute', top: '-15px', left: '5px', fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}>"</span>
-            <textarea onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={item.text} onChange={(e) => updateItemText(item.id, { text: e.target.value })} onInput={autoResize} placeholder="Enter a profound quote..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ ...textStyle, fontSize: '1.3rem', fontStyle: 'italic', textAlign: 'center', minHeight: '80px', zIndex: 1 }} />
+            <AutoExpandingTextarea 
+                 item={item} 
+                 updateItemText={updateItemText} 
+                 onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} 
+                 isMobile={isMobile} 
+                 textStyle={{ ...textStyle, fontSize: '1.3rem', fontStyle: 'italic', textAlign: 'center', minHeight: '80px', zIndex: 1 }} 
+                 placeholder="Enter a profound quote..." 
+               />
             <input onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={item.author} onChange={(e) => updateItemText(item.id, { author: e.target.value })} placeholder="- Author" onPointerDownCapture={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: item.textColor || '#000', opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
           </div>
         );
@@ -226,12 +251,12 @@ export default function Scrapbook() {
       
       case 'todo':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px', maxHeight: '40vh', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
             <input onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={item.listTitle || ''} onChange={(e) => updateItemText(item.id, { listTitle: e.target.value })} placeholder="List Title..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ margin: '0 0 5px 0', fontFamily: item.font, color: item.textColor || '#000', borderBottom: `1px solid ${(item.textColor || '#000')}40`, paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold' }} />
             {item.tasks.map(task => (
               <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input type="checkbox" checked={task.done} onChange={(e) => updateTodoTask(item.id, task.id, { done: e.target.checked })} onPointerDownCapture={(e) => e.stopPropagation()} style={{ cursor: 'pointer', width: '18px', height: '18px' }} />
-                <input onFocus={() => setFocusedItemId(item.id)} value={task.text} onChange={(e) => updateTodoTask(item.id, task.id, { text: e.target.value })} placeholder="New item..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: item.textColor || '#000', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }} />
+                <input onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={task.text} onChange={(e) => updateTodoTask(item.id, task.id, { text: e.target.value })} placeholder="New item..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: item.textColor || '#000', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }} />
               </div>
             ))}
           </div>
@@ -253,8 +278,6 @@ export default function Scrapbook() {
     }
   };
 
-  const selectedItem = items.find(i => i.id === focusedItemId);
-
   if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
 
   return (
@@ -265,9 +288,9 @@ export default function Scrapbook() {
         .item-container:hover .item-controls, .item-container.focused .item-controls { opacity: 1; pointer-events: auto; }
       `}</style>
 
-      {/* 📱 NATIVE APP TOP BAR (Mobile Only) */}
+      {/* 📱 MOBILE TOP BAR */}
       {isMobile && (
-        <div style={{ height: '60px', background: 'var(--bg-panel)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px', zIndex: 1000 }}>
+        <div style={{ height: '60px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px', zIndex: 1000 }}>
           
           <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={undo} disabled={past.length === 0} style={{ background: 'transparent', border: 'none', color: past.length === 0 ? '#555' : 'var(--text-main)' }}><Undo size={22} /></button>
@@ -281,7 +304,6 @@ export default function Scrapbook() {
             <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', padding: '0 5px' }}><Plus size={20} /></button>
           </div>
 
-          {/* 🔥 THE SAVE (ARCHIVE) BUTTON */}
           <button onClick={() => setShowArchiveModal(true)} style={{ background: 'var(--lantern-gold)', border: 'none', color: '#000', borderRadius: '20px', padding: '6px 12px', fontWeight: 'bold', fontSize: '0.85rem' }}>Save</button>
         </div>
       )}
@@ -289,18 +311,19 @@ export default function Scrapbook() {
       {/* DESKTOP TOP BAR */}
       {!isMobile && (
         <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 1000 }}>
+          <button onClick={undo} disabled={past.length === 0} style={{ background: 'transparent', border: 'none', color: past.length === 0 ? '#555' : 'var(--text-main)' }}><Undo size={20} /></button>
+          <button onClick={redo} disabled={future.length === 0} style={{ background: 'transparent', border: 'none', color: future.length === 0 ? '#555' : 'var(--text-main)' }}><Redo size={20} /></button>
+          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
           <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)' }}><ChevronLeft size={20} /></button>
           <span style={{ color: '#fff', fontWeight: 'bold' }}>{activeJournal?.name}</span>
           <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)' }}><ChevronRight size={20} /></button>
           <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
           <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Plus size={16} /> New Page</button>
-          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
-          <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Lock size={16} /> Vault</button>
         </div>
       )}
 
       {/* 🎨 MAIN CANVAS */}
-      <div ref={constraintsRef} onPointerDown={() => { setFocusedItemId(null); setActiveSheet(null); }} style={{ flex: 1, position: 'relative', background: themes[bgTheme], backgroundSize: bgTheme.includes('lined') || bgTheme.includes('grid') ? '100% 32px, 32px 32px' : 'auto', transition: 'background 0.5s ease', overflow: 'hidden' }}>
+      <div ref={constraintsRef} onPointerDown={() => { setFocusedItemId(null); setActiveSheet(null); }} style={{ flex: 1, position: 'relative', backgroundColor: themes[bgTheme].bg, backgroundImage: themes[bgTheme].img, backgroundSize: themes[bgTheme].size, transition: 'background 0.5s ease', overflow: 'hidden' }}>
         {items.map(item => (
           <motion.div
             key={item.id}
@@ -364,6 +387,7 @@ export default function Scrapbook() {
           <button onClick={() => setShowBgMenu(!showBgMenu)} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
           <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
           <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
+          <button onClick={() => navigate('/vault')} title="Open Vault" style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer' }}><Lock size={22} /></button>
         </div>
       )}
 
@@ -372,7 +396,6 @@ export default function Scrapbook() {
         {isMobile && activeSheet && (
           <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'tween', duration: 0.2 }} style={{ position: 'absolute', bottom: '70px', left: 0, right: 0, background: 'var(--bg-panel)', borderTopLeftRadius: '20px', borderTopRightRadius: '20px', padding: '20px', borderTop: '1px solid var(--border-color)', zIndex: 900, boxShadow: '0 -10px 40px rgba(0,0,0,0.5)' }}>
             
-            {/* ADD SHEET */}
             {activeSheet === 'add' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', textAlign: 'center' }}>
                 <div onClick={addText}><Type size={28} color="#ecf0f1" style={{ margin: '0 auto' }}/><p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '5px 0 0 0' }}>Text</p></div>
@@ -385,13 +408,12 @@ export default function Scrapbook() {
               </div>
             )}
 
-            {/* FORMAT SHEET */}
             {activeSheet === 'format' && (
               <div>
                 {!selectedItem ? ( <p style={{ color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>Tap an item to format it.</p> ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Scale</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Scale Block</span>
                       <div style={{ display: 'flex', gap: '15px', background: 'var(--bg-deep)', padding: '5px 15px', borderRadius: '20px' }}>
                         <button onClick={() => updateItemCommitted(selectedItem.id, { scale: Math.max(0.5, (selectedItem.scale || 1) - 0.1) })} style={{ background: 'transparent', border: 'none', color: '#fff' }}><ZoomOut size={20}/></button>
                         <span style={{ color: '#fff' }}>{Math.round((selectedItem.scale || 1) * 100)}%</span>
@@ -424,16 +446,14 @@ export default function Scrapbook() {
               </div>
             )}
 
-            {/* SKINS SHEET */}
             {activeSheet === 'skins' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
                 {Object.keys(themes).map(key => (
-                  <div key={key} onClick={() => setBgTheme(key)} style={{ height: '60px', borderRadius: '12px', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : '1px solid var(--border-color)' }}></div>
+                  <div key={key} onClick={() => setBgTheme(key)} style={{ height: '60px', borderRadius: '12px', backgroundColor: themes[key].bg, backgroundImage: themes[key].img, backgroundSize: themes[key].size, border: bgTheme === key ? '3px solid var(--lantern-gold)' : '1px solid var(--border-color)' }}></div>
                 ))}
               </div>
             )}
 
-            {/* STICKERS SHEET */}
             {activeSheet === 'stickers' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', maxHeight: '30vh', overflowY: 'auto' }}>
                 {['☕', '🕯️', '🥀', '🕰️', '🎞️', '🎟️', '🖋️', '🍷', '🌿', '🗝️', '📜', '🌙', '🍂', '📌', '📎', '🔍'].map(emoji => (
@@ -445,32 +465,21 @@ export default function Scrapbook() {
         )}
       </AnimatePresence>
 
-      {/* DESKTOP MODALS (Unchanged) */}
+      {/* DESKTOP MODALS */}
       {!isMobile && showBgMenu && (
-        <div style={{ position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(7, 40px)', gap: '10px', zIndex: 1000 }}>
-          {Object.keys(themes).map(key => <button key={key} onClick={() => { setBgTheme(key); setShowBgMenu(false); }} style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : 'none', cursor: 'pointer' }} />)}
+        <div style={{ position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(8, 40px)', gap: '10px', zIndex: 1000 }}>
+          {Object.keys(themes).map(key => <button key={key} onClick={() => { setBgTheme(key); setShowBgMenu(false); }} style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: themes[key].bg, backgroundImage: themes[key].img, backgroundSize: themes[key].size, border: bgTheme === key ? '3px solid var(--lantern-gold)' : 'none', cursor: 'pointer' }} />)}
         </div>
       )}
-      {showArchiveModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h2 style={{ margin: 0, color: 'var(--lantern-gold)' }}>Archive Notebook</h2>
-            <input type="text" required placeholder="Title..." value={archiveTitle} onChange={e => setArchiveTitle(e.target.value)} style={{ padding: '15px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px' }} />
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="button" onClick={() => setShowArchiveModal(false)} style={{ flex: 1, padding: '12px', background: 'transparent', color: '#fff', border: '1px solid #555', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
-              <button type="submit" disabled={isArchiving} style={{ flex: 1, padding: '12px', background: 'var(--lantern-gold)', color: '#000', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Lock in Vault</button>
-            </div>
-          </form>
-        </div>
-      )}
+      
       {showMediaModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2 style={{ margin: 0, color: 'var(--text-main)' }}>Select from Archives</h2><button onClick={() => setShowMediaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button></div>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2 style={{ margin: 0, color: 'var(--text-main)' }}>Archives</h2><button onClick={() => setShowMediaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem' }}>×</button></div>
             <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '15px' }}>
               {profileData && [...profileData.finishedList, ...profileData.currentlyConsuming, ...profileData.tbrList].map((media, i) => (
                 <div key={i} onClick={() => addMediaItem(media)} style={{ cursor: 'pointer' }}>
-                  <img src={media.coverImage || 'https://via.placeholder.com/100'} alt={media.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px' }} />
+                  <img src={media.coverImage || 'https://via.placeholder.com/100'} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px' }} />
                 </div>
               ))}
             </div>

@@ -166,7 +166,12 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
     display: inline-block !important;
     vertical-align: middle;
   }
-
+/* 🔥 FIX FOR CUT-OFF MENUS (Books, Movies, Series, etc.) */
+  .profile-tabs, [style*="overflow-x"], [style*="overflowX"], .search-tabs, nav {
+    justify-content: flex-start !important;
+    padding-left: 15px !important;
+    margin-left: 0 !important;
+  }
   /* 🔥 THE ABSOLUTE ORACLE BUTTON FIX */
   .oracle-card, div:has(> [style*="ANALYZE MY TASTE"]) {
     display: flex !important;
