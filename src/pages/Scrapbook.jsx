@@ -7,6 +7,7 @@ import {
   Sparkles, Settings2, Trash2, ZoomIn, ZoomOut, Move, Undo, Redo
 } from 'lucide-react';
 
+// 🔥 THE SMART AUTO-EXPANDING TEXT BOX
 const AutoExpandingTextarea = ({ item, updateItemText, onFocus, textStyle, placeholder }) => {
   const textareaRef = useRef(null);
   useEffect(() => {
@@ -55,10 +56,14 @@ export default function Scrapbook() {
   const navigate = useNavigate();
   const location = useLocation(); 
 
-  const activeJournal = journals.find(j => j.id === activeJournalId) || journals[0];
+  // 🔥 BULLETPROOF SAFEGUARDS: Prevents older database saves from crashing the app!
+  const activeJournal = journals.find(j => j.id === activeJournalId) || journals[0] || { id: Date.now(), name: 'Page 1', items: [] };
   const items = activeJournal?.items || [];
   const currentIndex = journals.findIndex(j => j.id === activeJournalId);
+  const safeJournalName = activeJournal?.name || `Page ${currentIndex + 1}`;
+  const safeActiveJournalId = activeJournal?.id;
 
+  // 🔥 ALL 3 THEMES RETURNED: Grid, Lined, and Dotted!
   const themes = {
     lined: { bg: '#fdf6e3', img: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px)', size: '100% 32px' },
     grid: { bg: '#fdf6e3', img: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px)', size: '32px 32px' },
@@ -94,16 +99,22 @@ export default function Scrapbook() {
     .then(res => res.json())
     .then(data => {
       if (data && data.pages && data.pages.length > 0) {
-        setJournals(data.pages);
+        // 🔥 CRASH FIX: Scrubs old data so it cannot trigger a white screen
+        const safePages = data.pages.map(p => ({ ...p, name: p.name || 'Page 1', items: p.items || [] }));
+        setJournals(safePages);
+        
         const targetIndex = location.state?.targetPageIndex !== undefined ? location.state.targetPageIndex : 0;
-        const targetPage = data.pages[targetIndex] || data.pages[0];
+        const targetPage = safePages[targetIndex] || safePages[0];
         setActiveJournalId(targetPage.id);
         if (data.theme) setBgTheme(data.theme); 
-      } else { setActiveJournalId(journals[0].id); }
+      } else { 
+        setActiveJournalId(journals[0].id); 
+      }
       setIsLoadingDesk(false);
     }).catch(() => setIsLoadingDesk(false));
   }, [location.state]);
 
+  // INVISIBLE AUTO-SAVE
   useEffect(() => {
     if (isLoadingDesk) return;
     const token = localStorage.getItem('token');
@@ -141,7 +152,7 @@ export default function Scrapbook() {
   const goToNextPage = () => { if (currentIndex < journals.length - 1) setActiveJournalId(journals[currentIndex + 1].id); };
 
   const addItemToJournal = (newItem) => { 
-    commitHistory(journals.map(j => j.id === activeJournalId ? { ...j, items: [...(j.items || []), newItem] } : j)); 
+    commitHistory(journals.map(j => j.id === safeActiveJournalId ? { ...j, items: [...(j.items || []), newItem] } : j)); 
     setActiveSheet(null); 
     setFocusedItemId(newItem.id);
   };
@@ -169,20 +180,20 @@ export default function Scrapbook() {
   };
 
   const updateItemText = (id, updates) => {
-    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: (j.items || []).map(item => item.id === id ? { ...item, ...updates } : item) } : j));
+    setJournals(journals.map(j => j.id === safeActiveJournalId ? { ...j, items: (j.items || []).map(item => item.id === id ? { ...item, ...updates } : item) } : j));
   };
   const updateItemCommitted = (id, updates) => {
-    commitHistory(journals.map(j => j.id === activeJournalId ? { ...j, items: (j.items || []).map(item => item.id === id ? { ...item, ...updates } : item) } : j));
+    commitHistory(journals.map(j => j.id === safeActiveJournalId ? { ...j, items: (j.items || []).map(item => item.id === id ? { ...item, ...updates } : item) } : j));
   };
   const deleteItem = (id) => { 
-    commitHistory(journals.map(j => j.id === activeJournalId ? { ...j, items: (j.items || []).filter(item => item.id !== id) } : j)); 
+    commitHistory(journals.map(j => j.id === safeActiveJournalId ? { ...j, items: (j.items || []).filter(item => item.id !== id) } : j)); 
     setFocusedItemId(null); 
     setActiveSheet(null); 
   };
 
   const updateTodoTask = (itemId, taskId, updates) => {
     setJournals(journals.map(j => {
-      if (j.id === activeJournalId) {
+      if (j.id === safeActiveJournalId) {
         return { ...j, items: (j.items || []).map(item => {
             if (item.id === itemId) {
               const newTasks = (item.tasks || []).map(t => t.id === taskId ? { ...t, ...updates } : t);
@@ -203,7 +214,7 @@ export default function Scrapbook() {
     setIsArchiving(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title: archiveTitle, theme: bgTheme, pages: journals, items: activeJournal.items || [] }) });
+      const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title: archiveTitle, theme: bgTheme, pages: journals, items: items }) });
       if (res.ok) {
         alert("Notebook locked in Vault!");
         setShowArchiveModal(false); setArchiveTitle(''); setActiveSheet(null);
@@ -268,9 +279,6 @@ export default function Scrapbook() {
 
   if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
 
-  // 🔥 CRASH FIX: Safe name replaces
-  const safeJournalName = activeJournal?.name || `Page ${currentIndex + 1}`;
-
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
       
@@ -279,7 +287,7 @@ export default function Scrapbook() {
         .item-container:hover .item-controls, .item-container.focused .item-controls { opacity: 1; pointer-events: auto; }
       `}</style>
 
-      {/* 📱 MOBILE TOP BAR */}
+      {/* 📱 MOBILE TOP BAR (Exactly what you asked for!) */}
       {isMobile && (
         <div style={{ height: '60px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px', zIndex: 1000, pointerEvents: 'auto' }}>
           
@@ -453,6 +461,7 @@ export default function Scrapbook() {
         </div>
       )}
       
+      {/* 🔥 MEDIA MODAL (Fully visible on top of everything) */}
       {showMediaModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
@@ -462,12 +471,13 @@ export default function Scrapbook() {
                 <div key={i} onClick={() => { addMediaItem(media); setShowMediaModal(false); }} style={{ cursor: 'pointer' }}>
                   <img src={media.coverImage || 'https://via.placeholder.com/100'} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px' }} />
                 </div>
-              )) : <p style={{ color: 'var(--lantern-gold)' }}>Loading...</p>}
+              )) : <p style={{ color: 'var(--lantern-gold)' }}>Loading Library...</p>}
             </div>
           </div>
         </div>
       )}
 
+      {/* ARCHIVE MODAL */}
       {showArchiveModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
