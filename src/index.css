@@ -471,3 +471,49 @@ body, html, #root {
     max-width: 160px !important; 
   }
 }
+/* =========================================
+   📱 AGGRESSIVE MOBILE SCALING FIXES
+   (For users with enlarged system fonts)
+   ========================================= */
+body, html, #root {
+  max-width: 100vw;
+  overflow-x: hidden; 
+}
+
+@media (max-width: 768px) {
+  /* 1. PROTECT THE NAVBAR & AVATAR */
+  header, nav, .navbar {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    gap: 5px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Force the title to shrink and truncate with "..." instead of breaking the screen */
+  .logo-text, h1, a[href="/"], [style*="THE LANTERN LIBRARY"] {
+    font-size: 1rem !important;
+    max-width: 40vw !important; /* Never takes up more than 40% of screen width */
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: inline-block !important;
+    vertical-align: middle;
+  }
+
+  /* 2. FIX THE ORACLE "ANALYZE MY TASTE" BUTTON */
+  .oracle-card button, [style*="ANALYZE MY TASTE"] {
+    font-size: 0.75rem !important;
+    padding: 6px 10px !important;
+    white-space: normal !important; /* Allows text to wrap into two lines */
+    text-align: center !important;
+    width: auto !important;
+    max-width: 100px !important;
+  }
+
+  /* 3. FIX PROFILE TABS (Finished, Currently Consuming, etc.) */
+  .profile-tabs, [style*="Currently Consuming"] {
+    flex-wrap: wrap !important; /* Forces them to stack neatly instead of shrinking into nothing */
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+}

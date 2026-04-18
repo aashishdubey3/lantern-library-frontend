@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox, Sparkles, ZoomIn, ZoomOut, Wrench } from 'lucide-react';
+import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox, Sparkles, ZoomIn, ZoomOut, Wrench } from 'lucide-react';
 
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
@@ -9,13 +9,12 @@ export default function Scrapbook() {
   
   const [profileData, setProfileData] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDesk, setIsLoadingDesk] = useState(true); 
   
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [showStickerMenu, setShowStickerMenu] = useState(false);
   const [showBgMenu, setShowBgMenu] = useState(false);
-  const [showMobileTools, setShowMobileTools] = useState(false); // 🔥 NEW: Mobile Drop-Up Menu State
+  const [showMobileTools, setShowMobileTools] = useState(false); 
   
   const [bgTheme, setBgTheme] = useState('lined'); 
   const [activeZIndex, setActiveZIndex] = useState(10);
@@ -44,7 +43,6 @@ export default function Scrapbook() {
     slate: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
     green: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)'
   };
-
   const themeSwatches = { lined: '#fdf6e3', grid: '#e5e5e5', leather: '#2b170c', parchment: '#f4ecd8', wood: '#4e342e', slate: '#2c3e50', green: '#1b4332' };
   const isDarkTheme = ['leather', 'wood', 'slate', 'green'].includes(bgTheme);
   const defaultTextColor = isDarkTheme ? '#fdf6e3' : '#2c3e50';
@@ -55,6 +53,7 @@ export default function Scrapbook() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // INITIAL LOAD
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -76,6 +75,24 @@ export default function Scrapbook() {
     }).catch(() => setIsLoadingDesk(false));
   }, [location.state]);
 
+  // 🔥 INVISIBLE AUTO-SAVE ENGINE
+  // Automatically saves to MongoDB 1 second after you stop moving/editing things
+  useEffect(() => {
+    if (isLoadingDesk) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const autoSaveTimer = setTimeout(() => {
+      fetch('https://lantern-library-backend.onrender.com/api/journals', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ pages: journals, theme: bgTheme }) 
+      }).catch(err => console.error("Auto-save failed", err));
+    }, 1000); 
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [journals, bgTheme, isLoadingDesk]);
+
   const bringToFront = () => { setActiveZIndex(prev => prev + 1); return activeZIndex + 1; };
   const createNewPage = () => { const newId = Date.now(); setJournals([...journals, { id: newId, name: `Page ${journals.length + 1}`, items: [] }]); setActiveJournalId(newId); };
   const goToPrevPage = () => { if (currentIndex > 0) setActiveJournalId(journals[currentIndex - 1].id); };
@@ -83,7 +100,6 @@ export default function Scrapbook() {
 
   const addItemToJournal = (newItem) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); setShowMobileTools(false); };
 
-  // 🔥 ALL ITEMS NOW SPAWN WITH A DEFAULT SCALE: 1
   const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', x: 0, y: 0, scale: 1, font: '"Courier New", Courier, monospace', bgColor: '#fdf3c6', textColor: '#2c3e50', zIndex: bringToFront() });
   const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, scale: 1, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() }); 
   const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, scale: 1, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() });
@@ -106,8 +122,14 @@ export default function Scrapbook() {
     input.click();
   };
 
-  const deleteItem = (id) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j)); setFocusedItemId(null); };
-  const updateItem = (id, updates) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j)); };
+  const deleteItem = (id) => { 
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j)); 
+    setFocusedItemId(null); 
+  };
+  
+  const updateItem = (id, updates) => { 
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j)); 
+  };
 
   const updateTodoTask = (itemId, taskId, updates) => {
     setJournals(journals.map(j => {
@@ -124,19 +146,6 @@ export default function Scrapbook() {
       }
       return j;
     }));
-  };
-
-  const saveDesk = async () => {
-    setIsSaving(true);
-    const token = localStorage.getItem('token');
-    try {
-      await fetch('https://lantern-library-backend.onrender.com/api/journals', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ pages: journals, theme: bgTheme }) 
-      });
-      alert("Desk Layout Saved!");
-      setShowMobileTools(false);
-    } catch (err) { alert("Network error."); } finally { setIsSaving(false); }
   };
 
   const archiveCurrentPage = async (e) => {
@@ -214,20 +223,26 @@ export default function Scrapbook() {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
       
-      {/* 🔥 CSS LOGIC: Pill shows on hover (Desktop) OR on tap (Mobile) */}
       <style>{`
         .item-container .item-controls { opacity: 0; transition: opacity 0.2s; pointer-events: none; } 
         .item-container:hover .item-controls, .item-container.focused .item-controls { opacity: 1; pointer-events: auto; }
+        
+        @media (max-width: 768px) {
+          .mobile-top-nav { width: 90% !important; padding: 8px 15px !important; gap: 8px !important; }
+          .mobile-top-nav span, .mobile-top-nav button { font-size: 0.8rem !important; }
+          .mobile-bottom-nav { width: 95% !important; padding: 10px !important; gap: 8px !important; justify-content: flex-start !important; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+          .mobile-bottom-nav button { padding: 5px !important; flex-shrink: 0; }
+          .mobile-item-controls { padding: 4px 8px !important; gap: 6px !important; top: -38px !important; right: auto !important; left: 0 !important; transform: scale(0.9); transform-origin: top left; }
+        }
       `}</style>
 
       <div ref={constraintsRef} onPointerDown={() => setFocusedItemId(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: themes[bgTheme], backgroundSize: bgTheme.includes('lined') || bgTheme.includes('grid') ? '100% 32px, 32px 32px' : 'auto', transition: 'background 0.5s ease' }}>
         
-        {/* RENDER DESK ITEMS */}
         {items.map(item => (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, scale: 0.5 }}  
-            animate={{ opacity: 1, scale: item.scale || 1 }}  // 🔥 SCALES ZOOM SMOOTHLY
+            initial={{ opacity: 0, scale: 0.8 }}  
+            animate={{ opacity: 1, scale: item.scale || 1 }} 
             drag dragConstraints={constraintsRef} dragElastic={0} dragMomentum={false}
             style={{ 
               x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: isMobile ? '10%' : '40%', zIndex: item.zIndex, 
@@ -237,17 +252,16 @@ export default function Scrapbook() {
               borderRadius: item.type === 'note' ? '2px 10px 10px 20px' : '8px', 
               display: 'flex', flexDirection: 'column',
               outline: focusedItemId === item.id ? '2px dashed rgba(245, 158, 11, 0.5)' : 'none',
-              outlineOffset: '4px'
+              outlineOffset: '4px',
+              touchAction: 'none' // 🔥 PREVENTS SCREEN SCROLLING WHILE DRAGGING ON MOBILE
             }}
             onDragEnd={(e, info) => { updateItem(item.id, { x: (item.x || 0) + info.offset.x, y: (item.y || 0) + info.offset.y }); }}
             onPointerDown={(e) => { e.stopPropagation(); updateItem(item.id, { zIndex: bringToFront() }); setFocusedItemId(item.id); }}
             whileDrag={{ boxShadow: "0 20px 50px rgba(0,0,0,0.4)", zIndex: 10000 }}
             className={`item-container ${focusedItemId === item.id ? 'focused' : ''}`}
           >
-            {/* 🔥 THE CONTROL PILL (Now Mobile Friendly with Zoom Options!) */}
-            <div className="item-controls" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', borderRadius: '30px', padding: '6px 12px', gap: '10px', position: 'absolute', top: '-45px', right: isMobile ? 'auto' : '0px', left: isMobile ? '0px' : 'auto', zIndex: 50, boxShadow: '0 5px 15px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'nowrap' }}>
+            <div className="item-controls mobile-item-controls" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', borderRadius: '30px', padding: '6px 12px', gap: '10px', position: 'absolute', top: '-45px', right: isMobile ? 'auto' : '0px', left: isMobile ? '0px' : 'auto', zIndex: 50, boxShadow: '0 5px 15px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'nowrap' }}>
               
-              {/* Zoom In/Out Tool */}
               <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { scale: Math.max(0.5, (item.scale || 1) - 0.1) }); }} title="Shrink" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomOut size={16} /></button>
               <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { scale: Math.min(2.5, (item.scale || 1) + 0.1) }); }} title="Enlarge" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomIn size={16} /></button>
               <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
@@ -289,10 +303,8 @@ export default function Scrapbook() {
           </motion.div>
         ))}
 
-        {/* 🟢 UNIFIED BOTTOM DOCK (Mobile Responsive) */}
         <div style={{ position: 'absolute', bottom: '30px', left: '20px', right: '20px', display: 'flex', justifyContent: isMobile ? 'center' : 'space-between', alignItems: 'center', zIndex: 1000, pointerEvents: 'none' }}>
           
-          {/* Left Nav (Hidden on mobile if tools are open) */}
           {!isMobile && (
             <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
               <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer' }}><ChevronLeft size={20} /></button>
@@ -303,7 +315,6 @@ export default function Scrapbook() {
             </div>
           )}
 
-          {/* Center Tools (Collapses into "+" Menu on Mobile) */}
           {(!isMobile || showMobileTools) && (
             <div style={{ pointerEvents: 'auto', display: isMobile ? 'grid' : 'flex', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'none', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '15px 25px', borderRadius: isMobile ? '20px' : '40px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.8)', position: isMobile ? 'absolute' : 'relative', bottom: isMobile ? '80px' : 'auto' }}>
               <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer' }}><Type size={22} /></button>
@@ -317,14 +328,15 @@ export default function Scrapbook() {
               <button onClick={() => { setShowStickerMenu(!showStickerMenu); setShowBgMenu(false); setShowMobileTools(false); }} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer' }}><SmilePlus size={22} /></button>
               <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); setShowMobileTools(false); }} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
               {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
-              <button onClick={saveDesk} disabled={isSaving} title="Save Desk Layout" style={{ background: 'transparent', border: 'none', color: '#95a5a6', cursor: isSaving ? 'wait' : 'pointer', opacity: isSaving ? 0.5 : 1 }}><Save size={22} /></button>
+              
+              {/* THE ONLY SAVE BUTTON (Send to Vault) */}
               <button onClick={() => { setShowArchiveModal(true); setShowMobileTools(false); }} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
+              
               {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
               <button onClick={() => alert("Oracle Lens coming next!")} title="Ask Oracle AI" style={{ background: 'transparent', border: 'none', color: '#a29bfe', cursor: 'pointer' }}><Sparkles size={22} /></button>
             </div>
           )}
 
-          {/* Mobile Master Dock (Replaces the massive horizontal bar) */}
           {isMobile && (
             <div style={{ pointerEvents: 'auto', display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
               <div style={{ display: 'flex', gap: '15px' }}>
@@ -344,25 +356,22 @@ export default function Scrapbook() {
           )}
         </div>
 
-        {/* POPUP THEME MENU */}
         {showBgMenu && (
-          <div style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 40px)' : 'repeat(7, 40px)', gap: '10px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
+          <div className="mobile-bottom-nav hide-scrollbar" style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 40px)' : 'repeat(7, 40px)', gap: '10px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
             {Object.keys(themes).map(key => (
               <button key={key} title={key} onClick={() => { setBgTheme(key); setShowBgMenu(false); }} style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : '2px solid transparent', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }} />
             ))}
           </div>
         )}
 
-        {/* POPUP STICKER MENU */}
         {showStickerMenu && (
-          <div style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
+          <div className="mobile-bottom-nav hide-scrollbar" style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
             {['☕', '🕯️', '🥀', '🕰️', '🎞️', '🎟️', '🖋️', '🍷', '🌿', '🗝️', '📜', '🌙', '🍂', '📌', '📎', '🔍'].map(emoji => (
               <button key={emoji} onClick={() => addSticker(emoji)} style={{ fontSize: '2rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }}>{emoji}</button>
             ))}
           </div>
         )}
 
-        {/* MODALS */}
         {showMediaModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
@@ -391,7 +400,6 @@ export default function Scrapbook() {
             </form>
           </div>
         )}
-
       </div>
     </div>
   );
