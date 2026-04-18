@@ -441,3 +441,33 @@ body, html, #root {
     max-width: 130px !important; 
   }
 }
+/* =========================================
+   📱 GLOBAL MOBILE NAV & TOUCH FIXES
+   ========================================= */
+body, html, #root {
+  max-width: 100vw;
+  overflow-x: hidden; 
+}
+
+/* Ensure draggable desk items don't accidentally trigger screen scrolling on phones */
+.item-container {
+  touch-action: none;
+}
+
+@media (max-width: 768px) {
+  /* Targets your top navbar to protect the avatar and notifications */
+  header, nav, .navbar {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    gap: 5px !important;
+  }
+
+  /* Safely shrinks "THE LANTERN LIBRARY" text so it doesn't push elements off screen */
+  h1, .logo-text, a[href="/"] {
+    font-size: 1.1rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 160px !important; 
+  }
+}

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox, Sparkles } from 'lucide-react';
+import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox, Sparkles, ZoomIn, ZoomOut, Wrench } from 'lucide-react';
 
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
@@ -15,6 +15,8 @@ export default function Scrapbook() {
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [showStickerMenu, setShowStickerMenu] = useState(false);
   const [showBgMenu, setShowBgMenu] = useState(false);
+  const [showMobileTools, setShowMobileTools] = useState(false); // 🔥 NEW: Mobile Drop-Up Menu State
+  
   const [bgTheme, setBgTheme] = useState('lined'); 
   const [activeZIndex, setActiveZIndex] = useState(10);
   const [focusedItemId, setFocusedItemId] = useState(null); 
@@ -22,6 +24,8 @@ export default function Scrapbook() {
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [archiveTitle, setArchiveTitle] = useState('');
   const [isArchiving, setIsArchiving] = useState(false);
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const constraintsRef = useRef(null);
   const navigate = useNavigate();
@@ -44,6 +48,12 @@ export default function Scrapbook() {
   const themeSwatches = { lined: '#fdf6e3', grid: '#e5e5e5', leather: '#2b170c', parchment: '#f4ecd8', wood: '#4e342e', slate: '#2c3e50', green: '#1b4332' };
   const isDarkTheme = ['leather', 'wood', 'slate', 'green'].includes(bgTheme);
   const defaultTextColor = isDarkTheme ? '#fdf6e3' : '#2c3e50';
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -71,14 +81,15 @@ export default function Scrapbook() {
   const goToPrevPage = () => { if (currentIndex > 0) setActiveJournalId(journals[currentIndex - 1].id); };
   const goToNextPage = () => { if (currentIndex < journals.length - 1) setActiveJournalId(journals[currentIndex + 1].id); };
 
-  const addItemToJournal = (newItem) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); };
+  const addItemToJournal = (newItem) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); setShowMobileTools(false); };
 
-  const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', x: 0, y: 0, font: '"Courier New", Courier, monospace', bgColor: '#fdf3c6', textColor: '#2c3e50', zIndex: bringToFront() });
-  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() }); 
-  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() });
-  const addTodo = () => addItemToJournal({ id: Date.now(), type: 'todo', listTitle: 'Checklist', tasks: [{ id: 1, text: '', done: false }], x: 0, y: 0, bgColor: 'rgba(253, 246, 227, 0.9)', textColor: '#2c3e50', font: 'var(--font-body)', zIndex: bringToFront() });
-  const addSticker = (emoji) => { addItemToJournal({ id: Date.now(), type: 'sticker', emoji, x: 0, y: 0, zIndex: bringToFront() }); setShowStickerMenu(false); };
-  const addMediaItem = (media) => { addItemToJournal({ id: Date.now(), type: 'media', media, x: 0, y: 0, displayStyle: media.mediaType === 'book' ? 'spine' : 'cover', zIndex: bringToFront() }); setShowMediaModal(false); };
+  // 🔥 ALL ITEMS NOW SPAWN WITH A DEFAULT SCALE: 1
+  const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', x: 0, y: 0, scale: 1, font: '"Courier New", Courier, monospace', bgColor: '#fdf3c6', textColor: '#2c3e50', zIndex: bringToFront() });
+  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, scale: 1, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() }); 
+  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, scale: 1, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() });
+  const addTodo = () => addItemToJournal({ id: Date.now(), type: 'todo', listTitle: 'Checklist', tasks: [{ id: 1, text: '', done: false }], x: 0, y: 0, scale: 1, bgColor: 'rgba(253, 246, 227, 0.9)', textColor: '#2c3e50', font: 'var(--font-body)', zIndex: bringToFront() });
+  const addSticker = (emoji) => { addItemToJournal({ id: Date.now(), type: 'sticker', emoji, x: 0, y: 0, scale: 1, zIndex: bringToFront() }); setShowStickerMenu(false); };
+  const addMediaItem = (media) => { addItemToJournal({ id: Date.now(), type: 'media', media, x: 0, y: 0, scale: 1, displayStyle: media.mediaType === 'book' ? 'spine' : 'cover', zIndex: bringToFront() }); setShowMediaModal(false); };
 
   const addPhoto = () => {
     const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
@@ -89,8 +100,8 @@ export default function Scrapbook() {
       try {
         const res = await fetch('https://api.cloudinary.com/v1_1/dfugne8fq/image/upload', { method: 'POST', body: formData });
         const data = await res.json();
-        addItemToJournal({ id: Date.now(), type: 'photo', url: data.secure_url, caption: '', x: 0, y: 0, font: '"Comic Sans MS", cursive, sans-serif', textColor: '#2c3e50', zIndex: bringToFront() });
-      } catch (err) { alert('Upload failed'); } finally { setIsUploading(false); }
+        addItemToJournal({ id: Date.now(), type: 'photo', url: data.secure_url, caption: '', x: 0, y: 0, scale: 1, font: '"Comic Sans MS", cursive, sans-serif', textColor: '#2c3e50', zIndex: bringToFront() });
+      } catch (err) { alert('Upload failed'); } finally { setIsUploading(false); setShowMobileTools(false); }
     };
     input.click();
   };
@@ -124,6 +135,7 @@ export default function Scrapbook() {
         body: JSON.stringify({ pages: journals, theme: bgTheme }) 
       });
       alert("Desk Layout Saved!");
+      setShowMobileTools(false);
     } catch (err) { alert("Network error."); } finally { setIsSaving(false); }
   };
 
@@ -202,32 +214,23 @@ export default function Scrapbook() {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
       
-      {/* 🔥 MOBILE CSS OVERRIDES */}
+      {/* 🔥 CSS LOGIC: Pill shows on hover (Desktop) OR on tap (Mobile) */}
       <style>{`
         .item-container .item-controls { opacity: 0; transition: opacity 0.2s; pointer-events: none; } 
         .item-container:hover .item-controls, .item-container.focused .item-controls { opacity: 1; pointer-events: auto; }
-        
-        @media (max-width: 768px) {
-          .mobile-top-nav { width: 90% !important; padding: 8px 15px !important; gap: 8px !important; }
-          .mobile-top-nav span, .mobile-top-nav button { font-size: 0.8rem !important; }
-          .mobile-bottom-nav { width: 95% !important; padding: 10px !important; gap: 8px !important; justify-content: flex-start !important; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
-          .mobile-bottom-nav button { padding: 5px !important; flex-shrink: 0; }
-          .mobile-bottom-nav svg { width: 18px; height: 18px; }
-          .mobile-item-controls { padding: 4px 8px !important; gap: 6px !important; top: -38px !important; right: auto !important; left: 0 !important; transform: scale(0.9); transform-origin: top left; }
-          .mobile-item-controls select, .mobile-item-controls input[type="color"] { height: 24px !important; width: 24px !important; }
-        }
       `}</style>
 
       <div ref={constraintsRef} onPointerDown={() => setFocusedItemId(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: themes[bgTheme], backgroundSize: bgTheme.includes('lined') || bgTheme.includes('grid') ? '100% 32px, 32px 32px' : 'auto', transition: 'background 0.5s ease' }}>
         
+        {/* RENDER DESK ITEMS */}
         {items.map(item => (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, scale: 0.8 }}  
-            animate={{ opacity: 1, scale: 1 }}    
+            initial={{ opacity: 0, scale: 0.5 }}  
+            animate={{ opacity: 1, scale: item.scale || 1 }}  // 🔥 SCALES ZOOM SMOOTHLY
             drag dragConstraints={constraintsRef} dragElastic={0} dragMomentum={false}
             style={{ 
-              x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: '40%', zIndex: item.zIndex, 
+              x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: isMobile ? '10%' : '40%', zIndex: item.zIndex, 
               background: item.type === 'photo' ? '#f8f9fa' : (item.bgColor || 'transparent'), 
               padding: item.type === 'sticker' || item.type === 'media' ? '0' : (item.type === 'photo' ? '10px 10px 25px 10px' : '20px'), 
               boxShadow: (item.bgColor && item.bgColor !== 'transparent') || item.type === 'photo' ? '0 10px 25px rgba(0,0,0,0.3)' : 'none', 
@@ -238,12 +241,17 @@ export default function Scrapbook() {
             }}
             onDragEnd={(e, info) => { updateItem(item.id, { x: (item.x || 0) + info.offset.x, y: (item.y || 0) + info.offset.y }); }}
             onPointerDown={(e) => { e.stopPropagation(); updateItem(item.id, { zIndex: bringToFront() }); setFocusedItemId(item.id); }}
-            whileDrag={{ scale: 1.02, boxShadow: "0 20px 50px rgba(0,0,0,0.4)", zIndex: 10000 }}
+            whileDrag={{ boxShadow: "0 20px 50px rgba(0,0,0,0.4)", zIndex: 10000 }}
             className={`item-container ${focusedItemId === item.id ? 'focused' : ''}`}
           >
-            {/* FLOATING CONTROL PILL (Responsive) */}
-            <div className="item-controls mobile-item-controls" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', borderRadius: '30px', padding: '6px 12px', gap: '10px', position: 'absolute', top: '-45px', right: '0px', zIndex: 50, boxShadow: '0 5px 15px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            {/* 🔥 THE CONTROL PILL (Now Mobile Friendly with Zoom Options!) */}
+            <div className="item-controls" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', borderRadius: '30px', padding: '6px 12px', gap: '10px', position: 'absolute', top: '-45px', right: isMobile ? 'auto' : '0px', left: isMobile ? '0px' : 'auto', zIndex: 50, boxShadow: '0 5px 15px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'nowrap' }}>
               
+              {/* Zoom In/Out Tool */}
+              <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { scale: Math.max(0.5, (item.scale || 1) - 0.1) }); }} title="Shrink" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomOut size={16} /></button>
+              <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { scale: Math.min(2.5, (item.scale || 1) + 0.1) }); }} title="Enlarge" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomIn size={16} /></button>
+              <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
+
               {['note', 'text', 'quote', 'todo', 'photo'].includes(item.type) && (
                 <select title="Font" value={item.font || 'var(--font-heading)'} onPointerDownCapture={e => e.stopPropagation()} onChange={e => updateItem(item.id, { font: e.target.value })} style={{ background: 'transparent', color: '#fff', border: 'none', outline: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>
                   <option value="var(--font-heading)">Serif</option>
@@ -281,68 +289,87 @@ export default function Scrapbook() {
           </motion.div>
         ))}
 
-        {/* 🟢 MOBILE BOTTOM DOCK (Scrollable) */}
-        <div style={{ position: 'absolute', bottom: '30px', left: '20px', right: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 1000, pointerEvents: 'none' }}>
+        {/* 🟢 UNIFIED BOTTOM DOCK (Mobile Responsive) */}
+        <div style={{ position: 'absolute', bottom: '30px', left: '20px', right: '20px', display: 'flex', justifyContent: isMobile ? 'center' : 'space-between', alignItems: 'center', zIndex: 1000, pointerEvents: 'none' }}>
           
-          {/* Left Nav */}
-          <div className="mobile-top-nav" style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-            <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer' }}><ChevronLeft size={20} /></button>
-            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', minWidth: '60px', textAlign: 'center' }}>{activeJournal?.name}</span>
-            <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === journals.length - 1 ? 'not-allowed' : 'pointer' }}><ChevronRight size={20} /></button>
-            <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
-            <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Plus size={16} /> <span className="hide-on-mobile">New Page</span></button>
-          </div>
+          {/* Left Nav (Hidden on mobile if tools are open) */}
+          {!isMobile && (
+            <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+              <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer' }}><ChevronLeft size={20} /></button>
+              <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', minWidth: '60px', textAlign: 'center' }}>{activeJournal?.name}</span>
+              <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === journals.length - 1 ? 'not-allowed' : 'pointer' }}><ChevronRight size={20} /></button>
+              <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
+              <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Plus size={16} /> New Page</button>
+            </div>
+          )}
 
-          {/* Center Tools (Scrollable on Mobile) */}
-          <div className="mobile-bottom-nav hide-scrollbar" style={{ pointerEvents: 'auto', display: 'flex', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '15px 25px', borderRadius: '40px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
-            <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer' }}><Type size={22} /></button>
-            <button onClick={addNote} title="Sticky Note" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: 'pointer' }}><StickyNote size={22} /></button>
-            <button onClick={addTodo} title="Checklist" style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer' }}><CheckSquare size={22} /></button>
-            <button onClick={addQuote} title="Quote" style={{ background: 'transparent', border: 'none', color: '#9b59b6', cursor: 'pointer' }}><Quote size={22} /></button>
-            <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
-            <button onClick={addPhoto} title="Upload Photo" disabled={isUploading} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: isUploading ? 'not-allowed' : 'pointer', opacity: isUploading ? 0.5 : 1 }}>{isUploading ? <Loader2 size={22} className="lucide-spin" /> : <ImageIcon size={22} />}</button>
-            <button onClick={() => setShowMediaModal(true)} title="Library Books" style={{ background: 'transparent', border: 'none', color: '#e67e22', cursor: 'pointer' }}><BookOpen size={22} /></button>
-            <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
-            <button onClick={() => { setShowStickerMenu(!showStickerMenu); setShowBgMenu(false); }} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer' }}><SmilePlus size={22} /></button>
-            <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); }} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
-            <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
-            <button onClick={saveDesk} disabled={isSaving} title="Save Desk Layout" style={{ background: 'transparent', border: 'none', color: '#95a5a6', cursor: isSaving ? 'wait' : 'pointer', opacity: isSaving ? 0.5 : 1 }}><Save size={22} /></button>
-            <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
-            <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
-            <button onClick={() => alert("Oracle Lens coming next!")} title="Ask Oracle AI" style={{ background: 'transparent', border: 'none', color: '#a29bfe', cursor: 'pointer' }}><Sparkles size={22} /></button>
-          </div>
+          {/* Center Tools (Collapses into "+" Menu on Mobile) */}
+          {(!isMobile || showMobileTools) && (
+            <div style={{ pointerEvents: 'auto', display: isMobile ? 'grid' : 'flex', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'none', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '15px 25px', borderRadius: isMobile ? '20px' : '40px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.8)', position: isMobile ? 'absolute' : 'relative', bottom: isMobile ? '80px' : 'auto' }}>
+              <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer' }}><Type size={22} /></button>
+              <button onClick={addNote} title="Sticky Note" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: 'pointer' }}><StickyNote size={22} /></button>
+              <button onClick={addTodo} title="Checklist" style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer' }}><CheckSquare size={22} /></button>
+              <button onClick={addQuote} title="Quote" style={{ background: 'transparent', border: 'none', color: '#9b59b6', cursor: 'pointer' }}><Quote size={22} /></button>
+              {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
+              <button onClick={addPhoto} title="Upload Photo" disabled={isUploading} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: isUploading ? 'not-allowed' : 'pointer', opacity: isUploading ? 0.5 : 1 }}>{isUploading ? <Loader2 size={22} className="lucide-spin" /> : <ImageIcon size={22} />}</button>
+              <button onClick={() => { setShowMediaModal(true); setShowMobileTools(false); }} title="Library Books" style={{ background: 'transparent', border: 'none', color: '#e67e22', cursor: 'pointer' }}><BookOpen size={22} /></button>
+              {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
+              <button onClick={() => { setShowStickerMenu(!showStickerMenu); setShowBgMenu(false); setShowMobileTools(false); }} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer' }}><SmilePlus size={22} /></button>
+              <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); setShowMobileTools(false); }} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
+              {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
+              <button onClick={saveDesk} disabled={isSaving} title="Save Desk Layout" style={{ background: 'transparent', border: 'none', color: '#95a5a6', cursor: isSaving ? 'wait' : 'pointer', opacity: isSaving ? 0.5 : 1 }}><Save size={22} /></button>
+              <button onClick={() => { setShowArchiveModal(true); setShowMobileTools(false); }} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
+              {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
+              <button onClick={() => alert("Oracle Lens coming next!")} title="Ask Oracle AI" style={{ background: 'transparent', border: 'none', color: '#a29bfe', cursor: 'pointer' }}><Sparkles size={22} /></button>
+            </div>
+          )}
 
-          {/* Right Vault Access */}
-          <div className="mobile-top-nav" style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-            <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}><Lock size={18} /> <span className="hide-on-mobile">Vault</span></button>
-          </div>
+          {/* Mobile Master Dock (Replaces the massive horizontal bar) */}
+          {isMobile && (
+            <div style={{ pointerEvents: 'auto', display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+              <div style={{ display: 'flex', gap: '15px' }}>
+                <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)' }}><ChevronLeft size={20} /></button>
+                <span style={{ color: '#fff', fontWeight: 'bold' }}>{activeJournal?.name.replace('Page ', 'Pg ')}</span>
+                <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)' }}><ChevronRight size={20} /></button>
+              </div>
+              <button onClick={() => setShowMobileTools(!showMobileTools)} style={{ background: 'var(--lantern-gold)', border: 'none', color: '#000', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Wrench size={20} /></button>
+              <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db' }}><Lock size={20} /></button>
+            </div>
+          )}
+
+          {!isMobile && (
+            <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+              <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}><Lock size={18} /> Vault</button>
+            </div>
+          )}
         </div>
 
-        {/* POPUP MENUS */}
+        {/* POPUP THEME MENU */}
         {showBgMenu && (
-          <div className="mobile-bottom-nav hide-scrollbar" style={{ position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(7, 40px)', gap: '10px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
+          <div style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 40px)' : 'repeat(7, 40px)', gap: '10px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
             {Object.keys(themes).map(key => (
               <button key={key} title={key} onClick={() => { setBgTheme(key); setShowBgMenu(false); }} style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : '2px solid transparent', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }} />
             ))}
           </div>
         )}
 
+        {/* POPUP STICKER MENU */}
         {showStickerMenu && (
-          <div className="mobile-bottom-nav hide-scrollbar" style={{ position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
+          <div style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
             {['☕', '🕯️', '🥀', '🕰️', '🎞️', '🎟️', '🖋️', '🍷', '🌿', '🗝️', '📜', '🌙', '🍂', '📌', '📎', '🔍'].map(emoji => (
-              <button key={emoji} onClick={() => addSticker(emoji)} style={{ fontSize: '2rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e => e.target.style.transform = 'scale(1.2)'} onMouseOut={e => e.target.style.transform = 'scale(1)'}>{emoji}</button>
+              <button key={emoji} onClick={() => addSticker(emoji)} style={{ fontSize: '2rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }}>{emoji}</button>
             ))}
           </div>
         )}
 
-        {/* ARCHIVE & MEDIA MODALS (Unchanged logic, just keeping structure) */}
+        {/* MODALS */}
         {showMediaModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
             <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}><h2 style={{ margin: 0, color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Select from Archives</h2><button onClick={() => setShowMediaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button></div>
               <div style={{ overflowY: 'auto', flexGrow: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '15px' }}>
                 {profileData ? [...profileData.finishedList, ...profileData.currentlyConsuming, ...profileData.tbrList].map((media, i) => (
-                  <div key={i} onClick={() => addMediaItem(media)} style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onMouseOver={e=>e.currentTarget.style.transform='scale(1.05)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'}>
+                  <div key={i} onClick={() => addMediaItem(media)} style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
                     <img src={media.coverImage || 'https://via.placeholder.com/100'} alt={media.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #444' }} />
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', marginTop: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{media.title}</p>
                   </div>
@@ -364,6 +391,7 @@ export default function Scrapbook() {
             </form>
           </div>
         )}
+
       </div>
     </div>
   );
