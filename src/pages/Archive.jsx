@@ -45,9 +45,8 @@ export default function Archive() {
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
     
-    // 🔥 FIX: Navigates back to your root Scrapbook page!
-    // (If your desk is NOT your homepage, change '/' to your exact route)
-    navigate('/', { state: { targetPageIndex: pageIndex } }); 
+    // 🔥 CHANGE '/YOUR_PEN_PAGE_URL' TO YOUR ACTUAL URL (e.g., '/write' or '/journal')
+    navigate('/desk', { state: { targetPageIndex: pageIndex } }); 
   };
 
   const themes = {
