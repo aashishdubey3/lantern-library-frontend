@@ -406,3 +406,38 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
+/* =========================================
+   📱 GLOBAL MOBILE RESPONSIVENESS FIXES
+   ========================================= */
+body, html, #root {
+  max-width: 100vw;
+  overflow-x: hidden; /* Stops the entire website from sliding left and right */
+}
+
+/* Hide the scrollbar in toolbars so it looks like a native app */
+.hide-scrollbar::-webkit-scrollbar { 
+  display: none; 
+}
+.hide-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}
+
+@media (max-width: 768px) {
+  /* Forces the top navigation bar to fit within the phone screen */
+  header, nav, [style*="display: flex"][style*="justify-content: space-between"] {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Shrinks the "THE LANTERN LIBRARY" text so the avatar fits */
+  h1, .logo-text, [style*="THE LANTERN LIBRARY"] {
+    font-size: 1.1rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 130px !important; 
+  }
+}

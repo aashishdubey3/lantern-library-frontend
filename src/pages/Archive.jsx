@@ -46,8 +46,8 @@ export default function Archive() {
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
     
-    // 🔥 FIX: Navigates to your scrapbook, not the home page! (Change '/scrapbook' if your route is different)
-    navigate('/scrapbook', { state: { targetPageIndex: pageIndex } }); 
+    // 🔥 THE FIX: Changed '/scrapbook' to '/' so it correctly finds your home desk!
+    navigate('/', { state: { targetPageIndex: pageIndex } }); 
   };
 
   const themes = {
