@@ -7,22 +7,25 @@ import {
   Sparkles, Settings2, Trash2, ZoomIn, ZoomOut, Move, Undo, Redo
 } from 'lucide-react';
 
-// 🔥 THE SMART AUTO-EXPANDING TEXT BOX
+// 🔥 THE FIXED AUTO-EXPANDING TEXT BOX (No more scroll traps!)
 const AutoExpandingTextarea = ({ item, updateItemText, onFocus, textStyle, placeholder }) => {
   const textareaRef = useRef(null);
-  useEffect(() => {
+  
+  const adjustHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
     }
-  }, [item.text]);
+  };
+
+  useEffect(() => { adjustHeight(); }, [item.text]);
 
   return (
     <textarea 
       ref={textareaRef}
       onFocus={onFocus} 
       value={item.text || ''} 
-      onChange={(e) => updateItemText(item.id, { text: e.target.value })} 
+      onChange={(e) => { updateItemText(item.id, { text: e.target.value }); adjustHeight(); }} 
       placeholder={placeholder} 
       onPointerDown={(e) => e.stopPropagation()} 
       style={{ ...textStyle, overflow: 'hidden', resize: 'none' }} 
@@ -56,14 +59,12 @@ export default function Scrapbook() {
   const navigate = useNavigate();
   const location = useLocation(); 
 
-  // 🔥 BULLETPROOF SAFEGUARDS: Prevents older database saves from crashing the app!
   const activeJournal = journals.find(j => j.id === activeJournalId) || journals[0] || { id: Date.now(), name: 'Page 1', items: [] };
   const items = activeJournal?.items || [];
   const currentIndex = journals.findIndex(j => j.id === activeJournalId);
   const safeJournalName = activeJournal?.name || `Page ${currentIndex + 1}`;
   const safeActiveJournalId = activeJournal?.id;
 
-  // 🔥 ALL 3 THEMES RETURNED: Grid, Lined, and Dotted!
   const themes = {
     lined: { bg: '#fdf6e3', img: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px)', size: '100% 32px' },
     grid: { bg: '#fdf6e3', img: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px)', size: '32px 32px' },
@@ -99,7 +100,6 @@ export default function Scrapbook() {
     .then(res => res.json())
     .then(data => {
       if (data && data.pages && data.pages.length > 0) {
-        // 🔥 CRASH FIX: Scrubs old data so it cannot trigger a white screen
         const safePages = data.pages.map(p => ({ ...p, name: p.name || 'Page 1', items: p.items || [] }));
         setJournals(safePages);
         
@@ -114,7 +114,6 @@ export default function Scrapbook() {
     }).catch(() => setIsLoadingDesk(false));
   }, [location.state]);
 
-  // INVISIBLE AUTO-SAVE
   useEffect(() => {
     if (isLoadingDesk) return;
     const token = localStorage.getItem('token');
@@ -224,6 +223,7 @@ export default function Scrapbook() {
   };
 
   const renderItemContent = (item) => {
+    // 🔥 FIXED TEXT STYLE: Removed ALL maxHeight and overflow restrictions so paragraphs flow freely!
     const textStyle = { flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', fontFamily: item.font, color: item.textColor || '#000', lineHeight: '1.5', cursor: 'text', minWidth: '150px' };
 
     switch (item.type) {
@@ -287,7 +287,7 @@ export default function Scrapbook() {
         .item-container:hover .item-controls, .item-container.focused .item-controls { opacity: 1; pointer-events: auto; }
       `}</style>
 
-      {/* 📱 MOBILE TOP BAR (Exactly what you asked for!) */}
+      {/* 📱 MOBILE TOP BAR */}
       {isMobile && (
         <div style={{ height: '60px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px', zIndex: 1000, pointerEvents: 'auto' }}>
           
@@ -461,7 +461,6 @@ export default function Scrapbook() {
         </div>
       )}
       
-      {/* 🔥 MEDIA MODAL (Fully visible on top of everything) */}
       {showMediaModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
@@ -477,7 +476,6 @@ export default function Scrapbook() {
         </div>
       )}
 
-      {/* ARCHIVE MODAL */}
       {showArchiveModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px' }}>

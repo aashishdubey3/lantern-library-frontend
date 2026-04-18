@@ -30,7 +30,10 @@ export default function Archive() {
     
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/${id}`, { 
+        method: 'DELETE', 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
       if (!res.ok) throw new Error("Server refused deletion");
     } catch(err) {
       alert("Backend error! Failed to delete.");
@@ -42,8 +45,8 @@ export default function Archive() {
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
     
-    // 🔥 EDIT BUTTON FIX: Change '/write' to whatever URL your Pen icon uses!
-    navigate('/write', { state: { targetPageIndex: pageIndex } }); 
+    // 🔥 CHANGE '/YOUR_PEN_PAGE_URL' TO YOUR ACTUAL URL (e.g., '/write' or '/journal')
+    navigate('/desk', { state: { targetPageIndex: pageIndex } }); 
   };
 
   const themes = {
@@ -64,10 +67,8 @@ export default function Archive() {
     const activePage = pages[pageIndex] || pages[0];
     const items = activePage?.items || [];
     
+    // Safely extract the background properties
     const vaultBg = themes[viewingArchive.theme] || themes['lined'];
-    
-    // 🔥 FATAL CRASH FIX: Protects against missing names in old databases
-    const safeName = activePage?.name || 'Page 1';
 
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100000, overflow: 'hidden' }}>
@@ -79,18 +80,20 @@ export default function Archive() {
           }
         `}</style>
 
+        {/* VAULT TOP NAV */}
         <div style={{ position: 'absolute', top: '20px', left: '10px', right: '10px', display: 'flex', justifyContent: 'space-between', zIndex: 100001 }}>
           <button className="vault-nav-btn" onClick={() => setViewingArchive(null)} style={{ padding: '10px 20px', background: 'rgba(0,0,0,0.8)', color: 'var(--lantern-gold)', border: '1px solid var(--lantern-gold)', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><ChevronLeft size={18} /> <span className="vault-nav-text">Close</span></button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.8)', padding: '5px 15px', borderRadius: '30px', border: '1px solid var(--border-color)', color: '#fff' }}>
             <button onClick={() => setPageIndex(Math.max(0, pageIndex - 1))} disabled={pageIndex === 0} style={{ background: 'transparent', border: 'none', color: pageIndex === 0 ? '#555' : '#fff', cursor: 'pointer' }}><ChevronLeft size={20} /></button>
-            <span className="vault-nav-text" style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{safeName.replace('Page ', 'Pg ')}</span>
+            <span className="vault-nav-text" style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{activePage.name.replace('Page ', 'Pg ')}</span>
             <button onClick={() => setPageIndex(Math.min(pages.length - 1, pageIndex + 1))} disabled={pageIndex === pages.length - 1} style={{ background: 'transparent', border: 'none', color: pageIndex === pages.length - 1 ? '#555' : '#fff', cursor: 'pointer' }}><ChevronRight size={20} /></button>
           </div>
 
           <button className="vault-nav-btn" onClick={restoreToDesk} style={{ padding: '10px 20px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Edit3 size={18} /> <span className="vault-nav-text">Edit</span></button>
         </div>
         
+        {/* DESK BACKGROUND */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: vaultBg.bg, backgroundImage: vaultBg.img, backgroundSize: vaultBg.size }}>
           
           {items.map(item => (
@@ -108,29 +111,30 @@ export default function Archive() {
                 transformOrigin: 'top left'
               }}
             >
-              {item.type === 'note' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#000', lineHeight: '1.5', minWidth: '150px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent' }}>{item.text || ''}</div>}
-              {item.type === 'text' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || '#000', lineHeight: '1.6', minWidth: '200px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent' }}>{item.text || ''}</div>}
+              {/* 🔥 READ-ONLY PARAGRAPHS - Expands naturally without scroll traps! */}
+              {item.type === 'note' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#000', lineHeight: '1.5', minWidth: '150px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent' }}>{item.text}</div>}
+              {item.type === 'text' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || '#000', lineHeight: '1.6', minWidth: '200px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent' }}>{item.text}</div>}
               
               {item.type === 'quote' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
                   <span style={{ fontSize: '4rem', color: 'rgba(0,0,0,0.1)', position: 'absolute', top: '-15px', left: '5px', fontFamily: 'var(--font-heading)' }}>"</span>
-                  <div style={{ fontFamily: item.font || 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor || '#000', textAlign: 'center', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{item.text || ''}</div>
-                  <div style={{ textAlign: 'center', color: item.textColor || '#000', opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }}>- {item.author || ''}</div>
+                  <div style={{ fontFamily: item.font || 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor || '#000', textAlign: 'center', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{item.text}</div>
+                  <div style={{ textAlign: 'center', color: item.textColor || '#000', opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }}>- {item.author}</div>
                 </div>
               )}
               {item.type === 'photo' && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <img src={item.url} alt="Polaroid" style={{ width: '200px', height: '200px', objectFit: 'cover', border: '1px solid #ddd' }} />
-                  <div style={{ marginTop: '15px', textAlign: 'center', fontFamily: item.font || '"Comic Sans MS", cursive, sans-serif', color: item.textColor || '#000', width: '100%' }}>{item.caption || ''}</div>
+                  <div style={{ marginTop: '15px', textAlign: 'center', fontFamily: item.font || '"Comic Sans MS", cursive, sans-serif', color: item.textColor || '#000', width: '100%' }}>{item.caption}</div>
                 </div>
               )}
               {item.type === 'todo' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
                   <h4 style={{ margin: '0 0 5px 0', fontFamily: item.font || 'var(--font-heading)', color: item.textColor || '#000', borderBottom: `1px solid ${(item.textColor || '#000')}40`, paddingBottom: '5px' }}>{item.listTitle || 'Checklist'}</h4>
-                  {(item.tasks || []).map(task => (
+                  {item.tasks.map(task => (
                     <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <input type="checkbox" checked={task.done} readOnly style={{ width: '18px', height: '18px' }} />
-                      <span style={{ fontSize: '0.95rem', color: item.textColor || '#000', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }}>{task.text || ''}</span>
+                      <span style={{ fontSize: '0.95rem', color: item.textColor || '#000', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }}>{task.text}</span>
                     </div>
                   ))}
                 </div>
@@ -138,10 +142,10 @@ export default function Archive() {
               {item.type === 'sticker' && <div style={{ fontSize: '5rem', filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.3))' }}>{item.emoji}</div>}
               {item.type === 'media' && (
                 <div style={{ filter: 'drop-shadow(5px 10px 15px rgba(0,0,0,0.5))' }}>
-                  {item.media?.mediaType === 'book' && item.displayStyle === 'spine' ? (
+                  {item.media.mediaType === 'book' && item.displayStyle === 'spine' ? (
                     <div className="shelf-book-spine" style={{ backgroundImage: `url(${item.media.coverImage})`, width: '50px', height: '200px', margin: 0 }}><span className="spine-title">{item.media.title}</span></div>
                   ) : (
-                    <img src={item.media?.coverImage} className={item.media?.mediaType === 'book' ? "shelf-book" : "film-poster"} style={{ width: '130px', height: '190px', margin: 0, borderRadius: item.media?.mediaType === 'book' ? '2px 6px 6px 2px' : '4px' }} alt="Media" />
+                    <img src={item.media.coverImage} className={item.media.mediaType === 'book' ? "shelf-book" : "film-poster"} style={{ width: '130px', height: '190px', margin: 0, borderRadius: item.media.mediaType === 'book' ? '2px 6px 6px 2px' : '4px' }} alt="Media" />
                   )}
                 </div>
               )}
@@ -152,7 +156,6 @@ export default function Archive() {
     );
   }
 
-  // ... (Keep the rest of the Archive return exactly as it was)
   return (
     <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
