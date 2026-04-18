@@ -147,7 +147,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 .chat-timestamp { font-size: 0.7rem; color: var(--text-muted); margin-top: 5px; padding: 0 5px; }
 
 @media (max-width: 768px) {
-  /* Hides the global footer on mobile to prevent it bleeding into apps */
+  /* Hide standard footer to make desk feel like an app */
   footer { display: none !important; }
 
   header, nav, .navbar {
@@ -167,37 +167,23 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
     vertical-align: middle;
   }
 
-  .profile-tabs, [style*="overflow-x"], [style*="overflowX"] {
-    justify-content: flex-start !important;
-    padding-left: 20px !important;
-    padding-right: 20px !important;
-  }
-
-  /* 🔥 THE ULTIMATE ORACLE FIX */
-  div:has(> [style*="ANALYZE MY TASTE"]),
-  .oracle-card {
+  /* 🔥 THE ABSOLUTE ORACLE BUTTON FIX */
+  .oracle-card, div:has(> [style*="ANALYZE MY TASTE"]) {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: center !important;
-    padding-bottom: 30px !important;
+    text-align: center !important;
   }
 
-  [style*="ANALYZE MY TASTE"] {
-    position: relative !important; 
-    right: auto !important;
-    top: auto !important;
-    bottom: auto !important;
-    left: auto !important;
-    margin-top: 25px !important;
-    width: 85% !important; /* Stretches nicely across the card */
-    min-width: 200px !important;
-    max-width: none !important; 
-    height: auto !important;
-    padding: 15px !important;
-    font-size: 0.9rem !important;
-    white-space: normal !important; /* Allows text to wrap */
-    line-height: 1.4 !important;
+  button[style*="ANALYZE MY TASTE"], .oracle-card button {
+    position: static !important;
+    margin-top: 20px !important;
+    width: auto !important;
+    min-width: 220px !important; 
+    max-width: none !important;
+    white-space: nowrap !important; /* FORCES it to stay on one line! */
+    padding: 12px 20px !important;
+    font-size: 14px !important;
   }
 }
 

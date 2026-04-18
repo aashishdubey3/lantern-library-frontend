@@ -1,31 +1,35 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox, Sparkles, ZoomIn, ZoomOut, Wrench } from 'lucide-react';
+import { 
+  StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, 
+  X, RefreshCcw, Type, Plus, ChevronLeft, ChevronRight, Palette, Lock, Droplet, Inbox, Sparkles, 
+  Undo, Redo, Check, Settings2, Trash2
+} from 'lucide-react';
 
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
-  const [activeJournalId, setActiveJournalId] = useState(null);
   
+  // 🔥 UNDO / REDO HISTORY STATE
+  const [past, setPast] = useState([]);
+  const [future, setFuture] = useState([]);
+  
+  const [activeJournalId, setActiveJournalId] = useState(null);
   const [profileData, setProfileData] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingDesk, setIsLoadingDesk] = useState(true); 
   
-  const [showMediaModal, setShowMediaModal] = useState(false);
-  const [showStickerMenu, setShowStickerMenu] = useState(false);
-  const [showBgMenu, setShowBgMenu] = useState(false);
-  const [showMobileTools, setShowMobileTools] = useState(false); 
+  // 🔥 NATIVE APP BOTTOM SHEETS
+  const [activeSheet, setActiveSheet] = useState(null); // 'add', 'format', 'skins', 'archive', 'media', 'stickers'
   
   const [bgTheme, setBgTheme] = useState('lined'); 
   const [activeZIndex, setActiveZIndex] = useState(10);
   const [focusedItemId, setFocusedItemId] = useState(null); 
   
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [archiveTitle, setArchiveTitle] = useState('');
   const [isArchiving, setIsArchiving] = useState(false);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
   const constraintsRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation(); 
@@ -44,8 +48,6 @@ export default function Scrapbook() {
     green: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)'
   };
   const themeSwatches = { lined: '#fdf6e3', grid: '#e5e5e5', leather: '#2b170c', parchment: '#f4ecd8', wood: '#4e342e', slate: '#2c3e50', green: '#1b4332' };
-  const isDarkTheme = ['leather', 'wood', 'slate', 'green'].includes(bgTheme);
-  const defaultTextColor = isDarkTheme ? '#fdf6e3' : '#2c3e50';
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -56,7 +58,6 @@ export default function Scrapbook() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-
     fetch('https://lantern-library-backend.onrender.com/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(res => res.json()).then(data => setProfileData(data)).catch(console.error);
 
@@ -74,34 +75,56 @@ export default function Scrapbook() {
     }).catch(() => setIsLoadingDesk(false));
   }, [location.state]);
 
-  // AUTO-SAVE ENGINE
+  // INVISIBLE AUTO-SAVE
   useEffect(() => {
     if (isLoadingDesk) return;
     const token = localStorage.getItem('token');
     if (!token) return;
     const autoSaveTimer = setTimeout(() => {
-      fetch('https://lantern-library-backend.onrender.com/api/journals', {
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ pages: journals, theme: bgTheme }) 
-      }).catch(err => console.error("Auto-save failed", err));
+      fetch('https://lantern-library-backend.onrender.com/api/journals', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ pages: journals, theme: bgTheme }) }).catch(console.error);
     }, 1000); 
     return () => clearTimeout(autoSaveTimer);
   }, [journals, bgTheme, isLoadingDesk]);
 
+  // 🔥 HISTORY LOGIC (Undo / Redo)
+  const commitHistory = (newJournals) => {
+    setPast([...past, journals]);
+    setFuture([]);
+    setJournals(newJournals);
+  };
+  const undo = () => {
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    setPast(past.slice(0, -1));
+    setFuture([journals, ...future]);
+    setJournals(previous);
+  };
+  const redo = () => {
+    if (future.length === 0) return;
+    const next = future[0];
+    setFuture(future.slice(1));
+    setPast([...past, journals]);
+    setJournals(next);
+  };
+
   const bringToFront = () => { setActiveZIndex(prev => prev + 1); return activeZIndex + 1; };
-  const createNewPage = () => { const newId = Date.now(); setJournals([...journals, { id: newId, name: `Page ${journals.length + 1}`, items: [] }]); setActiveJournalId(newId); };
+  
+  const createNewPage = () => { const newId = Date.now(); commitHistory([...journals, { id: newId, name: `Page ${journals.length + 1}`, items: [] }]); setActiveJournalId(newId); };
   const goToPrevPage = () => { if (currentIndex > 0) setActiveJournalId(journals[currentIndex - 1].id); };
   const goToNextPage = () => { if (currentIndex < journals.length - 1) setActiveJournalId(journals[currentIndex + 1].id); };
 
-  const addItemToJournal = (newItem) => { setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); setShowMobileTools(false); };
+  const addItemToJournal = (newItem) => { 
+    commitHistory(journals.map(j => j.id === activeJournalId ? { ...j, items: [...j.items, newItem] } : j)); 
+    setActiveSheet(null); 
+    setFocusedItemId(newItem.id);
+  };
 
   const addNote = () => addItemToJournal({ id: Date.now(), type: 'note', text: '', x: 0, y: 0, scale: 1, font: '"Courier New", Courier, monospace', bgColor: '#fdf3c6', textColor: '#2c3e50', zIndex: bringToFront() });
-  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, scale: 1, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() }); 
-  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, scale: 1, font: 'var(--font-heading)', bgColor: 'transparent', textColor: defaultTextColor, zIndex: bringToFront() });
+  const addText = () => addItemToJournal({ id: Date.now(), type: 'text', text: '', x: 0, y: 0, scale: 1, font: 'var(--font-heading)', bgColor: 'transparent', textColor: '#2c3e50', zIndex: bringToFront() }); 
+  const addQuote = () => addItemToJournal({ id: Date.now(), type: 'quote', text: '', author: '', x: 0, y: 0, scale: 1, font: 'var(--font-heading)', bgColor: 'transparent', textColor: '#2c3e50', zIndex: bringToFront() });
   const addTodo = () => addItemToJournal({ id: Date.now(), type: 'todo', listTitle: 'Checklist', tasks: [{ id: 1, text: '', done: false }], x: 0, y: 0, scale: 1, bgColor: 'rgba(253, 246, 227, 0.9)', textColor: '#2c3e50', font: 'var(--font-body)', zIndex: bringToFront() });
-  const addSticker = (emoji) => { addItemToJournal({ id: Date.now(), type: 'sticker', emoji, x: 0, y: 0, scale: 1, zIndex: bringToFront() }); setShowStickerMenu(false); };
-  const addMediaItem = (media) => { addItemToJournal({ id: Date.now(), type: 'media', media, x: 0, y: 0, scale: 1, displayStyle: media.mediaType === 'book' ? 'spine' : 'cover', zIndex: bringToFront() }); setShowMediaModal(false); };
+  const addSticker = (emoji) => addItemToJournal({ id: Date.now(), type: 'sticker', emoji, x: 0, y: 0, scale: 1, zIndex: bringToFront() }); 
+  const addMediaItem = (media) => addItemToJournal({ id: Date.now(), type: 'media', media, x: 0, y: 0, scale: 1, displayStyle: media.mediaType === 'book' ? 'spine' : 'cover', zIndex: bringToFront() }); 
 
   const addPhoto = () => {
     const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
@@ -113,18 +136,21 @@ export default function Scrapbook() {
         const res = await fetch('https://api.cloudinary.com/v1_1/dfugne8fq/image/upload', { method: 'POST', body: formData });
         const data = await res.json();
         addItemToJournal({ id: Date.now(), type: 'photo', url: data.secure_url, caption: '', x: 0, y: 0, scale: 1, font: '"Comic Sans MS", cursive, sans-serif', textColor: '#2c3e50', zIndex: bringToFront() });
-      } catch (err) { alert('Upload failed'); } finally { setIsUploading(false); setShowMobileTools(false); }
+      } catch (err) { alert('Upload failed'); } finally { setIsUploading(false); setActiveSheet(null); }
     };
     input.click();
   };
 
-  const deleteItem = (id) => { 
-    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j)); 
-    setFocusedItemId(null); 
-  };
+  const deleteItem = (id) => { commitHistory(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.filter(item => item.id !== id) } : j)); setFocusedItemId(null); setActiveSheet(null); };
   
-  const updateItem = (id, updates) => { 
-    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j)); 
+  // Real-time typing update (Does NOT trigger undo history to avoid lag)
+  const updateItemText = (id, updates) => {
+    setJournals(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j));
+  };
+
+  // Dragging/Styling update (Triggers history)
+  const updateItemCommitted = (id, updates) => {
+    commitHistory(journals.map(j => j.id === activeJournalId ? { ...j, items: j.items.map(item => item.id === id ? { ...item, ...updates } : item) } : j));
   };
 
   const updateTodoTask = (itemId, taskId, updates) => {
@@ -150,54 +176,30 @@ export default function Scrapbook() {
     setIsArchiving(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ title: archiveTitle, theme: bgTheme, pages: journals, items: activeJournal.items }) 
-      });
+      const res = await fetch('https://lantern-library-backend.onrender.com/api/journals/archive', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title: archiveTitle, theme: bgTheme, pages: journals, items: activeJournal.items }) });
       if (res.ok) {
-        alert("Notebook securely locked in your Vault!");
-        setShowArchiveModal(false); setArchiveTitle('');
-        setJournals([{ id: Date.now(), name: 'Page 1', items: [] }]); 
+        alert("Notebook locked in Vault!");
+        setActiveSheet(null); setArchiveTitle('');
+        commitHistory([{ id: Date.now(), name: 'Page 1', items: [] }]); 
       }
     } catch (err) { alert("Failed to archive page."); } finally { setIsArchiving(false); }
   };
 
-  // 🔥 SMART AUTO-RESIZE FOR TEXTAREAS
-  const handleTextResize = (el) => {
-    if (el) {
-      el.style.height = 'auto';
-      el.style.height = el.scrollHeight + 'px';
-    }
-  };
-
   const renderItemContent = (item) => {
+    // 🔥 FIX: maxHeight 40vh keeps huge texts from taking over the screen.
+    const textStyle = { flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: item.font, color: item.textColor, lineHeight: '1.5', cursor: 'text', minHeight: '100px', minWidth: '150px', maxHeight: '40vh', overflowY: 'auto' };
+
     switch (item.type) {
       case 'note':
       case 'text':
-        return <textarea 
-          ref={handleTextResize}
-          onFocus={() => setFocusedItemId(item.id)} 
-          value={item.text} 
-          onChange={(e) => { handleTextResize(e.target); updateItem(item.id, { text: e.target.value }); }} 
-          placeholder={item.type === 'note' ? "Scribble thoughts..." : "Type here..."} 
-          onPointerDownCapture={(e) => e.stopPropagation()} 
-          style={{ flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: item.font, fontSize: item.type === 'note' ? '1.05rem' : '1.4rem', color: item.textColor, lineHeight: '1.5', cursor: 'text', minHeight: '100px', minWidth: '150px', overflow: 'hidden' }} 
-        />;
+        return <textarea onFocus={() => { setFocusedItemId(item.id); setActiveSheet(isMobile ? 'format' : null); }} value={item.text} onChange={(e) => updateItemText(item.id, { text: e.target.value })} placeholder={item.type === 'note' ? "Scribble thoughts..." : "Type here..."} onPointerDownCapture={(e) => e.stopPropagation()} style={{ ...textStyle, fontSize: item.type === 'note' ? '1.05rem' : '1.4rem' }} />;
       
       case 'quote':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
             <span style={{ fontSize: '4rem', color: 'rgba(0, 0, 0, 0.1)', position: 'absolute', top: '-15px', left: '5px', fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}>"</span>
-            <textarea 
-              ref={handleTextResize}
-              onFocus={() => setFocusedItemId(item.id)} 
-              value={item.text} 
-              onChange={(e) => { handleTextResize(e.target); updateItem(item.id, { text: e.target.value }); }} 
-              placeholder="Enter a profound quote..." 
-              onPointerDownCapture={(e) => e.stopPropagation()} 
-              style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', resize: 'both', fontFamily: item.font, fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor, textAlign: 'center', minHeight: '80px', zIndex: 1, overflow: 'hidden' }} 
-            />
-            <input onFocus={() => setFocusedItemId(item.id)} value={item.author} onChange={(e) => updateItem(item.id, { author: e.target.value })} placeholder="- Author" onPointerDownCapture={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: item.textColor, opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
+            <textarea onFocus={() => { setFocusedItemId(item.id); setActiveSheet(isMobile ? 'format' : null); }} value={item.text} onChange={(e) => updateItemText(item.id, { text: e.target.value })} placeholder="Enter a profound quote..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ ...textStyle, fontSize: '1.3rem', fontStyle: 'italic', textAlign: 'center', minHeight: '80px', zIndex: 1 }} />
+            <input onFocus={() => setFocusedItemId(item.id)} value={item.author} onChange={(e) => updateItemText(item.id, { author: e.target.value })} placeholder="- Author" onPointerDownCapture={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: item.textColor, opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
           </div>
         );
       
@@ -205,14 +207,14 @@ export default function Scrapbook() {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <img src={item.url} alt="Polaroid" draggable="false" style={{ width: '200px', height: '200px', objectFit: 'cover', pointerEvents: 'none', border: '1px solid #ddd' }} />
-            <input onFocus={() => setFocusedItemId(item.id)} value={item.caption} onChange={(e) => updateItem(item.id, { caption: e.target.value })} placeholder="Write a caption..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: item.font, color: item.textColor, width: '100%', fontSize: '1rem' }} />
+            <input onFocus={() => { setFocusedItemId(item.id); setActiveSheet(isMobile ? 'format' : null); }} value={item.caption} onChange={(e) => updateItemText(item.id, { caption: e.target.value })} placeholder="Write a caption..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: item.font, color: item.textColor, width: '100%', fontSize: '1rem' }} />
           </div>
         );
       
       case 'todo':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
-            <input onFocus={() => setFocusedItemId(item.id)} value={item.listTitle || ''} onChange={(e) => updateItem(item.id, { listTitle: e.target.value })} placeholder="List Title..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ margin: '0 0 5px 0', fontFamily: item.font, color: item.textColor, borderBottom: `1px solid ${item.textColor}40`, paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px', maxHeight: '40vh', overflowY: 'auto' }}>
+            <input onFocus={() => { setFocusedItemId(item.id); setActiveSheet(isMobile ? 'format' : null); }} value={item.listTitle || ''} onChange={(e) => updateItemText(item.id, { listTitle: e.target.value })} placeholder="List Title..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ margin: '0 0 5px 0', fontFamily: item.font, color: item.textColor, borderBottom: `1px solid ${item.textColor}40`, paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold' }} />
             {item.tasks.map(task => (
               <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <input type="checkbox" checked={task.done} onChange={(e) => updateTodoTask(item.id, task.id, { done: e.target.checked })} onPointerDownCapture={(e) => e.stopPropagation()} style={{ cursor: 'pointer', width: '18px', height: '18px' }} />
@@ -238,31 +240,44 @@ export default function Scrapbook() {
     }
   };
 
+  const selectedItem = items.find(i => i.id === focusedItemId);
+
   if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: '#000', zIndex: 9999 }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
       
-      <style>{`
-        .item-container .item-controls { opacity: 0; transition: opacity 0.2s; pointer-events: none; } 
-        .item-container:hover .item-controls, .item-container.focused .item-controls { opacity: 1; pointer-events: auto; }
-        
-        @media (max-width: 768px) {
-          .mobile-top-nav { width: 90% !important; padding: 8px 15px !important; gap: 8px !important; }
-          .mobile-top-nav span, .mobile-top-nav button { font-size: 0.8rem !important; }
-          .mobile-bottom-nav { width: 95% !important; padding: 10px !important; gap: 8px !important; justify-content: flex-start !important; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
-          .mobile-bottom-nav button { padding: 5px !important; flex-shrink: 0; }
-          .mobile-item-controls { padding: 4px 8px !important; gap: 6px !important; top: -38px !important; right: auto !important; left: 0 !important; transform: scale(0.9); transform-origin: top left; }
-        }
-      `}</style>
+      {/* 📱 NATIVE APP TOP BAR (Mobile Only) */}
+      {isMobile && (
+        <div style={{ height: '60px', background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 15px', zIndex: 1000 }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', display: 'flex', alignItems: 'center' }}><ChevronLeft size={24} /></button>
+          
+          <div style={{ display: 'flex', gap: '20px' }}>
+            <button onClick={undo} disabled={past.length === 0} style={{ background: 'transparent', border: 'none', color: past.length === 0 ? '#555' : 'var(--text-main)' }}><Undo size={22} /></button>
+            <button onClick={redo} disabled={future.length === 0} style={{ background: 'transparent', border: 'none', color: future.length === 0 ? '#555' : 'var(--text-main)' }}><Redo size={22} /></button>
+          </div>
 
-      <div ref={constraintsRef} onPointerDown={() => setFocusedItemId(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: themes[bgTheme], backgroundSize: bgTheme.includes('lined') || bgTheme.includes('grid') ? '100% 32px, 32px 32px' : 'auto', transition: 'background 0.5s ease' }}>
-        
+          <button onClick={() => setActiveSheet(null)} style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)' }}><Check size={24} /></button>
+        </div>
+      )}
+
+      {/* DESKTOP TOP BAR (Unchanged) */}
+      {!isMobile && (
+        <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 1000 }}>
+          <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)' }}><ChevronLeft size={20} /></button>
+          <span style={{ color: '#fff', fontWeight: 'bold' }}>{activeJournal?.name}</span>
+          <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)' }}><ChevronRight size={20} /></button>
+          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
+          <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Plus size={16} /> New Page</button>
+        </div>
+      )}
+
+      {/* 🎨 MAIN CANVAS */}
+      <div ref={constraintsRef} onPointerDown={() => { setFocusedItemId(null); setActiveSheet(null); }} style={{ flex: 1, position: 'relative', background: themes[bgTheme], backgroundSize: bgTheme.includes('lined') || bgTheme.includes('grid') ? '100% 32px, 32px 32px' : 'auto', transition: 'background 0.5s ease', overflow: 'hidden' }}>
         {items.map(item => (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, scale: 0.8 }}  
-            animate={{ opacity: 1, scale: item.scale || 1 }} 
+            initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: item.scale || 1 }} 
             drag dragConstraints={constraintsRef} dragElastic={0.1} dragMomentum={false}
             style={{ 
               x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: isMobile ? '10%' : '40%', zIndex: item.zIndex, 
@@ -271,165 +286,191 @@ export default function Scrapbook() {
               boxShadow: (item.bgColor && item.bgColor !== 'transparent') || item.type === 'photo' ? '0 10px 25px rgba(0,0,0,0.3)' : 'none', 
               borderRadius: item.type === 'note' ? '2px 10px 10px 20px' : '8px', 
               display: 'flex', flexDirection: 'column',
-              outline: focusedItemId === item.id ? '2px dashed rgba(245, 158, 11, 0.5)' : 'none',
-              outlineOffset: '4px',
+              outline: focusedItemId === item.id ? '2px dashed rgba(245, 158, 11, 0.5)' : 'none', outlineOffset: '4px',
               touchAction: 'none' 
             }}
-            onDragEnd={(e, info) => { updateItem(item.id, { x: (item.x || 0) + info.offset.x, y: (item.y || 0) + info.offset.y }); }}
-            onPointerDown={(e) => { e.stopPropagation(); updateItem(item.id, { zIndex: bringToFront() }); setFocusedItemId(item.id); }}
+            onDragEnd={(e, info) => { updateItemCommitted(item.id, { x: (item.x || 0) + info.offset.x, y: (item.y || 0) + info.offset.y }); }}
+            onPointerDown={(e) => { e.stopPropagation(); updateItem(item.id, { zIndex: bringToFront() }); setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }}
             whileDrag={{ boxShadow: "0 20px 50px rgba(0,0,0,0.4)", zIndex: 10000 }}
-            className={`item-container ${focusedItemId === item.id ? 'focused' : ''}`}
           >
-            <div className="item-controls mobile-item-controls" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', borderRadius: '30px', padding: '6px 12px', gap: '10px', position: 'absolute', top: '-45px', right: isMobile ? 'auto' : '0px', left: isMobile ? '0px' : 'auto', zIndex: 50, boxShadow: '0 5px 15px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'nowrap' }}>
-              
-              <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { scale: Math.max(0.5, (item.scale || 1) - 0.1) }); }} title="Shrink" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomOut size={16} /></button>
-              <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { scale: Math.min(2.5, (item.scale || 1) + 0.1) }); }} title="Enlarge" style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomIn size={16} /></button>
-              <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
-
-              {['note', 'text', 'quote', 'todo', 'photo'].includes(item.type) && (
-                <select title="Font" value={item.font || 'var(--font-heading)'} onPointerDownCapture={e => e.stopPropagation()} onChange={e => updateItem(item.id, { font: e.target.value })} style={{ background: 'transparent', color: '#fff', border: 'none', outline: 'none', cursor: 'pointer', fontSize: '0.85rem' }}>
-                  <option value="var(--font-heading)">Serif</option>
-                  <option value='"Courier New", Courier, monospace'>Typewriter</option>
-                  <option value="sans-serif">Modern</option>
-                  <option value='"Comic Sans MS", cursive, sans-serif'>Handwriting</option>
-                </select>
-              )}
-
-              {['note', 'text', 'quote', 'todo', 'photo'].includes(item.type) && (
-                <div title="Text Color" style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
-                  <Type size={14} color="#fff" />
-                  <input type="color" value={item.textColor || '#000000'} onPointerDownCapture={e => e.stopPropagation()} onChange={e => updateItem(item.id, { textColor: e.target.value })} style={{ width: '20px', height: '20px', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }} />
-                </div>
-              )}
-
-              {['note', 'text', 'quote', 'todo'].includes(item.type) && (
-                <div title="Background Color" style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '10px' }}>
-                  <Palette size={14} color="#fff" />
-                  <input type="color" value={item.bgColor !== 'transparent' ? item.bgColor : '#ffffff'} onPointerDownCapture={e => e.stopPropagation()} onChange={e => updateItem(item.id, { bgColor: e.target.value })} style={{ width: '20px', height: '20px', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }} />
-                  <button onClick={(e) => { e.stopPropagation(); updateItem(item.id, { bgColor: 'transparent' }); }} title="Make Transparent" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Droplet size={14} /></button>
-                </div>
-              )}
-
-              {item.type === 'media' && item.media.mediaType === 'book' && ( 
-                <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItem(item.id, { displayStyle: item.displayStyle === 'spine' ? 'cover' : 'spine' }); }} style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer', borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '10px' }}><RefreshCcw size={16} /></button> 
-              )}
-
-              {/* 🔥 DRAG ICON REMOVED ON MOBILE SO IT DOESNT CLUTTER */}
-              {!isMobile && (
-                <>
-                  <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
-                  <div title="Drag to Move" style={{ color: '#3498db', cursor: 'grab', display: 'flex', alignItems: 'center' }}><Move size={16} /></div>
-                </>
-              )}
-              
-              {!isMobile && <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
-              <button onPointerDownCapture={(e) => { e.stopPropagation(); deleteItem(item.id); }} style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={18} /></button>
-            </div>
-
+            {/* Desktop Floating Pill */}
+            {!isMobile && focusedItemId === item.id && (
+              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', borderRadius: '30px', padding: '6px 12px', gap: '10px', position: 'absolute', top: '-45px', right: '0px', zIndex: 50, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItemCommitted(item.id, { scale: Math.max(0.5, (item.scale || 1) - 0.1) }); }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomOut size={16} /></button>
+                <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItemCommitted(item.id, { scale: Math.min(2.5, (item.scale || 1) + 0.1) }); }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomIn size={16} /></button>
+                <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
+                <div style={{ color: '#3498db', cursor: 'grab', display: 'flex', alignItems: 'center' }}><Move size={16} /></div>
+                <button onPointerDownCapture={(e) => { e.stopPropagation(); deleteItem(item.id); }} style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={18} /></button>
+              </div>
+            )}
             {renderItemContent(item)}
           </motion.div>
         ))}
-
-        <div style={{ position: 'absolute', bottom: '30px', left: '20px', right: '20px', display: 'flex', justifyContent: isMobile ? 'center' : 'space-between', alignItems: 'center', zIndex: 1000, pointerEvents: 'none' }}>
-          
-          {!isMobile && (
-            <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-              <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === 0 ? 'not-allowed' : 'pointer' }}><ChevronLeft size={20} /></button>
-              <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '0.95rem', minWidth: '60px', textAlign: 'center' }}>{activeJournal?.name}</span>
-              <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)', cursor: currentIndex === journals.length - 1 ? 'not-allowed' : 'pointer' }}><ChevronRight size={20} /></button>
-              <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
-              <button onClick={createNewPage} style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Plus size={16} /> New Page</button>
-            </div>
-          )}
-
-          {(!isMobile || showMobileTools) && (
-            <div style={{ pointerEvents: 'auto', display: isMobile ? 'grid' : 'flex', gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'none', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '15px 25px', borderRadius: isMobile ? '20px' : '40px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.8)', position: isMobile ? 'absolute' : 'relative', bottom: isMobile ? '80px' : 'auto' }}>
-              <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer' }}><Type size={22} /></button>
-              <button onClick={addNote} title="Sticky Note" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: 'pointer' }}><StickyNote size={22} /></button>
-              <button onClick={addTodo} title="Checklist" style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer' }}><CheckSquare size={22} /></button>
-              <button onClick={addQuote} title="Quote" style={{ background: 'transparent', border: 'none', color: '#9b59b6', cursor: 'pointer' }}><Quote size={22} /></button>
-              {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
-              <button onClick={addPhoto} title="Upload Photo" disabled={isUploading} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: isUploading ? 'not-allowed' : 'pointer', opacity: isUploading ? 0.5 : 1 }}>{isUploading ? <Loader2 size={22} className="lucide-spin" /> : <ImageIcon size={22} />}</button>
-              <button onClick={() => { setShowMediaModal(true); setShowMobileTools(false); }} title="Library Books" style={{ background: 'transparent', border: 'none', color: '#e67e22', cursor: 'pointer' }}><BookOpen size={22} /></button>
-              {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
-              <button onClick={() => { setShowStickerMenu(!showStickerMenu); setShowBgMenu(false); setShowMobileTools(false); }} title="Stickers" style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer' }}><SmilePlus size={22} /></button>
-              <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); setShowMobileTools(false); }} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
-              {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
-              <button onClick={() => { setShowArchiveModal(true); setShowMobileTools(false); }} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
-              {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
-              <button onClick={() => alert("Oracle Lens coming next!")} title="Ask Oracle AI" style={{ background: 'transparent', border: 'none', color: '#a29bfe', cursor: 'pointer' }}><Sparkles size={22} /></button>
-            </div>
-          )}
-
-          {isMobile && (
-            <div style={{ pointerEvents: 'auto', display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-              <div style={{ display: 'flex', gap: '15px' }}>
-                <button onClick={goToPrevPage} disabled={currentIndex === 0} style={{ background: 'transparent', border: 'none', color: currentIndex === 0 ? '#555' : 'var(--lantern-gold)' }}><ChevronLeft size={20} /></button>
-                <span style={{ color: '#fff', fontWeight: 'bold' }}>{activeJournal?.name.replace('Page ', 'Pg ')}</span>
-                <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)' }}><ChevronRight size={20} /></button>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)' }}><Inbox size={20} /></button>
-                <button onClick={() => setShowMobileTools(!showMobileTools)} style={{ background: 'var(--lantern-gold)', border: 'none', color: '#000', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Wrench size={20} /></button>
-                <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db' }}><Lock size={20} /></button>
-              </div>
-            </div>
-          )}
-
-          {!isMobile && (
-            <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '10px 20px', borderRadius: '30px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-              <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}><Lock size={18} /> Vault</button>
-            </div>
-          )}
-        </div>
-
-        {/* MENUS AND MODALS */}
-        {showBgMenu && (
-          <div className="mobile-bottom-nav hide-scrollbar" style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 40px)' : 'repeat(7, 40px)', gap: '10px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
-            {Object.keys(themes).map(key => (
-              <button key={key} title={key} onClick={() => { setBgTheme(key); setShowBgMenu(false); }} style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : '2px solid transparent', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }} />
-            ))}
-          </div>
-        )}
-
-        {showStickerMenu && (
-          <div className="mobile-bottom-nav hide-scrollbar" style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
-            {['☕', '🕯️', '🥀', '🕰️', '🎞️', '🎟️', '🖋️', '🍷', '🌿', '🗝️', '📜', '🌙', '🍂', '📌', '📎', '🔍'].map(emoji => (
-              <button key={emoji} onClick={() => addSticker(emoji)} style={{ fontSize: '2rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }}>{emoji}</button>
-            ))}
-          </div>
-        )}
-
-        {showMediaModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}><h2 style={{ margin: 0, color: 'var(--text-main)', fontFamily: 'var(--font-heading)' }}>Select from Archives</h2><button onClick={() => setShowMediaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button></div>
-              <div style={{ overflowY: 'auto', flexGrow: 1, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '15px' }}>
-                {profileData ? [...profileData.finishedList, ...profileData.currentlyConsuming, ...profileData.tbrList].map((media, i) => (
-                  <div key={i} onClick={() => addMediaItem(media)} style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
-                    <img src={media.coverImage || 'https://via.placeholder.com/100'} alt={media.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #444' }} />
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', marginTop: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{media.title}</p>
-                  </div>
-                )) : <p style={{ color: 'var(--lantern-gold)' }}>Loading archives...</p>}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showArchiveModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <h2 style={{ margin: 0, color: 'var(--lantern-gold)' }}>Archive Notebook</h2>
-              <input type="text" required placeholder="Title..." value={archiveTitle} onChange={e => setArchiveTitle(e.target.value)} style={{ padding: '15px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px' }} />
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="button" onClick={() => setShowArchiveModal(false)} style={{ flex: 1, padding: '12px', background: 'transparent', color: '#fff', border: '1px solid #555', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" disabled={isArchiving} style={{ flex: 1, padding: '12px', background: 'var(--lantern-gold)', color: '#000', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Lock in Vault</button>
-              </div>
-            </form>
-          </div>
-        )}
       </div>
+
+      {/* 📱 NATIVE APP BOTTOM BAR (Mobile) */}
+      {isMobile && (
+        <div style={{ height: '60px', background: 'var(--bg-panel)', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', zIndex: 1000 }}>
+          <button onClick={() => setActiveSheet(activeSheet === 'format' ? null : 'format')} style={{ background: 'transparent', border: 'none', color: activeSheet === 'format' ? 'var(--lantern-gold)' : 'var(--text-muted)' }}><Settings2 size={24} /></button>
+          <button onClick={() => setActiveSheet(activeSheet === 'skins' ? null : 'skins')} style={{ background: 'transparent', border: 'none', color: activeSheet === 'skins' ? 'var(--lantern-gold)' : 'var(--text-muted)' }}><Palette size={24} /></button>
+          
+          {/* THE BIG ADD BUTTON */}
+          <button onClick={() => setActiveSheet(activeSheet === 'add' ? null : 'add')} style={{ background: 'var(--lantern-gold)', border: 'none', color: '#000', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'translateY(-10px)', boxShadow: '0 4px 10px rgba(245, 158, 11, 0.4)' }}><Plus size={26} /></button>
+          
+          <button onClick={() => setActiveSheet(activeSheet === 'archive' ? null : 'archive')} style={{ background: 'transparent', border: 'none', color: activeSheet === 'archive' ? 'var(--lantern-gold)' : 'var(--text-muted)' }}><Inbox size={24} /></button>
+          <button onClick={() => alert("Oracle Lens coming next!")} style={{ background: 'transparent', border: 'none', color: '#a29bfe' }}><Sparkles size={24} /></button>
+        </div>
+      )}
+
+      {/* DESKTOP BOTTOM DOCK (Unchanged) */}
+      {!isMobile && (
+        <div style={{ position: 'absolute', bottom: '30px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)', padding: '15px 25px', borderRadius: '40px', border: '1px solid rgba(245, 158, 11, 0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.8)', zIndex: 1000 }}>
+          <button onClick={addText} title="Plain Text" style={{ background: 'transparent', border: 'none', color: '#ecf0f1', cursor: 'pointer' }}><Type size={22} /></button>
+          <button onClick={addNote} title="Sticky Note" style={{ background: 'transparent', border: 'none', color: '#f1c40f', cursor: 'pointer' }}><StickyNote size={22} /></button>
+          <button onClick={addTodo} title="Checklist" style={{ background: 'transparent', border: 'none', color: '#2ecc71', cursor: 'pointer' }}><CheckSquare size={22} /></button>
+          <button onClick={addQuote} title="Quote" style={{ background: 'transparent', border: 'none', color: '#9b59b6', cursor: 'pointer' }}><Quote size={22} /></button>
+          <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
+          <button onClick={addPhoto} title="Upload Photo" disabled={isUploading} style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: isUploading ? 'not-allowed' : 'pointer', opacity: isUploading ? 0.5 : 1 }}>{isUploading ? <Loader2 size={22} className="lucide-spin" /> : <ImageIcon size={22} />}</button>
+          <button onClick={() => setShowMediaModal(true)} title="Library Books" style={{ background: 'transparent', border: 'none', color: '#e67e22', cursor: 'pointer' }}><BookOpen size={22} /></button>
+          <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
+          <button onClick={() => setShowBgMenu(!showBgMenu)} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
+          <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>
+          <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
+          <button onClick={() => navigate('/vault')} title="Open Vault" style={{ background: 'transparent', border: 'none', color: '#3498db', cursor: 'pointer' }}><Lock size={22} /></button>
+        </div>
+      )}
+
+      {/* 📱 NATIVE BOTTOM SHEETS (Mobile Only) */}
+      <AnimatePresence>
+        {isMobile && activeSheet && (
+          <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'tween', duration: 0.2 }} style={{ position: 'absolute', bottom: '60px', left: 0, right: 0, background: 'var(--bg-panel)', borderTopLeftRadius: '20px', borderTopRightRadius: '20px', padding: '20px', borderTop: '1px solid var(--border-color)', zIndex: 900, boxShadow: '0 -10px 40px rgba(0,0,0,0.5)' }}>
+            
+            {/* ADD SHEET */}
+            {activeSheet === 'add' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', textAlign: 'center' }}>
+                <div onClick={addText}><Type size={28} color="#ecf0f1" style={{ margin: '0 auto' }}/><p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '5px 0 0 0' }}>Text</p></div>
+                <div onClick={addNote}><StickyNote size={28} color="#f1c40f" style={{ margin: '0 auto' }}/><p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '5px 0 0 0' }}>Note</p></div>
+                <div onClick={addTodo}><CheckSquare size={28} color="#2ecc71" style={{ margin: '0 auto' }}/><p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '5px 0 0 0' }}>List</p></div>
+                <div onClick={addQuote}><Quote size={28} color="#9b59b6" style={{ margin: '0 auto' }}/><p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '5px 0 0 0' }}>Quote</p></div>
+                <div onClick={addPhoto}><ImageIcon size={28} color="#3498db" style={{ margin: '0 auto' }}/><p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '5px 0 0 0' }}>Photo</p></div>
+                <div onClick={() => setActiveSheet('media')}><BookOpen size={28} color="#e67e22" style={{ margin: '0 auto' }}/><p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '5px 0 0 0' }}>Library</p></div>
+                <div onClick={() => setActiveSheet('stickers')}><SmilePlus size={28} color="#e74c3c" style={{ margin: '0 auto' }}/><p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '5px 0 0 0' }}>Sticker</p></div>
+              </div>
+            )}
+
+            {/* FORMAT SHEET */}
+            {activeSheet === 'format' && (
+              <div>
+                {!selectedItem ? ( <p style={{ color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>Tap an item to format it.</p> ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Scale</span>
+                      <div style={{ display: 'flex', gap: '15px', background: 'var(--bg-deep)', padding: '5px 15px', borderRadius: '20px' }}>
+                        <button onClick={() => updateItemCommitted(selectedItem.id, { scale: Math.max(0.5, (selectedItem.scale || 1) - 0.1) })} style={{ background: 'transparent', border: 'none', color: '#fff' }}><ZoomOut size={20}/></button>
+                        <span style={{ color: '#fff' }}>{Math.round((selectedItem.scale || 1) * 100)}%</span>
+                        <button onClick={() => updateItemCommitted(selectedItem.id, { scale: Math.min(2.5, (selectedItem.scale || 1) + 0.1) })} style={{ background: 'transparent', border: 'none', color: '#fff' }}><ZoomIn size={20}/></button>
+                      </div>
+                    </div>
+
+                    {['note', 'text', 'quote', 'todo'].includes(selectedItem.type) && (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Colors</span>
+                          <div style={{ display: 'flex', gap: '10px' }}>
+                            <input type="color" value={selectedItem.textColor || '#000000'} onChange={e => updateItemCommitted(selectedItem.id, { textColor: e.target.value })} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent' }} />
+                            <input type="color" value={selectedItem.bgColor !== 'transparent' ? selectedItem.bgColor : '#ffffff'} onChange={e => updateItemCommitted(selectedItem.id, { bgColor: e.target.value })} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent' }} />
+                            <button onClick={() => updateItemCommitted(selectedItem.id, { bgColor: 'transparent' })} style={{ background: '#333', color: '#fff', border: 'none', borderRadius: '50%', width: '30px', height: '30px' }}><Droplet size={14} style={{margin:'0 auto'}}/></button>
+                          </div>
+                        </div>
+                        <select value={selectedItem.font || 'var(--font-heading)'} onChange={e => updateItemCommitted(selectedItem.id, { font: e.target.value })} style={{ padding: '10px', background: 'var(--bg-deep)', color: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                          <option value="var(--font-heading)">Serif Font</option>
+                          <option value='"Courier New", Courier, monospace'>Typewriter</option>
+                          <option value="sans-serif">Modern</option>
+                          <option value='"Comic Sans MS", cursive, sans-serif'>Handwriting</option>
+                        </select>
+                      </>
+                    )}
+                    
+                    <button onClick={() => deleteItem(selectedItem.id)} style={{ width: '100%', padding: '12px', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', border: '1px solid rgba(231, 76, 60, 0.3)', borderRadius: '8px', display: 'flex', justifyContent: 'center', gap: '8px' }}><Trash2 size={18}/> Delete Item</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* SKINS SHEET */}
+            {activeSheet === 'skins' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px' }}>
+                {Object.keys(themes).map(key => (
+                  <div key={key} onClick={() => setBgTheme(key)} style={{ height: '60px', borderRadius: '12px', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : '1px solid var(--border-color)' }}></div>
+                ))}
+              </div>
+            )}
+
+            {/* STICKERS SHEET */}
+            {activeSheet === 'stickers' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', maxHeight: '30vh', overflowY: 'auto' }}>
+                {['☕', '🕯️', '🥀', '🕰️', '🎞️', '🎟️', '🖋️', '🍷', '🌿', '🗝️', '📜', '🌙', '🍂', '📌', '📎', '🔍'].map(emoji => (
+                  <div key={emoji} onClick={() => addSticker(emoji)} style={{ fontSize: '2rem', textAlign: 'center' }}>{emoji}</div>
+                ))}
+              </div>
+            )}
+
+            {/* ARCHIVE SHEET */}
+            {activeSheet === 'archive' && (
+              <form onSubmit={archiveCurrentPage} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <h3 style={{ margin: 0, color: 'var(--lantern-gold)' }}>Lock in Vault</h3>
+                <input type="text" required placeholder="Name this entry..." value={archiveTitle} onChange={e => setArchiveTitle(e.target.value)} style={{ padding: '12px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px' }} />
+                <button type="submit" disabled={isArchiving} style={{ padding: '12px', background: 'var(--lantern-gold)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>{isArchiving ? 'Locking...' : 'Save to Vault'}</button>
+              </form>
+            )}
+
+            {/* MEDIA SHEET */}
+            {activeSheet === 'media' && (
+              <div style={{ maxHeight: '40vh', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {profileData ? [...profileData.finishedList, ...profileData.currentlyConsuming, ...profileData.tbrList].map((media, i) => (
+                  <div key={i} onClick={() => addMediaItem(media)}>
+                    <img src={media.coverImage} style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: '6px' }} />
+                  </div>
+                )) : <p style={{ color: 'var(--lantern-gold)' }}>Loading...</p>}
+              </div>
+            )}
+
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DESKTOP MODALS (Unchanged) */}
+      {!isMobile && showBgMenu && (
+        <div style={{ position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(7, 40px)', gap: '10px', zIndex: 1000 }}>
+          {Object.keys(themes).map(key => <button key={key} onClick={() => { setBgTheme(key); setShowBgMenu(false); }} style={{ width: '40px', height: '40px', borderRadius: '50%', background: themeSwatches[key], border: bgTheme === key ? '3px solid var(--lantern-gold)' : 'none', cursor: 'pointer' }} />)}
+        </div>
+      )}
+      {!isMobile && showArchiveModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <h2 style={{ margin: 0, color: 'var(--lantern-gold)' }}>Archive Notebook</h2>
+            <input type="text" required placeholder="Title..." value={archiveTitle} onChange={e => setArchiveTitle(e.target.value)} style={{ padding: '15px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '8px' }} />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" onClick={() => setShowArchiveModal(false)} style={{ flex: 1, padding: '12px', background: 'transparent', color: '#fff', border: '1px solid #555', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={isArchiving} style={{ flex: 1, padding: '12px', background: 'var(--lantern-gold)', color: '#000', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Lock in Vault</button>
+            </div>
+          </form>
+        </div>
+      )}
+      {!isMobile && showMediaModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2 style={{ margin: 0, color: 'var(--text-main)' }}>Select from Archives</h2><button onClick={() => setShowMediaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button></div>
+            <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '15px' }}>
+              {profileData && [...profileData.finishedList, ...profileData.currentlyConsuming, ...profileData.tbrList].map((media, i) => (
+                <div key={i} onClick={() => addMediaItem(media)} style={{ cursor: 'pointer' }}>
+                  <img src={media.coverImage || 'https://via.placeholder.com/100'} alt={media.title} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px' }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
