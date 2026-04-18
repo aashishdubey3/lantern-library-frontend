@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox, Sparkles, ZoomIn, ZoomOut, Wrench } from 'lucide-react';
+import { StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, X, RefreshCcw, Save, Type, Plus, ChevronLeft, ChevronRight, Palette, Move, Lock, Droplet, Inbox, Sparkles, ZoomIn, ZoomOut, Wrench } from 'lucide-react';
 
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
@@ -53,7 +53,6 @@ export default function Scrapbook() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // INITIAL LOAD
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -75,13 +74,11 @@ export default function Scrapbook() {
     }).catch(() => setIsLoadingDesk(false));
   }, [location.state]);
 
-  // 🔥 INVISIBLE AUTO-SAVE ENGINE
-  // Automatically saves to MongoDB 1 second after you stop moving/editing things
+  // INVISIBLE AUTO-SAVE
   useEffect(() => {
     if (isLoadingDesk) return;
     const token = localStorage.getItem('token');
     if (!token) return;
-
     const autoSaveTimer = setTimeout(() => {
       fetch('https://lantern-library-backend.onrender.com/api/journals', {
         method: 'POST', 
@@ -89,7 +86,6 @@ export default function Scrapbook() {
         body: JSON.stringify({ pages: journals, theme: bgTheme }) 
       }).catch(err => console.error("Auto-save failed", err));
     }, 1000); 
-
     return () => clearTimeout(autoSaveTimer);
   }, [journals, bgTheme, isLoadingDesk]);
 
@@ -221,7 +217,8 @@ export default function Scrapbook() {
   if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#000' }}>
+    // 🔥 FIX: Position FIXED hides the global footer behind the full-screen desk!
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: '#000', zIndex: 9999 }}>
       
       <style>{`
         .item-container .item-controls { opacity: 0; transition: opacity 0.2s; pointer-events: none; } 
@@ -253,7 +250,7 @@ export default function Scrapbook() {
               display: 'flex', flexDirection: 'column',
               outline: focusedItemId === item.id ? '2px dashed rgba(245, 158, 11, 0.5)' : 'none',
               outlineOffset: '4px',
-              touchAction: 'none' // 🔥 PREVENTS SCREEN SCROLLING WHILE DRAGGING ON MOBILE
+              touchAction: 'none' 
             }}
             onDragEnd={(e, info) => { updateItem(item.id, { x: (item.x || 0) + info.offset.x, y: (item.y || 0) + info.offset.y }); }}
             onPointerDown={(e) => { e.stopPropagation(); updateItem(item.id, { zIndex: bringToFront() }); setFocusedItemId(item.id); }}
@@ -329,10 +326,9 @@ export default function Scrapbook() {
               <button onClick={() => { setShowBgMenu(!showBgMenu); setShowStickerMenu(false); setShowMobileTools(false); }} title="Desk Theme" style={{ background: 'transparent', border: 'none', color: '#1abc9c', cursor: 'pointer' }}><Palette size={22} /></button>
               {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
               
-              {/* THE ONLY SAVE BUTTON (Send to Vault) */}
-              <button onClick={() => { setShowArchiveModal(true); setShowMobileTools(false); }} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>
-              
+              {!isMobile && <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer' }}><Inbox size={22} /></button>}
               {!isMobile && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', margin: '0 5px' }}></div>}
+              
               <button onClick={() => alert("Oracle Lens coming next!")} title="Ask Oracle AI" style={{ background: 'transparent', border: 'none', color: '#a29bfe', cursor: 'pointer' }}><Sparkles size={22} /></button>
             </div>
           )}
@@ -344,8 +340,13 @@ export default function Scrapbook() {
                 <span style={{ color: '#fff', fontWeight: 'bold' }}>{activeJournal?.name.replace('Page ', 'Pg ')}</span>
                 <button onClick={goToNextPage} disabled={currentIndex === journals.length - 1} style={{ background: 'transparent', border: 'none', color: currentIndex === journals.length - 1 ? '#555' : 'var(--lantern-gold)' }}><ChevronRight size={20} /></button>
               </div>
-              <button onClick={() => setShowMobileTools(!showMobileTools)} style={{ background: 'var(--lantern-gold)', border: 'none', color: '#000', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Wrench size={20} /></button>
-              <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db' }}><Lock size={20} /></button>
+              
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                {/* 🔥 INBOX ALWAYS VISIBLE ON MOBILE */}
+                <button onClick={() => setShowArchiveModal(true)} title="Send to Vault" style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)' }}><Inbox size={20} /></button>
+                <button onClick={() => setShowMobileTools(!showMobileTools)} style={{ background: 'var(--lantern-gold)', border: 'none', color: '#000', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Wrench size={20} /></button>
+                <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: '#3498db' }}><Lock size={20} /></button>
+              </div>
             </div>
           )}
 
@@ -356,6 +357,7 @@ export default function Scrapbook() {
           )}
         </div>
 
+        {/* MENUS AND MODALS */}
         {showBgMenu && (
           <div className="mobile-bottom-nav hide-scrollbar" style={{ position: 'absolute', bottom: isMobile ? '160px' : '100px', left: '50%', transform: 'translateX(-50%)', background: 'var(--bg-panel)', padding: '15px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: isMobile ? 'repeat(4, 40px)' : 'repeat(7, 40px)', gap: '10px', zIndex: 1000, boxShadow: '0 15px 30px rgba(0,0,0,0.6)' }}>
             {Object.keys(themes).map(key => (

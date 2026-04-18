@@ -147,7 +147,9 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 .chat-timestamp { font-size: 0.7rem; color: var(--text-muted); margin-top: 5px; padding: 0 5px; }
 
 @media (max-width: 768px) {
-  /* 1. PROTECT THE NAVBAR & AVATAR */
+  /* Hides the global footer on mobile to prevent it bleeding into apps */
+  footer { display: none !important; }
+
   header, nav, .navbar {
     padding-left: 8px !important;
     padding-right: 8px !important;
@@ -155,7 +157,6 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
     flex-wrap: nowrap !important;
   }
 
-  /* Force the title to shrink and truncate instead of breaking the screen */
   .logo-text, h1, a[href="/"], [style*="THE LANTERN LIBRARY"] {
     font-size: 1rem !important;
     max-width: 40vw !important; 
@@ -166,35 +167,32 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
     vertical-align: middle;
   }
 
-  /* 2. FIX THE CUT-OFF TABS (Books, Movies, Series, Research) */
-  /* This forces the scrollable items to start from the left instead of centering, freeing trapped items */
   .profile-tabs, [style*="overflow-x"], [style*="overflowX"] {
     justify-content: flex-start !important;
     padding-left: 20px !important;
     padding-right: 20px !important;
   }
 
-  /* 3. FIX THE ORACLE CARD & BUTTON */
-  /* Instead of floating on the right edge, this stacks the button neatly below the text */
+  /* 🔥 THE ORACLE BUTTON FIX: No more squishing! */
   .oracle-card, [style*="The Oracle"] {
     display: flex !important;
     flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
     padding: 20px !important;
     height: auto !important;
   }
 
   .oracle-card button, [style*="ANALYZE MY TASTE"] {
-    position: relative !important; 
-    right: auto !important;
-    top: auto !important;
+    position: static !important; 
     margin-top: 15px !important;
-    width: 100% !important; 
-    max-width: 250px !important;
-    align-self: center !important;
-    text-align: center !important;
+    width: max-content !important; /* Forces it to stretch to fit the text */
+    min-width: 180px !important;
+    max-width: none !important; /* Removes the squish bug */
     font-size: 0.9rem !important;
-    padding: 12px !important;
-    white-space: normal !important;
+    padding: 12px 24px !important;
+    border-radius: 30px !important;
+    white-space: nowrap !important;
   }
 }
 
