@@ -4,10 +4,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, 
   X, RefreshCcw, Type, Plus, ChevronLeft, ChevronRight, Palette, Lock, Droplet, 
-  Sparkles, Settings2, Trash2, ZoomIn, ZoomOut, Move, Undo, Redo
-} from 'lucide-react';
+  Sparkles, Settings2, Trash2, ZoomIn, ZoomOut, Move, Undo, Redo, Inbox 
+} from 'lucide-react'; // 🔥 INBOX IMPORTED! THIS WAS CAUSING THE WHITE SCREEN!
 
-// 🔥 THE FIXED AUTO-EXPANDING TEXT BOX (No more scroll traps!)
+// 🔥 SMART AUTO-EXPANDING TEXT
 const AutoExpandingTextarea = ({ item, updateItemText, onFocus, textStyle, placeholder }) => {
   const textareaRef = useRef(null);
   
@@ -92,7 +92,7 @@ export default function Scrapbook() {
     fetch('https://lantern-library-backend.onrender.com/api/users/profile', { headers: { 'Authorization': `Bearer ${token}` } })
       .then(res => res.json())
       .then(data => {
-        const actualUserData = data.user ? data.user : data;
+        const actualUserData = data.user || data.profile || data;
         setProfileData(actualUserData);
       }).catch(console.error);
 
@@ -102,7 +102,6 @@ export default function Scrapbook() {
       if (data && data.pages && data.pages.length > 0) {
         const safePages = data.pages.map(p => ({ ...p, name: p.name || 'Page 1', items: p.items || [] }));
         setJournals(safePages);
-        
         const targetIndex = location.state?.targetPageIndex !== undefined ? location.state.targetPageIndex : 0;
         const targetPage = safePages[targetIndex] || safePages[0];
         setActiveJournalId(targetPage.id);
@@ -223,7 +222,6 @@ export default function Scrapbook() {
   };
 
   const renderItemContent = (item) => {
-    // 🔥 FIXED TEXT STYLE: Removed ALL maxHeight and overflow restrictions so paragraphs flow freely!
     const textStyle = { flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', fontFamily: item.font, color: item.textColor || '#000', lineHeight: '1.5', cursor: 'text', minWidth: '150px' };
 
     switch (item.type) {
@@ -278,6 +276,14 @@ export default function Scrapbook() {
   };
 
   if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
+
+  // 🔥 LIBRARY LOADER FIX: Extremely robust array gathering
+  let allMedia = [];
+  if (profileData) {
+    if (Array.isArray(profileData.finishedList)) allMedia.push(...profileData.finishedList);
+    if (Array.isArray(profileData.currentlyConsuming)) allMedia.push(...profileData.currentlyConsuming);
+    if (Array.isArray(profileData.tbrList)) allMedia.push(...profileData.tbrList);
+  }
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
@@ -389,7 +395,7 @@ export default function Scrapbook() {
         </div>
       )}
 
-      {/* 📱 NATIVE BOTTOM SHEETS (Mobile Only) */}
+      {/* 📱 NATIVE BOTTOM SHEETS */}
       <AnimatePresence>
         {isMobile && activeSheet && (
           <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'tween', duration: 0.2 }} style={{ position: 'absolute', bottom: '70px', left: 0, right: 0, background: 'var(--bg-panel)', borderTopLeftRadius: '20px', borderTopRightRadius: '20px', padding: '20px', borderTop: '1px solid var(--border-color)', zIndex: 900, boxShadow: '0 -10px 40px rgba(0,0,0,0.5)' }}>
@@ -461,21 +467,23 @@ export default function Scrapbook() {
         </div>
       )}
       
+      {/* 🔥 MEDIA MODAL */}
       {showMediaModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}><h2 style={{ margin: 0, color: 'var(--text-main)' }}>Archives</h2><button onClick={() => setShowMediaModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.5rem' }}>×</button></div>
             <div style={{ overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '15px' }}>
-              {profileData ? [...(profileData.finishedList || []), ...(profileData.currentlyConsuming || []), ...(profileData.tbrList || [])].map((media, i) => (
+              {allMedia.length > 0 ? allMedia.map((media, i) => (
                 <div key={i} onClick={() => { addMediaItem(media); setShowMediaModal(false); }} style={{ cursor: 'pointer' }}>
                   <img src={media.coverImage || 'https://via.placeholder.com/100'} style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '6px' }} />
                 </div>
-              )) : <p style={{ color: 'var(--lantern-gold)' }}>Loading Library...</p>}
+              )) : <p style={{ color: 'var(--lantern-gold)' }}>Library is empty or loading...</p>}
             </div>
           </div>
         </div>
       )}
 
+      {/* ARCHIVE MODAL */}
       {showArchiveModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onSubmit={archiveCurrentPage} style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '400px', border: '1px solid var(--lantern-gold)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
