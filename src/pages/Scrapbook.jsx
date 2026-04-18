@@ -5,9 +5,11 @@ import {
   StickyNote, Quote, Image as ImageIcon, CheckSquare, BookOpen, Loader2, SmilePlus, 
   X, RefreshCcw, Type, Plus, ChevronLeft, ChevronRight, Palette, Lock, Droplet, 
   Sparkles, Settings2, Trash2, ZoomIn, ZoomOut, Move, Undo, Redo, Inbox 
-} from 'lucide-react'; // 🔥 INBOX IMPORTED! THIS WAS CAUSING THE WHITE SCREEN!
+} from 'lucide-react';
 
-// 🔥 SMART AUTO-EXPANDING TEXT
+// 🔥 FATAL CRASH FIX: Protects the color pickers from non-hex colors (like 'transparent' or 'rgba')
+const isValidHex = (color) => typeof color === 'string' && /^#[0-9A-F]{6}$/i.test(color);
+
 const AutoExpandingTextarea = ({ item, updateItemText, onFocus, textStyle, placeholder }) => {
   const textareaRef = useRef(null);
   
@@ -59,9 +61,10 @@ export default function Scrapbook() {
   const navigate = useNavigate();
   const location = useLocation(); 
 
+  // 🔥 DESKTOP CRASH FIX: Fallbacks to prevent -1 index crashes
   const activeJournal = journals.find(j => j.id === activeJournalId) || journals[0] || { id: Date.now(), name: 'Page 1', items: [] };
   const items = activeJournal?.items || [];
-  const currentIndex = journals.findIndex(j => j.id === activeJournalId);
+  const currentIndex = Math.max(0, journals.findIndex(j => j.id === activeJournalId));
   const safeJournalName = activeJournal?.name || `Page ${currentIndex + 1}`;
   const safeActiveJournalId = activeJournal?.id;
 
@@ -99,7 +102,7 @@ export default function Scrapbook() {
     fetch('https://lantern-library-backend.onrender.com/api/journals', { headers: { 'Authorization': `Bearer ${token}` } })
     .then(res => res.json())
     .then(data => {
-      if (data && data.pages && data.pages.length > 0) {
+      if (data && Array.isArray(data.pages) && data.pages.length > 0) {
         const safePages = data.pages.map(p => ({ ...p, name: p.name || 'Page 1', items: p.items || [] }));
         setJournals(safePages);
         const targetIndex = location.state?.targetPageIndex !== undefined ? location.state.targetPageIndex : 0;
@@ -275,15 +278,20 @@ export default function Scrapbook() {
     }
   };
 
-  if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
+  const selectedItem = items.find(i => i.id === focusedItemId);
 
-  // 🔥 LIBRARY LOADER FIX: Extremely robust array gathering
+  // 🔥 LIBRARY LOADER FIX: Deeply scans the database to find ANY book or movie you saved
   let allMedia = [];
   if (profileData) {
-    if (Array.isArray(profileData.finishedList)) allMedia.push(...profileData.finishedList);
-    if (Array.isArray(profileData.currentlyConsuming)) allMedia.push(...profileData.currentlyConsuming);
-    if (Array.isArray(profileData.tbrList)) allMedia.push(...profileData.tbrList);
+    Object.values(profileData).forEach(val => {
+      if (Array.isArray(val)) {
+        const mediaItems = val.filter(v => v && (v.coverImage || v.title));
+        allMedia.push(...mediaItems);
+      }
+    });
   }
+
+  if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: '#000', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
@@ -349,14 +357,34 @@ export default function Scrapbook() {
             whileDrag={{ boxShadow: "0 20px 50px rgba(0,0,0,0.4)", zIndex: 10000 }}
             className={`item-container ${focusedItemId === item.id ? 'focused' : ''}`}
           >
-            {/* Desktop Floating Pill */}
+            {/* 🔥 DESKTOP FORMATTING PILL (Tools restored!) */}
             {!isMobile && focusedItemId === item.id && (
               <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', borderRadius: '30px', padding: '6px 12px', gap: '10px', position: 'absolute', top: '-45px', right: '0px', zIndex: 50, border: '1px solid rgba(255,255,255,0.1)' }}>
-                <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItemCommitted(item.id, { scale: Math.max(0.5, (item.scale || 1) - 0.1) }); }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomOut size={16} /></button>
-                <button onPointerDownCapture={(e) => { e.stopPropagation(); updateItemCommitted(item.id, { scale: Math.min(2.5, (item.scale || 1) + 0.1) }); }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomIn size={16} /></button>
+                <button onPointerDown={(e) => { e.stopPropagation(); updateItemCommitted(item.id, { scale: Math.max(0.5, (item.scale || 1) - 0.1) }); }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomOut size={16} /></button>
+                <button onPointerDown={(e) => { e.stopPropagation(); updateItemCommitted(item.id, { scale: Math.min(2.5, (item.scale || 1) + 0.1) }); }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><ZoomIn size={16} /></button>
                 <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
+
+                {['note', 'text', 'quote', 'todo'].includes(item.type) && (
+                  <>
+                    <input type="color" value={isValidHex(item.textColor) ? item.textColor : '#000000'} onChange={e => updateItemCommitted(item.id, { textColor: e.target.value })} style={{ width: '20px', height: '20px', border: 'none', background: 'transparent', cursor: 'pointer' }} />
+                    <input type="color" value={isValidHex(item.bgColor) ? item.bgColor : '#ffffff'} onChange={e => updateItemCommitted(item.id, { bgColor: e.target.value })} style={{ width: '20px', height: '20px', border: 'none', background: 'transparent', cursor: 'pointer' }} />
+                    <button onPointerDown={(e) => { e.stopPropagation(); updateItemCommitted(item.id, { bgColor: 'transparent' }); }} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0 }}><Droplet size={14}/></button>
+                    <select value={item.font || 'var(--font-heading)'} onChange={e => updateItemCommitted(item.id, { font: e.target.value })} onPointerDown={e => e.stopPropagation()} style={{ background: 'transparent', color: '#fff', border: 'none', fontSize: '0.8rem', cursor: 'pointer', outline: 'none' }}>
+                      <option value="var(--font-heading)">Serif</option>
+                      <option value='"Courier New", Courier, monospace'>Typewriter</option>
+                      <option value="sans-serif">Modern</option>
+                      <option value='"Comic Sans MS", cursive, sans-serif'>Handwriting</option>
+                    </select>
+                    <div style={{ width: '1px', height: '15px', background: 'rgba(255,255,255,0.2)', margin: '0 2px' }}></div>
+                  </>
+                )}
+                
+                {item.type === 'media' && item.media?.mediaType === 'book' && (
+                  <button onPointerDown={(e) => { e.stopPropagation(); updateItemCommitted(item.id, { displayStyle: item.displayStyle === 'spine' ? 'cover' : 'spine' }); }} style={{ background: 'transparent', border: 'none', color: 'var(--lantern-gold)', cursor: 'pointer', padding: 0 }}><RefreshCcw size={16}/></button>
+                )}
+
                 <div style={{ color: '#3498db', cursor: 'grab', display: 'flex', alignItems: 'center' }}><Move size={16} /></div>
-                <button onPointerDownCapture={(e) => { e.stopPropagation(); deleteItem(item.id); }} style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={18} /></button>
+                <button onPointerDown={(e) => { e.stopPropagation(); deleteItem(item.id); }} style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={18} /></button>
               </div>
             )}
             {renderItemContent(item)}
@@ -395,7 +423,7 @@ export default function Scrapbook() {
         </div>
       )}
 
-      {/* 📱 NATIVE BOTTOM SHEETS */}
+      {/* 📱 NATIVE BOTTOM SHEETS (Mobile Only) */}
       <AnimatePresence>
         {isMobile && activeSheet && (
           <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'tween', duration: 0.2 }} style={{ position: 'absolute', bottom: '70px', left: 0, right: 0, background: 'var(--bg-panel)', borderTopLeftRadius: '20px', borderTopRightRadius: '20px', padding: '20px', borderTop: '1px solid var(--border-color)', zIndex: 900, boxShadow: '0 -10px 40px rgba(0,0,0,0.5)' }}>
@@ -430,8 +458,8 @@ export default function Scrapbook() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Colors</span>
                           <div style={{ display: 'flex', gap: '10px' }}>
-                            <input type="color" value={selectedItem.textColor || '#000000'} onChange={e => updateItemCommitted(selectedItem.id, { textColor: e.target.value })} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent' }} />
-                            <input type="color" value={(selectedItem.bgColor && selectedItem.bgColor !== 'transparent') ? selectedItem.bgColor : '#ffffff'} onChange={e => updateItemCommitted(selectedItem.id, { bgColor: e.target.value })} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent' }} />
+                            <input type="color" value={isValidHex(selectedItem.textColor) ? selectedItem.textColor : '#000000'} onChange={e => updateItemCommitted(selectedItem.id, { textColor: e.target.value })} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent' }} />
+                            <input type="color" value={isValidHex(selectedItem.bgColor) ? selectedItem.bgColor : '#ffffff'} onChange={e => updateItemCommitted(selectedItem.id, { bgColor: e.target.value })} style={{ width: '30px', height: '30px', border: 'none', background: 'transparent' }} />
                             <button onClick={() => updateItemCommitted(selectedItem.id, { bgColor: 'transparent' })} style={{ background: '#333', color: '#fff', border: 'none', borderRadius: '50%', width: '30px', height: '30px' }}><Droplet size={14} style={{margin:'0 auto'}}/></button>
                           </div>
                         </div>
@@ -467,7 +495,7 @@ export default function Scrapbook() {
         </div>
       )}
       
-      {/* 🔥 MEDIA MODAL */}
+      {/* 🔥 MEDIA MODAL (DEEP SCAN LIBRARY LOADER) */}
       {showMediaModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'var(--bg-panel)', padding: '30px', borderRadius: '16px', width: '600px', maxWidth: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--lantern-gold)' }}>
