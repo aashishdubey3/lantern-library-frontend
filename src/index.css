@@ -173,26 +173,31 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
     padding-right: 20px !important;
   }
 
-  /* 🔥 THE ORACLE BUTTON FIX: No more squishing! */
-  .oracle-card, [style*="The Oracle"] {
+  /* 🔥 THE ULTIMATE ORACLE FIX */
+  div:has(> [style*="ANALYZE MY TASTE"]),
+  .oracle-card {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    text-align: center !important;
-    padding: 20px !important;
-    height: auto !important;
+    justify-content: center !important;
+    padding-bottom: 30px !important;
   }
 
-  .oracle-card button, [style*="ANALYZE MY TASTE"] {
-    position: static !important; 
-    margin-top: 15px !important;
-    width: max-content !important; /* Forces it to stretch to fit the text */
-    min-width: 180px !important;
-    max-width: none !important; /* Removes the squish bug */
+  [style*="ANALYZE MY TASTE"] {
+    position: relative !important; 
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    margin-top: 25px !important;
+    width: 85% !important; /* Stretches nicely across the card */
+    min-width: 200px !important;
+    max-width: none !important; 
+    height: auto !important;
+    padding: 15px !important;
     font-size: 0.9rem !important;
-    padding: 12px 24px !important;
-    border-radius: 30px !important;
-    white-space: nowrap !important;
+    white-space: normal !important; /* Allows text to wrap */
+    line-height: 1.4 !important;
   }
 }
 
