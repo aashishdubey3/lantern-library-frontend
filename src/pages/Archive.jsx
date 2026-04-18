@@ -42,12 +42,12 @@ export default function Archive() {
     }
   };
 
-  const restoreToDesk = async () => {
+ const restoreToDesk = async () => {
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
     
-    // 🔥 FIX: Navigates back to the main route! (If your desk is at '/desk', change this!)
-    navigate('/', { state: { targetPageIndex: pageIndex } }); 
+    // 🔥 FIX: Now teleports you straight to your Scrapbook desk!
+    navigate('/scrapbook', { state: { targetPageIndex: pageIndex } }); 
   };
 
   const themes = {
