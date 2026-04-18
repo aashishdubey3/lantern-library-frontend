@@ -21,13 +21,12 @@ export default function Archive() {
     fetchArchives();
   }, [navigate]);
 
-  // 🔥 AGGRESSIVE DELETE: Will alert you if the backend refuses to delete it
   const deleteArchive = async (id, e) => {
     e.stopPropagation();
     if (!window.confirm("Are you sure you want to permanently burn this notebook?")) return;
     
     const previousArchives = [...archives];
-    setArchives(prev => prev.filter(archive => archive._id !== id)); // Hide instantly
+    setArchives(prev => prev.filter(archive => archive._id !== id)); 
     
     try {
       const token = localStorage.getItem('token');
@@ -38,93 +37,105 @@ export default function Archive() {
       if (!res.ok) throw new Error("Server refused deletion");
     } catch(err) {
       alert("Backend error! Failed to delete.");
-      setArchives(previousArchives); // Put it back if backend failed
+      setArchives(previousArchives); 
     }
   };
 
- const restoreToDesk = async () => {
+  const restoreToDesk = async () => {
     const token = localStorage.getItem('token');
     await fetch(`https://lantern-library-backend.onrender.com/api/journals/archive/restore/${viewingArchive._id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
     
-    // 🔥 FIX: Now teleports you straight to your Scrapbook desk!
-    navigate('/scrapbook', { state: { targetPageIndex: pageIndex } }); 
+    // 🔥 FIX: Navigates back to your root Scrapbook page!
+    // (If your desk is NOT your homepage, change '/' to your exact route)
+    navigate('/', { state: { targetPageIndex: pageIndex } }); 
   };
 
   const themes = {
-    lined: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px), #fdf6e3',
-    grid: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px), #fdf6e3',
-    leather: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px), linear-gradient(135deg, #2b170c 0%, #1e130c 100%)',
-    parchment: 'radial-gradient(#e0d5c1 1px, transparent 1px), #f4ecd8',
-    wood: 'repeating-linear-gradient(to right, #4e342e, #3e2723 20px, #4e342e 40px)',
-    slate: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
-    green: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)'
+    lined: { bg: '#fdf6e3', img: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px)', size: '100% 32px' },
+    grid: { bg: '#fdf6e3', img: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px)', size: '32px 32px' },
+    dotted: { bg: '#fdf6e3', img: 'radial-gradient(#d4c4a8 2px, transparent 2px)', size: '20px 20px' },
+    leather: { bg: '#1e130c', img: 'radial-gradient(circle, rgba(255,255,255,0.04) 2px, transparent 2px), linear-gradient(135deg, #2b170c 0%, #1e130c 100%)', size: 'auto' },
+    parchment: { bg: '#f4ecd8', img: 'radial-gradient(#e0d5c1 1px, transparent 1px)', size: '20px 20px' },
+    wood: { bg: '#3e2723', img: 'repeating-linear-gradient(to right, #4e342e, #3e2723 20px, #4e342e 40px)', size: 'auto' },
+    slate: { bg: '#1a252f', img: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)', size: 'auto' },
+    green: { bg: '#081c15', img: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)', size: 'auto' }
   };
 
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Unlocking the Vault...</h2>;
 
   if (viewingArchive) {
-    // 🔥 SAFE FALLBACK: If pages array is missing, load the items backup!
     const pages = viewingArchive.pages && viewingArchive.pages.length > 0 ? viewingArchive.pages : [{ name: 'Page 1', items: viewingArchive.items || [] }];
     const activePage = pages[pageIndex] || pages[0];
     const items = activePage?.items || [];
     
-    // 🔥 SAFELY LOAD BACKGROUND
-    const vaultBg = themes[viewingArchive.theme] || viewingArchive.theme || themes['parchment'];
+    // Safely extract the background properties
+    const vaultBg = themes[viewingArchive.theme] || themes['lined'];
 
     return (
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#000', zIndex: 100000, overflow: 'hidden' }}>
         
+        <style>{`
+          @media (max-width: 768px) {
+            .vault-nav-text { font-size: 0.8rem !important; }
+            .vault-nav-btn { padding: 6px 12px !important; font-size: 0.8rem !important; }
+          }
+        `}</style>
+
         {/* VAULT TOP NAV */}
-        <div style={{ position: 'absolute', top: '20px', left: '20px', right: '20px', display: 'flex', justifyContent: 'space-between', zIndex: 100001 }}>
-          <button onClick={() => setViewingArchive(null)} style={{ padding: '10px 20px', background: 'rgba(0,0,0,0.8)', color: 'var(--lantern-gold)', border: '1px solid var(--lantern-gold)', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}><ChevronLeft size={18} /> Close Vault</button>
+        <div style={{ position: 'absolute', top: '20px', left: '10px', right: '10px', display: 'flex', justifyContent: 'space-between', zIndex: 100001 }}>
+          <button className="vault-nav-btn" onClick={() => setViewingArchive(null)} style={{ padding: '10px 20px', background: 'rgba(0,0,0,0.8)', color: 'var(--lantern-gold)', border: '1px solid var(--lantern-gold)', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><ChevronLeft size={18} /> <span className="vault-nav-text">Close</span></button>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'rgba(0,0,0,0.8)', padding: '5px 20px', borderRadius: '30px', border: '1px solid var(--border-color)', color: '#fff' }}>
-            <button onClick={() => setPageIndex(Math.max(0, pageIndex - 1))} disabled={pageIndex === 0} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><ChevronLeft size={20} /></button>
-            <span style={{ fontWeight: 'bold' }}>{activePage.name}</span>
-            <button onClick={() => setPageIndex(Math.min(pages.length - 1, pageIndex + 1))} disabled={pageIndex === pages.length - 1} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}><ChevronRight size={20} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.8)', padding: '5px 15px', borderRadius: '30px', border: '1px solid var(--border-color)', color: '#fff' }}>
+            <button onClick={() => setPageIndex(Math.max(0, pageIndex - 1))} disabled={pageIndex === 0} style={{ background: 'transparent', border: 'none', color: pageIndex === 0 ? '#555' : '#fff', cursor: 'pointer' }}><ChevronLeft size={20} /></button>
+            <span className="vault-nav-text" style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>{activePage.name.replace('Page ', 'Pg ')}</span>
+            <button onClick={() => setPageIndex(Math.min(pages.length - 1, pageIndex + 1))} disabled={pageIndex === pages.length - 1} style={{ background: 'transparent', border: 'none', color: pageIndex === pages.length - 1 ? '#555' : '#fff', cursor: 'pointer' }}><ChevronRight size={20} /></button>
           </div>
 
-          <button onClick={restoreToDesk} style={{ padding: '10px 20px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold' }}><Edit3 size={18} /> Edit on Desk</button>
+          <button className="vault-nav-btn" onClick={restoreToDesk} style={{ padding: '10px 20px', background: 'var(--lantern-gold)', color: 'var(--bg-deep)', border: 'none', borderRadius: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}><Edit3 size={18} /> <span className="vault-nav-text">Edit</span></button>
         </div>
         
         {/* DESK BACKGROUND */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: vaultBg, backgroundSize: vaultBg.includes('lined') || vaultBg.includes('grid') ? '100% 32px, 32px 32px' : 'auto' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: vaultBg.bg, backgroundImage: vaultBg.img, backgroundSize: vaultBg.size }}>
           
           {items.map(item => (
             <motion.div
               key={item.id}
               drag={false} 
               style={{ 
-                x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: '40%', zIndex: item.zIndex, 
+                x: item.x || 0, y: item.y || 0, position: 'absolute', top: '30%', left: window.innerWidth <= 768 ? '10%' : '40%', zIndex: item.zIndex, 
                 background: item.type === 'photo' ? '#f8f9fa' : (item.bgColor || 'transparent'), 
                 padding: item.type === 'sticker' || item.type === 'media' ? '0' : (item.type === 'photo' ? '10px 10px 25px 10px' : '20px'), 
                 boxShadow: (item.bgColor && item.bgColor !== 'transparent') || item.type === 'photo' ? '0 10px 25px rgba(0,0,0,0.3)' : 'none', 
                 borderRadius: item.type === 'note' ? '2px 10px 10px 20px' : '8px', 
-                display: 'flex', flexDirection: 'column'
+                display: 'flex', flexDirection: 'column',
+                transform: `scale(${item.scale || 1})`,
+                transformOrigin: 'top left'
               }}
             >
-              {item.type === 'note' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#2c3e50', lineHeight: '1.5', minHeight: '150px', minWidth: '150px', padding: '10px', borderRadius: '4px' }}>{item.text}</div>}
-{item.type === 'text' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || '#fdf6e3', lineHeight: '1.6', minHeight: '100px', minWidth: '200px', padding: '10px', borderRadius: '4px' }}>{item.text}</div>}
-{item.type === 'quote' && (
-  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
-    <span style={{ fontSize: '4rem', color: 'rgba(245, 158, 11, 0.3)', position: 'absolute', top: '-10px', left: '10px', fontFamily: 'var(--font-heading)' }}>"</span>
-    <div style={{ fontFamily: item.font || 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor || '#2c3e50', textAlign: 'center', zIndex: 1, whiteSpace: 'pre-wrap' }}>{item.text}</div>
-    <div style={{ textAlign: 'center', color: 'var(--lantern-gold)', fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }}>- {item.author}</div>
-  </div>
-)}
+              {/* 🔥 READ-ONLY PARAGRAPHS - Expands naturally without scroll traps! */}
+              {item.type === 'note' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: item.font || '"Courier New", Courier, monospace', fontSize: '1.05rem', color: item.textColor || '#000', lineHeight: '1.5', minWidth: '150px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent' }}>{item.text}</div>}
+              {item.type === 'text' && <div style={{ flexGrow: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: item.font || 'var(--font-heading)', fontSize: '1.4rem', color: item.textColor || '#000', lineHeight: '1.6', minWidth: '200px', background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent' }}>{item.text}</div>}
+              
+              {item.type === 'quote' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
+                  <span style={{ fontSize: '4rem', color: 'rgba(0,0,0,0.1)', position: 'absolute', top: '-15px', left: '5px', fontFamily: 'var(--font-heading)' }}>"</span>
+                  <div style={{ fontFamily: item.font || 'var(--font-heading)', fontSize: '1.3rem', fontStyle: 'italic', color: item.textColor || '#000', textAlign: 'center', zIndex: 1, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{item.text}</div>
+                  <div style={{ textAlign: 'center', color: item.textColor || '#000', opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }}>- {item.author}</div>
+                </div>
+              )}
               {item.type === 'photo' && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <img src={item.url} alt="Polaroid" draggable="false" style={{ width: '200px', height: '200px', objectFit: 'cover', border: '1px solid #ddd' }} />
-                  <input readOnly value={item.caption} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: item.font, color: item.textColor, width: '100%', fontSize: '1rem' }} />
+                  <img src={item.url} alt="Polaroid" style={{ width: '200px', height: '200px', objectFit: 'cover', border: '1px solid #ddd' }} />
+                  <div style={{ marginTop: '15px', textAlign: 'center', fontFamily: item.font || '"Comic Sans MS", cursive, sans-serif', color: item.textColor || '#000', width: '100%' }}>{item.caption}</div>
                 </div>
               )}
               {item.type === 'todo' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
-                  <input readOnly value={item.listTitle || ''} style={{ margin: '0 0 5px 0', fontFamily: item.font, color: item.textColor, borderBottom: `1px solid ${item.textColor}40`, paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold' }} />
+                  <h4 style={{ margin: '0 0 5px 0', fontFamily: item.font || 'var(--font-heading)', color: item.textColor || '#000', borderBottom: `1px solid ${(item.textColor || '#000')}40`, paddingBottom: '5px' }}>{item.listTitle || 'Checklist'}</h4>
                   {item.tasks.map(task => (
                     <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <input type="checkbox" checked={task.done} readOnly style={{ width: '18px', height: '18px' }} />
-                      <input readOnly value={task.text} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: item.textColor, textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }} />
+                      <span style={{ fontSize: '0.95rem', color: item.textColor || '#000', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }}>{task.text}</span>
                     </div>
                   ))}
                 </div>

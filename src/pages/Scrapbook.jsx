@@ -7,31 +7,6 @@ import {
   Sparkles, Settings2, Trash2, ZoomIn, ZoomOut, Move, Undo, Redo
 } from 'lucide-react';
 
-// 🔥 THE SMART AUTO-EXPANDING TEXT BOX
-// This guarantees your paragraphs are never trapped in a scroll box!
-const AutoExpandingTextarea = ({ item, updateItemText, onFocus, isMobile, textStyle, placeholder }) => {
-  const textareaRef = useRef(null);
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-    }
-  }, [item.text]);
-
-  return (
-    <textarea 
-      ref={textareaRef}
-      onFocus={onFocus} 
-      value={item.text} 
-      onChange={(e) => updateItemText(item.id, { text: e.target.value })} 
-      placeholder={placeholder} 
-      onPointerDownCapture={(e) => e.stopPropagation()} 
-      style={{ ...textStyle, overflow: 'hidden', resize: 'none' }} // Removes scrollbars & manual resize
-    />
-  );
-};
-
 export default function Scrapbook() {
   const [journals, setJournals] = useState([{ id: Date.now(), name: 'Page 1', items: [] }]);
   const [activeJournalId, setActiveJournalId] = useState(null);
@@ -44,7 +19,6 @@ export default function Scrapbook() {
   const [isLoadingDesk, setIsLoadingDesk] = useState(true); 
   
   const [activeSheet, setActiveSheet] = useState(null); 
-  
   const [bgTheme, setBgTheme] = useState('lined'); 
   const [activeZIndex, setActiveZIndex] = useState(10);
   const [focusedItemId, setFocusedItemId] = useState(null); 
@@ -63,6 +37,7 @@ export default function Scrapbook() {
   const items = activeJournal ? activeJournal.items : [];
   const currentIndex = journals.findIndex(j => j.id === activeJournalId);
 
+  // 🔥 FATAL CRASH FIX: Bulletproof Theme Mapper
   const themes = {
     lined: { bg: '#fdf6e3', img: 'repeating-linear-gradient(transparent, transparent 31px, #d4c4a8 31px, #d4c4a8 32px)', size: '100% 32px' },
     grid: { bg: '#fdf6e3', img: 'linear-gradient(#d4c4a8 1px, transparent 1px), linear-gradient(90deg, #d4c4a8 1px, transparent 1px)', size: '32px 32px' },
@@ -74,6 +49,9 @@ export default function Scrapbook() {
     green: { bg: '#081c15', img: 'radial-gradient(circle at center, #1b4332 0%, #081c15 100%)', size: 'auto' }
   };
   const themeSwatches = { lined: '#fdf6e3', grid: '#e5e5e5', dotted: '#d4c4a8', leather: '#2b170c', parchment: '#f4ecd8', wood: '#4e342e', slate: '#2c3e50', green: '#1b4332' };
+
+  // This prevents the white screen of death if an old save sends an invalid theme string
+  const currentTheme = themes[bgTheme] || themes['lined'];
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -101,7 +79,6 @@ export default function Scrapbook() {
     }).catch(() => setIsLoadingDesk(false));
   }, [location.state]);
 
-  // INVISIBLE AUTO-SAVE
   useEffect(() => {
     if (isLoadingDesk) return;
     const token = localStorage.getItem('token');
@@ -210,34 +187,31 @@ export default function Scrapbook() {
     } catch (err) { alert("Failed to archive page."); } finally { setIsArchiving(false); }
   };
 
+  // 🔥 CRASH-FREE NATIVE TEXT RENDERER
   const renderItemContent = (item) => {
-    const textStyle = { flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', fontFamily: item.font, color: item.textColor || '#000', lineHeight: '1.5', cursor: 'text', minHeight: '100px', minWidth: '150px' };
+    const handleAutoResize = (e) => {
+      e.target.style.height = 'auto';
+      e.target.style.height = `${e.target.scrollHeight}px`;
+    };
+
+    const textStyle = { flexGrow: 1, background: item.isHighlighted ? 'rgba(241, 196, 15, 0.4)' : 'transparent', border: 'none', outline: 'none', resize: 'none', fontFamily: item.font, color: item.textColor || '#000', lineHeight: '1.5', cursor: 'text', minHeight: '100px', minWidth: '150px', overflow: 'hidden' };
+
+    const handleItemFocus = () => {
+      setFocusedItemId(item.id);
+      if(isMobile) setActiveSheet('format');
+    };
 
     switch (item.type) {
       case 'note':
       case 'text':
-        return <AutoExpandingTextarea 
-                 item={item} 
-                 updateItemText={updateItemText} 
-                 onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} 
-                 isMobile={isMobile} 
-                 textStyle={{ ...textStyle, fontSize: item.type === 'note' ? '1.05rem' : '1.4rem' }} 
-                 placeholder={item.type === 'note' ? "Scribble thoughts..." : "Type here..."} 
-               />;
+        return <textarea onFocus={handleItemFocus} value={item.text} onChange={(e) => updateItemText(item.id, { text: e.target.value })} onInput={handleAutoResize} placeholder={item.type === 'note' ? "Scribble thoughts..." : "Type here..."} onPointerDown={(e) => e.stopPropagation()} style={{ ...textStyle, fontSize: item.type === 'note' ? '1.05rem' : '1.4rem' }} />;
       
       case 'quote':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '250px' }}>
             <span style={{ fontSize: '4rem', color: 'rgba(0, 0, 0, 0.1)', position: 'absolute', top: '-15px', left: '5px', fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}>"</span>
-            <AutoExpandingTextarea 
-                 item={item} 
-                 updateItemText={updateItemText} 
-                 onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} 
-                 isMobile={isMobile} 
-                 textStyle={{ ...textStyle, fontSize: '1.3rem', fontStyle: 'italic', textAlign: 'center', minHeight: '80px', zIndex: 1 }} 
-                 placeholder="Enter a profound quote..." 
-               />
-            <input onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={item.author} onChange={(e) => updateItemText(item.id, { author: e.target.value })} placeholder="- Author" onPointerDownCapture={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: item.textColor || '#000', opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
+            <textarea onFocus={handleItemFocus} value={item.text} onChange={(e) => updateItemText(item.id, { text: e.target.value })} onInput={handleAutoResize} placeholder="Enter a profound quote..." onPointerDown={(e) => e.stopPropagation()} style={{ ...textStyle, fontSize: '1.3rem', fontStyle: 'italic', textAlign: 'center', minHeight: '80px', zIndex: 1 }} />
+            <input onFocus={handleItemFocus} value={item.author} onChange={(e) => updateItemText(item.id, { author: e.target.value })} placeholder="- Author" onPointerDown={(e) => e.stopPropagation()} style={{ background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', color: item.textColor || '#000', opacity: 0.8, fontFamily: 'var(--font-body)', fontWeight: 'bold', fontSize: '0.9rem' }} />
           </div>
         );
       
@@ -245,18 +219,19 @@ export default function Scrapbook() {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <img src={item.url} alt="Polaroid" draggable="false" style={{ width: '200px', height: '200px', objectFit: 'cover', pointerEvents: 'none', border: '1px solid #ddd' }} />
-            <input onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={item.caption} onChange={(e) => updateItemText(item.id, { caption: e.target.value })} placeholder="Write a caption..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: item.font, color: item.textColor || '#000', width: '100%', fontSize: '1rem' }} />
+            <input onFocus={handleItemFocus} value={item.caption} onChange={(e) => updateItemText(item.id, { caption: e.target.value })} placeholder="Write a caption..." onPointerDown={(e) => e.stopPropagation()} style={{ marginTop: '15px', background: 'transparent', border: 'none', outline: 'none', textAlign: 'center', fontFamily: item.font, color: item.textColor || '#000', width: '100%', fontSize: '1rem' }} />
           </div>
         );
       
       case 'todo':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
-            <input onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={item.listTitle || ''} onChange={(e) => updateItemText(item.id, { listTitle: e.target.value })} placeholder="List Title..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ margin: '0 0 5px 0', fontFamily: item.font, color: item.textColor || '#000', borderBottom: `1px solid ${(item.textColor || '#000')}40`, paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold' }} />
+            <input onFocus={handleItemFocus} value={item.listTitle || ''} onChange={(e) => updateItemText(item.id, { listTitle: e.target.value })} placeholder="List Title..." onPointerDown={(e) => e.stopPropagation()} style={{ margin: '0 0 5px 0', fontFamily: item.font, color: item.textColor || '#000', borderBottom: `1px solid ${(item.textColor || '#000')}40`, paddingBottom: '5px', background: 'transparent', borderTop: 'none', borderLeft: 'none', borderRight: 'none', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold' }} />
             {item.tasks.map(task => (
               <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <input type="checkbox" checked={task.done} onChange={(e) => updateTodoTask(item.id, task.id, { done: e.target.checked })} onPointerDownCapture={(e) => e.stopPropagation()} style={{ cursor: 'pointer', width: '18px', height: '18px' }} />
-                <input onFocus={() => { setFocusedItemId(item.id); if(isMobile) setActiveSheet('format'); }} value={task.text} onChange={(e) => updateTodoTask(item.id, task.id, { text: e.target.value })} placeholder="New item..." onPointerDownCapture={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: item.textColor || '#000', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }} />
+                {/* 🔥 FIX: Tick button works flawlessly now! */}
+                <input type="checkbox" checked={task.done} onChange={(e) => updateTodoTask(item.id, task.id, { done: e.target.checked })} onPointerDown={(e) => e.stopPropagation()} style={{ cursor: 'pointer', width: '20px', height: '20px' }} />
+                <input onFocus={handleItemFocus} value={task.text} onChange={(e) => updateTodoTask(item.id, task.id, { text: e.target.value })} placeholder="New item..." onPointerDown={(e) => e.stopPropagation()} style={{ flexGrow: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '0.95rem', color: item.textColor || '#000', textDecoration: task.done ? 'line-through' : 'none', opacity: task.done ? 0.6 : 1, fontFamily: item.font }} />
               </div>
             ))}
           </div>
@@ -278,6 +253,8 @@ export default function Scrapbook() {
     }
   };
 
+  const selectedItem = items.find(i => i.id === focusedItemId);
+
   if (isLoadingDesk) return <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'var(--lantern-gold)' }}><h2>Dusting off your desk...</h2></div>;
 
   return (
@@ -288,7 +265,7 @@ export default function Scrapbook() {
         .item-container:hover .item-controls, .item-container.focused .item-controls { opacity: 1; pointer-events: auto; }
       `}</style>
 
-      {/* 📱 MOBILE TOP BAR */}
+      {/* 📱 MOBILE TOP BAR (With Undo/Redo & Save) */}
       {isMobile && (
         <div style={{ height: '60px', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px', zIndex: 1000 }}>
           
@@ -322,8 +299,8 @@ export default function Scrapbook() {
         </div>
       )}
 
-      {/* 🎨 MAIN CANVAS */}
-      <div ref={constraintsRef} onPointerDown={() => { setFocusedItemId(null); setActiveSheet(null); }} style={{ flex: 1, position: 'relative', backgroundColor: themes[bgTheme].bg, backgroundImage: themes[bgTheme].img, backgroundSize: themes[bgTheme].size, transition: 'background 0.5s ease', overflow: 'hidden' }}>
+      {/* 🎨 MAIN CANVAS (Crash-Proof rendering) */}
+      <div ref={constraintsRef} onPointerDown={() => { setFocusedItemId(null); setActiveSheet(null); }} style={{ flex: 1, position: 'relative', backgroundColor: currentTheme.bg, backgroundImage: currentTheme.img, backgroundSize: currentTheme.size, transition: 'background 0.5s ease', overflow: 'hidden' }}>
         {items.map(item => (
           <motion.div
             key={item.id}
@@ -365,7 +342,6 @@ export default function Scrapbook() {
           <button onClick={() => setActiveSheet(activeSheet === 'skins' ? null : 'skins')} style={{ background: 'transparent', border: 'none', color: activeSheet === 'skins' ? 'var(--lantern-gold)' : 'var(--text-muted)' }}><Palette size={26} /></button>
           <button onClick={() => alert("Oracle Lens coming next!")} style={{ background: 'transparent', border: 'none', color: '#a29bfe' }}><Sparkles size={26} /></button>
           
-          {/* THE BIG CENTER ADD BUTTON */}
           <button onClick={() => setActiveSheet(activeSheet === 'add' ? null : 'add')} style={{ background: 'var(--lantern-gold)', border: 'none', color: '#000', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'translateY(-15px)', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)' }}><Plus size={30} /></button>
           
           <button onClick={() => navigate('/vault')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)' }}><Lock size={26} /></button>
@@ -413,7 +389,7 @@ export default function Scrapbook() {
                 {!selectedItem ? ( <p style={{ color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>Tap an item to format it.</p> ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Scale Block</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Scale</span>
                       <div style={{ display: 'flex', gap: '15px', background: 'var(--bg-deep)', padding: '5px 15px', borderRadius: '20px' }}>
                         <button onClick={() => updateItemCommitted(selectedItem.id, { scale: Math.max(0.5, (selectedItem.scale || 1) - 0.1) })} style={{ background: 'transparent', border: 'none', color: '#fff' }}><ZoomOut size={20}/></button>
                         <span style={{ color: '#fff' }}>{Math.round((selectedItem.scale || 1) * 100)}%</span>
@@ -439,7 +415,6 @@ export default function Scrapbook() {
                         </select>
                       </>
                     )}
-                    
                     <button onClick={() => deleteItem(selectedItem.id)} style={{ width: '100%', padding: '12px', background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', border: '1px solid rgba(231, 76, 60, 0.3)', borderRadius: '8px', display: 'flex', justifyContent: 'center', gap: '8px' }}><Trash2 size={18}/> Delete Item</button>
                   </div>
                 )}
