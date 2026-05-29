@@ -1,5 +1,5 @@
 /* =========================================
-   🏮 THE LANTERN LIBRARY: PREMIUM UI
+   🏮 READER'S STOP: PREMIUM UI
    ========================================= */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
@@ -16,19 +16,22 @@
   --lantern-glow: rgba(245, 158, 11, 0.15); 
   --border-color: #27272A;   
   
-  /* 🔥 Dynamic Glass Variables */
+  /* 🔥 Dynamic Glass & Component Variables */
   --search-glass: rgba(20, 20, 23, 0.7);
   --hero-gradient: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(20, 20, 23, 0.6) 100%);
+  --card-shadow: 0 12px 24px rgba(0,0,0,0.4);
+  --bubble-received-bg: rgba(20, 20, 23, 0.9);
+  --dock-bg: rgba(20, 20, 20, 0.85);
   
   --font-heading: 'Playfair Display', serif; 
   --font-body: 'Inter', sans-serif;          
 }
 
-/* ☀️ OVERRIDE: DAYLIGHT (Clean Ivory Mode) */
+/* ☀️ OVERRIDE: DAYLIGHT (Premium Ivory & Clean White) */
 body.theme-daylight {
-  --bg-deep: #F3F4F6;        
+  --bg-deep: #F9FAFB;        
   --bg-panel: #FFFFFF;       
-  --bg-panel-hover: #F9FAFB;
+  --bg-panel-hover: #F3F4F6;
   --text-main: #111827;      
   --text-muted: #6B7280;     
   
@@ -37,16 +40,18 @@ body.theme-daylight {
   --border-color: #E5E7EB;   
 
   /* 🔥 Clean White Glass for Day Mode */
-  --search-glass: rgba(255, 255, 255, 0.8);
-  --hero-gradient: linear-gradient(180deg, rgba(217, 119, 6, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%);
+  --search-glass: rgba(255, 255, 255, 0.85);
+  --hero-gradient: linear-gradient(180deg, rgba(217, 119, 6, 0.05) 0%, rgba(249, 250, 251, 0.8) 100%);
+  --card-shadow: 0 12px 24px rgba(0,0,0,0.06); /* Softer, elegant shadow for light mode */
+  --bubble-received-bg: #FFFFFF;
+  --dock-bg: rgba(255, 255, 255, 0.85);
 }
 
 /* =========================================
-   🌍 GLOBAL RESET 
+   🌍 GLOBAL RESET & TYPOGRAPHY
    ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-/* 🔥 FIX: Added overflow-x: hidden and max-width to stop mobile horizontal wobbling */
 html, body {
   background-color: var(--bg-deep);
   color: var(--text-main);
@@ -60,8 +65,7 @@ html, body {
 }
 
 html { scroll-behavior: smooth; }
-
-h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 600; color: var(--text-main); transition: color 0.8s ease; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); font-weight: 600; color: var(--text-main); transition: color 0.4s ease; }
 p, span, div, a { font-family: var(--font-body); }
 
 .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -73,7 +77,7 @@ p, span, div, a { font-family: var(--font-body); }
 button, .app-card, .bottom-nav-link, .aesthetic-3d-book { 
   font-family: var(--font-body); 
   transition: all 0.2s ease; 
-  -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; 
+  -webkit-user-select: none; -moz-user-select: none; user-select: none; 
 }
 
 button:active:not(:disabled), .app-card:active, .bottom-nav-link:active { transform: scale(0.96); }
@@ -81,29 +85,17 @@ button:active:not(:disabled), .app-card:active, .bottom-nav-link:active { transf
 input, textarea, select { font-family: var(--font-body); background-color: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-color); transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease; }
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--lantern-gold); }
 
-/* 🔥 SLEEK CARD CTA BUTTONS */
 .card-cta-btn {
-  padding: 12px 20px;
-  background: transparent;
-  color: var(--text-main);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-  display: inline-block;
+  padding: 12px 20px; background: transparent; color: var(--text-main); border: 1px solid var(--border-color);
+  border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s ease; display: inline-block;
 }
 .card-cta-btn:hover { border-color: var(--lantern-gold); color: var(--lantern-gold); background: rgba(245, 158, 11, 0.05); }
-.card-cta-btn:active { transform: scale(0.96); background: rgba(245, 158, 11, 0.1); }
 
-/* 🔥 MAGICAL GLOWING SEARCH BUTTON */
-.lantern-search-btn { background: linear-gradient(135deg, #F59E0B, #d35400); box-shadow: 0 0 15px rgba(245, 158, 11, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.3); border: none; color: white; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-.lantern-search-btn:active { transform: scale(0.96); box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
-.search-container.focused .lantern-search-btn { box-shadow: 0 0 25px rgba(245, 158, 11, 0.8), inset 0 0 12px rgba(255, 255, 255, 0.5); }
+.lantern-search-btn { background: linear-gradient(135deg, #F59E0B, #d35400); box-shadow: 0 0 15px rgba(245, 158, 11, 0.5), inset 0 0 8px rgba(255, 255, 255, 0.3); border: none; color: white; transition: all 0.3s ease; }
+.lantern-search-btn:active { transform: scale(0.96); }
 
 /* =========================================
-   📖 3D BOOK LOGO & ALIVE CARDS
+   📖 THE BRAND LOGO & ALIVE CARDS
    ========================================= */
 .aesthetic-3d-book { width: 44px; height: 30px; position: relative; perspective: 400px; cursor: pointer; display: flex; flex-shrink: 0; border-radius: 2px 6px 6px 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 .book-spine-center { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; background: linear-gradient(to right, #8e6b23, #F59E0B, #8e6b23); transform: translateX(-50%); z-index: 5; border-radius: 2px; }
@@ -115,423 +107,106 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 .theme-daylight .book-static-page { background: #FFFFFF; }
 
 .manuscript-card { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: pointer; }
-.manuscript-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.2); border-color: var(--lantern-gold) !important; }
-.theme-daylight .manuscript-card:hover { box-shadow: 0 12px 24px rgba(0,0,0,0.06); }
+.manuscript-card:hover { transform: translateY(-4px); box-shadow: var(--card-shadow); border-color: var(--lantern-gold) !important; }
 
 @keyframes magical-breathe {
   0%, 100% { transform: translateY(0); box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 0 0 rgba(245, 158, 11, 0); }
-  50% { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08), 0 0 12px rgba(245, 158, 11, 0.15); }
+  50% { transform: translateY(-3px); box-shadow: var(--card-shadow), 0 0 12px rgba(245, 158, 11, 0.15); }
 }
 .alive-card { animation: magical-breathe 4s ease-in-out infinite; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.alive-card:hover { animation-play-state: paused; transform: translateY(-6px) scale(1.02); box-shadow: 0 15px 30px rgba(0,0,0,0.12), 0 0 18px rgba(245, 158, 11, 0.3) !important; border-color: var(--lantern-gold); }
+.alive-card:hover { animation-play-state: paused; transform: translateY(-6px) scale(1.02); box-shadow: var(--card-shadow), 0 0 18px rgba(245, 158, 11, 0.3) !important; border-color: var(--lantern-gold); }
 
 .bottom-nav-link { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: var(--text-muted); font-size: 1.4rem; padding: 5px 15px; border-radius: 12px; transition: all 0.2s; }
 .bottom-nav-link:active { background: rgba(245, 158, 11, 0.1); color: var(--lantern-gold); transform: scale(0.9); }
 
 /* =========================================
-   💬 NATIVE CHAT ARCHITECTURE (WHATSAPP STYLE)
-   ========================================= */
-.chat-layout { display: flex; flex-direction: column; height: calc(100vh - 120px); background-color: var(--bg-deep); border-radius: 16px; border: 1px solid var(--border-color); overflow: hidden; }
-.chat-header { flex-shrink: 0; padding: 15px 20px; background: var(--bg-panel); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; z-index: 10; }
-.chat-tunnel { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-.chat-tunnel::-webkit-scrollbar { display: none; }
-.chat-tunnel { -ms-overflow-style: none; scrollbar-width: none; }
-.chat-input-area { flex-shrink: 0; padding: 12px 15px; background: var(--bg-panel); border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
-
-.bubble-wrapper { display: flex; flex-direction: column; max-width: 85%; }
-.bubble-wrapper.sent { align-self: flex-end; align-items: flex-end; }
-.bubble-wrapper.received { align-self: flex-start; align-items: flex-start; }
-.chat-bubble { padding: 12px 16px; font-size: 0.95rem; line-height: 1.4; word-wrap: break-word; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-.chat-bubble.sent { background: var(--lantern-gold); color: #ffffff; border-radius: 20px 20px 4px 20px; }
-.chat-bubble.received { background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 20px 20px 20px 4px; }
-.chat-timestamp { font-size: 0.7rem; color: var(--text-muted); margin-top: 5px; padding: 0 5px; }
-
-@media (max-width: 768px) {
-  /* Hide standard footer to make desk feel like an app */
-  footer { display: none !important; }
-
-  header, nav, .navbar {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    gap: 5px !important;
-    flex-wrap: nowrap !important;
-  }
-
-  .logo-text, h1, a[href="/"], [style*="THE LANTERN LIBRARY"] {
-    font-size: 1rem !important;
-    max-width: 40vw !important; 
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    display: inline-block !important;
-    vertical-align: middle;
-  }
-/* 🔥 FIX FOR CUT-OFF MENUS (Books, Movies, Series, etc.) */
-  .profile-tabs, .search-tabs, [style*="overflow-x"], [style*="overflowX"] {
-    justify-content: flex-start !important;
-    padding-left: 15px !important;
-    margin-left: 0 !important;
-  }
-  /* 🔥 THE ABSOLUTE ORACLE BUTTON FIX */
-  .oracle-card, div:has(> [style*="ANALYZE MY TASTE"]) {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-  }
-
-  button[style*="ANALYZE MY TASTE"], .oracle-card button {
-    position: static !important;
-    margin-top: 20px !important;
-    width: auto !important;
-    min-width: 220px !important; 
-    max-width: none !important;
-    white-space: nowrap !important; /* FORCES it to stay on one line! */
-    padding: 12px 20px !important;
-    font-size: 14px !important;
-  }
-}
-
-/* =========================================
-   🔮 THE DEEP AESTHETIC SUMMONING
+   🔮 THE DEEP AESTHETIC SUMMONING & CHAT
    ========================================= */
 .magical-chat-tunnel { background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-panel) 100%); position: relative; }
-.magical-chat-tunnel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.04) 0%, transparent 80%); pointer-events: none; z-index: 0; }
 .glowing-avatar { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--lantern-gold); box-shadow: 0 0 12px rgba(245, 158, 11, 0.3); animation: pulse-glow 3s infinite alternate; z-index: 1; flex-shrink: 0; }
 @keyframes pulse-glow { 0% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.2); } 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); } }
-.summon-bubble { position: relative; z-index: 1; padding: 14px 18px; font-size: 1rem; line-height: 1.6; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-.summon-bubble.received { font-family: var(--font-heading); background: rgba(20, 20, 23, 0.9); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--text-main); border-radius: 20px 20px 20px 4px; }
+
+/* 🔥 FIX: Text Camouflage resolved by using dynamic background variable */
+.summon-bubble.received { font-family: var(--font-heading); background: var(--bubble-received-bg); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 20px 20px 20px 4px; box-shadow: var(--card-shadow); }
 .summon-bubble.sent { font-family: var(--font-body); }
 
 /* =========================================
-   🖋️ THE PUBLISHING POLISH
-   ========================================= */
-.ql-toolbar.ql-snow, .tox-toolbar { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch; background: var(--bg-panel); border-color: var(--border-color) !important; border-radius: 12px 12px 0 0; padding: 10px !important; }
-.ql-toolbar::-webkit-scrollbar, .tox-toolbar::-webkit-scrollbar { display: none; }
-.ql-container.ql-snow { border-color: var(--border-color) !important; border-radius: 0 0 12px 12px; background: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); font-size: 1.05rem; min-height: 45vh; }
-.ql-editor.ql-blank::before { color: var(--text-muted) !important; font-style: italic; }
-.rich-text-content blockquote { border-left: 3px solid var(--lantern-gold); margin: 20px 0; padding: 15px 20px; font-style: italic; font-family: var(--font-heading); color: var(--text-muted); background: rgba(245, 158, 11, 0.05); border-radius: 0 8px 8px 0; }
-.rich-text-content p { margin-bottom: 15px; line-height: 1.7; }
-
-/* =========================================
-   ✨ PREMIUM NATIVE ANIMATIONS & EFFECTS
-   ========================================= */
-
-/* 1. Staggered Cascade Entrance */
-@keyframes slideUpFade {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-cascade-1 { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.animate-cascade-2 { opacity: 0; animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards; }
-.animate-cascade-3 { opacity: 0; animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; }
-
-/* 2. Glassmorphism & Holographic Shimmer */
-@keyframes shimmer {
-  0% { transform: translateX(-150%) skewX(-15deg); }
-  50%, 100% { transform: translateX(200%) skewX(-15deg); }
-}
-.glass-card {
-  position: relative; background: rgba(20, 20, 23, 0.4); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.theme-daylight .glass-card { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05); }
-.glass-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent); z-index: 1; pointer-events: none; animation: shimmer 6s infinite; }
-.glass-card:active { transform: scale(0.97); }
-
-/* 3. Dynamic Search Focus Mode */
-.search-container { transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); transform-origin: center; }
-.search-container.focused { transform: scale(1.03); z-index: 100; }
-
-/* 🔥 FIX: Changed 100vw to 100% to stop scrollbar glitching */
-.page-dimmer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
-.page-dimmer.active { opacity: 1; pointer-events: auto; }
-/* =========================================
    📚 THE AESTHETIC ARCHIVES
    ========================================= */
-
-/* --- 1. THE MAHOGANY BOOKSHELF --- */
 .wooden-shelf-container {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 20px 20px 0 20px;
-  /* Dark wood base with a subtle vertical grain pattern */
-  background-color: #3e2723;
+  display: flex; flex-wrap: wrap; padding: 20px 20px 0 20px; gap: 20px; justify-content: center;
+  background-color: #3e2723; border-radius: 8px 8px 0 0; position: relative;
   background-image: repeating-linear-gradient(to right, rgba(0,0,0,0.05) 0px, transparent 2px, rgba(0,0,0,0.05) 4px);
-  border-radius: 8px 8px 0 0;
   box-shadow: inset 0 20px 30px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.3);
-  position: relative;
-  gap: 20px;
-  justify-content: center;
 }
-/* --- 1.b THE BOOK SPINES --- */
+
 .shelf-book-spine {
-  width: 45px;
-  height: 180px;
-  background-size: cover;
-  background-position: left center; /* Uses the left edge of the cover to simulate the binding */
-  border-radius: 4px 2px 2px 4px;
+  width: 45px; height: 180px; background-size: cover; background-position: left center; 
+  border-radius: 4px 2px 2px 4px; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center;
   box-shadow: inset -5px 0 10px rgba(0,0,0,0.6), inset 2px 0 5px rgba(255,255,255,0.2), 5px 5px 15px rgba(0,0,0,0.5);
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  transform-origin: bottom center;
-  align-self: flex-end;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-left: 2px solid rgba(255,255,255,0.1);
+  transition: transform 0.3s ease; transform-origin: bottom center; overflow: hidden; align-self: flex-end;
 }
-
-.shelf-book-spine::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.6); /* Darkens the spine so the gold text is readable */
-  z-index: 1;
-}
-
-.shelf-book-spine:hover {
-  transform: translateY(-15px) rotate(-4deg) scale(1.05); /* Simulates pulling the book out */
-  box-shadow: inset -5px 0 10px rgba(0,0,0,0.6), inset 2px 0 5px rgba(255,255,255,0.2), 10px 15px 25px rgba(0,0,0,0.6);
-}
+.shelf-book-spine::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1; }
+.shelf-book-spine:hover { transform: translateY(-15px) rotate(-4deg) scale(1.05); }
 
 .spine-title {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg); /* Makes text read top-to-bottom like a real book */
-  color: var(--lantern-gold);
-  font-family: var(--font-heading);
-  font-size: 0.85rem;
-  font-weight: bold;
-  letter-spacing: 1px;
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
-  z-index: 2;
-  padding: 10px 0;
-  max-height: 95%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); color: var(--lantern-gold);
+  font-family: var(--font-heading); font-size: 0.85rem; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+  z-index: 2; padding: 10px 0; max-height: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* The actual 3D shelf the books sit on */
-.shelf-lip {
-  width: 100%;
-  height: 25px;
-  background: linear-gradient(to bottom, #5d4037, #3e2723);
-  border-top: 2px solid #795548;
-  border-radius: 3px;
-  box-shadow: 0 8px 15px rgba(0,0,0,0.5);
-  margin-bottom: 30px;
-  margin-top: -5px;
-}
+.shelf-lip { width: 100%; height: 25px; background: linear-gradient(to bottom, #5d4037, #3e2723); border-top: 2px solid #795548; border-radius: 3px; box-shadow: 0 8px 15px rgba(0,0,0,0.5); margin-bottom: 30px; margin-top: -5px; }
 
-.shelf-book {
-  width: 110px;
-  height: 165px;
-  object-fit: cover;
-  border-radius: 2px 5px 5px 2px;
-  /* Simulates the spine and page depth */
-  box-shadow: -4px 0 10px rgba(0,0,0,0.5), inset 4px 0 8px rgba(255,255,255,0.2);
-  cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  transform-origin: bottom center;
-  align-self: flex-end; /* Keeps books sitting flat on the shelf */
-}
+.shelf-book { width: 110px; height: 165px; object-fit: cover; border-radius: 2px 5px 5px 2px; box-shadow: -4px 0 10px rgba(0,0,0,0.5), inset 4px 0 8px rgba(255,255,255,0.2); cursor: pointer; transition: transform 0.3s ease; transform-origin: bottom center; align-self: flex-end; }
+.shelf-book:hover { transform: translateY(-10px) scale(1.05) rotate(-2deg); }
 
-.shelf-book:hover {
-  transform: translateY(-10px) scale(1.05) rotate(-2deg);
-}
-
-/* --- 2. THE VINTAGE FILM STRIP --- */
 .film-strip-container {
-  display: flex;
-  gap: 15px;
-  padding: 35px 20px;
-  background-color: #050505;
-  position: relative;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-  border-radius: 4px;
+  display: flex; gap: 15px; padding: 35px 20px; background-color: #050505; position: relative; overflow-x: auto;
+  scroll-snap-type: x mandatory; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border-radius: 4px;
 }
-
-/* Pure CSS Magic: Creating the film sprocket holes using dashed borders */
-.film-strip-container::before,
-.film-strip-container::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 15px;
-  background-image: repeating-linear-gradient(90deg, transparent 0px, transparent 15px, rgba(255,255,255,0.8) 15px, rgba(255,255,255,0.8) 25px);
-}
-
+.film-strip-container::before, .film-strip-container::after { content: ''; position: absolute; left: 0; width: 100%; height: 15px; background-image: repeating-linear-gradient(90deg, transparent 0px, transparent 15px, rgba(255,255,255,0.8) 15px, rgba(255,255,255,0.8) 25px); }
 .film-strip-container::before { top: 8px; }
 .film-strip-container::after { bottom: 8px; }
 
-.film-poster {
-  scroll-snap-align: center;
-  width: 140px;
-  height: 210px;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 2px solid #111;
-  /* Cinematic color grading effect */
-  filter: sepia(0.3) contrast(1.2) brightness(0.9);
-  transition: filter 0.3s, transform 0.3s;
-  cursor: pointer;
-  position: relative;
-  z-index: 10;
-}
+.film-poster { scroll-snap-align: center; width: 140px; height: 210px; object-fit: cover; flex-shrink: 0; border: 2px solid #111; filter: sepia(0.3) contrast(1.2) brightness(0.9); transition: filter 0.3s, transform 0.3s; cursor: pointer; position: relative; z-index: 10; }
+.film-poster:hover { filter: sepia(0) contrast(1) brightness(1.1); transform: scale(1.08); border-color: var(--lantern-gold); }
 
-.film-poster:hover {
-  filter: sepia(0) contrast(1) brightness(1.1);
-  transform: scale(1.08);
-  border-color: var(--lantern-gold);
-}
 /* =========================================
-   📝 ARTICLE IMAGE CONSTRAINTS
+   🖋️ QUILL EDITOR & DESK DOCK
    ========================================= */
-.article-content-body img {
-  max-width: 100%;
-  height: auto !important;
-  border-radius: 8px;
-  display: block;
-  margin: 20px auto; /* Centers the image nicely between paragraphs */
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
+.ql-toolbar.ql-snow, .tox-toolbar { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; background: var(--bg-panel); border-color: var(--border-color) !important; border-radius: 12px 12px 0 0; padding: 10px !important; }
+.ql-toolbar::-webkit-scrollbar, .tox-toolbar::-webkit-scrollbar { display: none; }
+.ql-container.ql-snow { border-color: var(--border-color) !important; border-radius: 0 0 12px 12px; background: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); font-size: 1.05rem; min-height: 45vh; }
+.rich-text-content blockquote { border-left: 3px solid var(--lantern-gold); margin: 20px 0; padding: 15px 20px; font-style: italic; font-family: var(--font-heading); color: var(--text-muted); background: rgba(245, 158, 11, 0.05); border-radius: 0 8px 8px 0; }
 
-/* Also ensures long text or links don't break the layout */
-.article-content-body {
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-}
-/* =========================================
-   🖋️ MODERN DESK & QUILL EDITOR STYLES
-   ========================================= */
-/* Make the Quill editor blend seamlessly into the notes */
-.desk-quill .ql-container.ql-snow {
-  border: none !important;
-  font-family: inherit;
-  font-size: inherit;
-}
+.desk-quill .ql-container.ql-snow { border: none !important; font-family: inherit; font-size: inherit; }
+.desk-quill .ql-toolbar.ql-snow { display: none; border: none; border-bottom: 1px solid var(--border-color); background: var(--bg-panel); border-radius: 8px 8px 0 0; padding: 8px; }
+.item-container.focused .desk-quill .ql-toolbar.ql-snow { display: block; }
 
-.desk-quill .ql-editor {
-  padding: 15px;
-  min-height: 150px;
-}
-
-/* Hide the MS Word toolbar UNLESS the note is actively clicked/focused */
-.desk-quill .ql-toolbar.ql-snow {
-  display: none;
-  border: none;
-  border-bottom: 1px solid rgba(0,0,0,0.1);
-  background: #f8f9fa;
-  border-radius: 8px 8px 0 0;
-  padding: 8px;
-}
-
-.item-container.focused .desk-quill .ql-toolbar.ql-snow {
-  display: block;
-}
-
-/* Modern, minimalist floating dock */
+/* 🔥 FIX: Text Camouflage resolved */
 .modern-dock {
-  background: rgba(20, 20, 20, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  background: var(--dock-bg);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
 }
+
 /* =========================================
-   📱 GLOBAL MOBILE RESPONSIVENESS FIXES
+   📱 MASTER MOBILE RESPONSIVENESS (CONSOLIDATED)
    ========================================= */
-body, html, #root {
-  max-width: 100vw;
-  overflow-x: hidden; /* Stops the entire website from sliding left and right */
-}
-
-/* Hide the scrollbar in toolbars so it looks like a native app */
-.hide-scrollbar::-webkit-scrollbar { 
-  display: none; 
-}
-.hide-scrollbar { 
-  -ms-overflow-style: none; 
-  scrollbar-width: none; 
-}
-
 @media (max-width: 768px) {
-  /* Forces the top navigation bar to fit within the phone screen */
-  header, nav, [style*="display: flex"][style*="justify-content: space-between"] {
+  footer { display: none !important; }
+
+  header, nav, .navbar {
     padding-left: 10px !important;
     padding-right: 10px !important;
     gap: 8px !important;
     flex-wrap: nowrap !important;
   }
 
-  /* Shrinks the "THE LANTERN LIBRARY" text so the avatar fits */
-  h1, .logo-text, [style*="THE LANTERN LIBRARY"] {
+  h1, .logo-text, a[href="/"], [style*="THE LANTERN LIBRARY"], [style*="Reader's Stop"] {
     font-size: 1.1rem !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 130px !important; 
-  }
-}
-/* =========================================
-   📱 GLOBAL MOBILE NAV & TOUCH FIXES
-   ========================================= */
-body, html, #root {
-  max-width: 100vw;
-  overflow-x: hidden; 
-}
-
-/* Ensure draggable desk items don't accidentally trigger screen scrolling on phones */
-.item-container {
-  touch-action: none;
-}
-
-@media (max-width: 768px) {
-  /* Targets your top navbar to protect the avatar and notifications */
-  header, nav, .navbar {
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-    gap: 5px !important;
-  }
-
-  /* Safely shrinks "THE LANTERN LIBRARY" text so it doesn't push elements off screen */
-  h1, .logo-text, a[href="/"] {
-    font-size: 1.1rem !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 160px !important; 
-  }
-}
-/* =========================================
-   📱 AGGRESSIVE MOBILE SCALING FIXES
-   (For users with enlarged system fonts)
-   ========================================= */
-body, html, #root {
-  max-width: 100vw;
-  overflow-x: hidden; 
-}
-
-@media (max-width: 768px) {
-  /* 1. PROTECT THE NAVBAR & AVATAR */
-  header, nav, .navbar {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    gap: 5px !important;
-    flex-wrap: nowrap !important;
-  }
-
-  /* Force the title to shrink and truncate with "..." instead of breaking the screen */
-  .logo-text, h1, a[href="/"], [style*="THE LANTERN LIBRARY"] {
-    font-size: 1rem !important;
-    max-width: 40vw !important; /* Never takes up more than 40% of screen width */
+    max-width: 45vw !important; 
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -539,90 +214,12 @@ body, html, #root {
     vertical-align: middle;
   }
 
-  /* 2. FIX THE ORACLE "ANALYZE MY TASTE" BUTTON */
-  .oracle-card button, [style*="ANALYZE MY TASTE"] {
-    font-size: 0.75rem !important;
-    padding: 6px 10px !important;
-    white-space: normal !important; /* Allows text to wrap into two lines */
-    text-align: center !important;
-    width: auto !important;
-    max-width: 100px !important;
-  }
-
-  /* 3. FIX PROFILE TABS (Finished, Currently Consuming, etc.) */
-  .profile-tabs, [style*="Currently Consuming"] {
-    flex-wrap: wrap !important; /* Forces them to stack neatly instead of shrinking into nothing */
-    justify-content: center !important;
-    gap: 8px !important;
-  }
-}
-/* =========================================
-   📱 GLOBAL MOBILE OVERRIDES
-   ========================================= */
-body, html, #root {
-  max-width: 100vw;
-  overflow-x: hidden; 
-}
-
-@media (max-width: 768px) {
-  /* Hides the default footer when using mobile apps */
-  footer { display: none !important; }
-
-  header, .navbar {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    gap: 5px !important;
-    flex-wrap: nowrap !important;
-  }
-
-  .logo-text, h1, a[href="/"], [style*="THE LANTERN LIBRARY"] {
-    font-size: 1rem !important;
-    max-width: 40vw !important; 
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    display: inline-block !important;
-    vertical-align: middle;
-  }
-
-  /* 🔥 FIX FOR CUT-OFF TABS (Books, Movies, etc.) */
   .profile-tabs, .search-tabs, [style*="overflow-x"], [style*="overflowX"] {
     justify-content: flex-start !important;
     padding-left: 15px !important;
     margin-left: 0 !important;
   }
 
-  /* 🔥 FIX FOR ORACLE BUTTON SQUISHING */
-  .oracle-card, div:has(> [style*="ANALYZE MY TASTE"]) {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-  }
-
-  button[style*="ANALYZE MY TASTE"], .oracle-card button {
-    position: static !important;
-    margin-top: 20px !important;
-    width: auto !important;
-    min-width: 220px !important; 
-    max-width: none !important;
-    white-space: nowrap !important; 
-    padding: 12px 20px !important;
-    font-size: 14px !important;
-  }
-}
-@media (max-width: 768px) {
-  /* Hides default footer in apps */
-  footer { display: none !important; }
-
-  /* 🔥 FREE THE MENUS! This stops the "Books" tab from getting trapped */
-  .profile-tabs, .search-tabs, [style*="overflow-x"], [style*="overflowX"] {
-    justify-content: flex-start !important;
-    padding-left: 15px !important;
-    margin-left: 0 !important;
-  }
-
-  /* 🔥 FIX FOR ORACLE BUTTON SQUISHING */
   .oracle-card, div:has(> [style*="ANALYZE MY TASTE"]) {
     display: flex !important;
     flex-direction: column !important;

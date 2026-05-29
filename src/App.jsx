@@ -28,6 +28,7 @@ import Archive from "./pages/Archive";
 // 🔥 FIXED: Vercel will now look inside the 'pages' folder for this file!
 import Landing from './pages/Landing'; 
 import Scrapbook from "./pages/Scrapbook";
+import ScrollToTop from './components/ScrollToTop';
 
 function AppLayout() {
   const location = useLocation();
@@ -120,6 +121,7 @@ function AppLayout() {
 function App() {
   return (
     <BrowserRouter>
+    <ScrollToTop />
       <AppLayout />
     </BrowserRouter>
   );

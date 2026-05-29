@@ -101,10 +101,11 @@ export default function Navbar() {
 
   return (
     <>
-      {/* 🔥 FIX 1: zIndex boosted to 9999 so it covers everything */}
       <nav style={{ background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-color)', padding: isMobile ? '12px 15px' : '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 9999, transition: 'background 0.4s ease' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '15px' }}>
+          
+          {/* 🔥 RESTORED ANIMATED BOOK TOGGLE */}
           <div className="aesthetic-3d-book" onClick={toggleTheme} title="Turn the page to change time">
             <div className="book-static-page left"></div>
             <div className="book-spine-center"></div>
@@ -113,8 +114,9 @@ export default function Navbar() {
           </div>
           
           <Link to="/" style={{ textDecoration: 'none' }}>
+            {/* 🔥 NEW BRAND NAME */}
             <h2 style={{ margin: 0, color: 'var(--lantern-gold)', letterSpacing: isMobile ? '0px' : '1px', textTransform: 'uppercase', fontSize: isMobile ? '0.9rem' : '1.2rem', whiteSpace: 'nowrap', fontWeight: 'bold', fontFamily: 'var(--font-heading)' }}>
-              The Lantern Library
+              Reader's Stop
             </h2>
           </Link>
         </div>
@@ -133,7 +135,7 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '15px' : '20px' }}>
           
           {!isMobile && (
-            <button onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+            <button type="button" onClick={() => navigate('/write')} style={{ background: 'var(--lantern-gold)', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: '20px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
               <PenLine size={16} /> Publish
             </button>
           )}
@@ -144,12 +146,11 @@ export default function Navbar() {
 
           {/* NOTIFICATION BELL */}
           <div style={{ position: 'relative' }} ref={notifRef}>
-            <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative', padding: '0', display: 'flex', alignItems: 'center', color: 'var(--lantern-gold)' }}>
+            <button type="button" onClick={() => setShowNotifDropdown(!showNotifDropdown)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', position: 'relative', padding: '0', display: 'flex', alignItems: 'center', color: 'var(--lantern-gold)' }}>
               <Bell size={isMobile ? 22 : 24} />
               {unreadCount > 0 && <span style={{ position: 'absolute', top: '-4px', right: '-4px', background: '#e74c3c', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.65rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg-panel)' }}>{unreadCount}</span>}
             </button>
 
-            {/* 🔥 Dropdown background is explicitly set so it covers elements beneath it */}
             {showNotifDropdown && (
                <div style={{ position: 'absolute', top: '100%', right: isMobile ? '-40px' : '0', marginTop: '15px', width: isMobile ? '280px' : '320px', background: 'var(--bg-deep)', border: '1px solid var(--border-color)', borderRadius: '12px', zIndex: 10000, boxShadow: '0 10px 30px rgba(0,0,0,0.8)', overflow: 'hidden' }}>
                  <div style={{ padding: '15px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-panel)' }}>
