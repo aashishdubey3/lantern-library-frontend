@@ -55,6 +55,7 @@ export default function Scrapbook() {
   const [archiveTitle, setArchiveTitle] = useState('');
   const [isArchiving, setIsArchiving] = useState(false);
   const [showMediaModal, setShowMediaModal] = useState(false);
+  const [showBgMenu, setShowBgMenu] = useState(false);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const constraintsRef = useRef(null);
