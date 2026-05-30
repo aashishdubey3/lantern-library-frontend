@@ -270,51 +270,35 @@ export default function Profile() {
     const books = filteredList.filter(item => item.mediaType === 'book');
     const moviesAndSeries = filteredList.filter(item => item.mediaType === 'movie' || item.mediaType === 'series');
 
-    // Get a clean title for the export card based on the active tab
-    const getTabName = () => {
-      if (activeTab === 'tbrList') return 'To Be Read';
-      if (activeTab === 'currentlyConsuming') return 'Currently Consuming';
-      return 'Finished Archives';
-    };
-
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
         
-        {/* 🔥 THE GLOBAL TAB HEADER & DOWNLOAD BUTTON */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', flexWrap: 'wrap', gap: '15px' }}>
-          <h3 style={{ margin: 0, color: 'var(--text-main)', fontFamily: 'var(--font-heading)', fontSize: '1.5rem' }}>
-            {getTabName()} {mediaFilter !== 'all' ? `— ${mediaFilter}s` : ''}
-          </h3>
-          
-          <button 
-            onClick={handleDownloadLibrary}
-            disabled={isDownloading}
-            style={{ background: 'var(--lantern-gold)', border: 'none', color: '#000', padding: '8px 18px', borderRadius: '30px', cursor: isDownloading ? 'wait' : 'pointer', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', transition: 'transform 0.2s ease', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-          >
-            <Download size={18} /> {isDownloading ? 'Capturing...' : 'Download Shelf Card'}
-          </button>
-        </div>
-
-        {/* 📚 1. THE WOODEN BOOKSHELF (UI) */}
+        {/* 📚 1. THE WOODEN BOOKSHELF WITH SPINES */}
         {books.length > 0 && (() => {
-          const booksPerShelf = window.innerWidth <= 768 ? 4 : 12;
-          const bookChunks = chunkArray(books, booksPerShelf);
+          // Chunk books into groups of 6 per shelf
+          const bookChunks = chunkArray(books, 6);
           const currentShelf = bookChunks[bookPage] || [];
 
           return (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h4 style={{ margin: 0, color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}>The Library</h4>
-                {books.length > booksPerShelf && (
-                  <button onClick={() => setIsFullLibrary(!isFullLibrary)} style={{ background: 'transparent', border: '1px solid var(--lantern-gold)', color: 'var(--lantern-gold)', padding: '4px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '25px' }}>
+                <h3 style={{ margin: 0, color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)' }}>The Library</h3>
+                
+                {/* The Premium Toggle Button */}
+                {books.length > 6 && (
+                  <button 
+                    onClick={() => setIsFullLibrary(!isFullLibrary)}
+                    style={{ background: 'transparent', border: '1px solid var(--lantern-gold)', color: 'var(--lantern-gold)', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s ease' }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = 'var(--lantern-gold)'; e.currentTarget.style.color = 'var(--bg-deep)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--lantern-gold)'; }}
+                  >
                     {isFullLibrary ? 'View Single Shelf' : 'View Full Library 📚'}
                   </button>
                 )}
               </div>
 
               {isFullLibrary ? (
+                /* --- FULL LIBRARY VIEW --- */
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {bookChunks.map((chunk, index) => (
                     <div key={index} className="wooden-shelf-container" style={{ marginBottom: index === bookChunks.length - 1 ? '0' : '-15px' }}>
@@ -328,6 +312,7 @@ export default function Profile() {
                   ))}
                 </div>
               ) : (
+                /* --- SINGLE SHELF (PAGINATED) VIEW --- */
                 <div>
                   <div className="wooden-shelf-container">
                     {currentShelf.map(item => (
@@ -337,11 +322,27 @@ export default function Profile() {
                     ))}
                     <div className="shelf-lip"></div>
                   </div>
+
+                  {/* Pagination Arrows */}
                   {bookChunks.length > 1 && (
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginTop: '10px' }}>
-                      <button onClick={() => setBookPage(Math.max(0, bookPage - 1))} disabled={bookPage === 0} style={{ background: 'transparent', border: 'none', color: bookPage === 0 ? '#555' : 'var(--lantern-gold)', cursor: bookPage === 0 ? 'default' : 'pointer', fontWeight: 'bold' }}>&larr; Prev</button>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Shelf {bookPage + 1} of {bookChunks.length}</span>
-                      <button onClick={() => setBookPage(Math.min(bookChunks.length - 1, bookPage + 1))} disabled={bookPage === bookChunks.length - 1} style={{ background: 'transparent', border: 'none', color: bookPage === bookChunks.length - 1 ? '#555' : 'var(--lantern-gold)', cursor: bookPage === bookChunks.length - 1 ? 'default' : 'pointer', fontWeight: 'bold' }}>Next &rarr;</button>
+                      <button 
+                        onClick={() => setBookPage(Math.max(0, bookPage - 1))} 
+                        disabled={bookPage === 0}
+                        style={{ background: 'transparent', border: 'none', color: bookPage === 0 ? '#555' : 'var(--lantern-gold)', cursor: bookPage === 0 ? 'default' : 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+                      >
+                        &larr; Prev
+                      </button>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                        Shelf {bookPage + 1} of {bookChunks.length}
+                      </span>
+                      <button 
+                        onClick={() => setBookPage(Math.min(bookChunks.length - 1, bookPage + 1))} 
+                        disabled={bookPage === bookChunks.length - 1}
+                        style={{ background: 'transparent', border: 'none', color: bookPage === bookChunks.length - 1 ? '#555' : 'var(--lantern-gold)', cursor: bookPage === bookChunks.length - 1 ? 'default' : 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+                      >
+                        Next &rarr;
+                      </button>
                     </div>
                   )}
                 </div>
@@ -350,10 +351,10 @@ export default function Profile() {
           );
         })()}
 
-        {/* 🎞️ 2. THE FILM STRIP (UI) */}
+        {/* 🎞️ 2. THE FILM STRIP */}
         {moviesAndSeries.length > 0 && (
           <div>
-            <h4 style={{ margin: '0 0 15px 0', color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', fontSize: '1.2rem' }}>The Screening Room</h4>
+            <h3 style={{ color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>The Screening Room</h3>
             <div className="film-strip-container hide-scroll">
               {moviesAndSeries.map(item => (
                 <div key={item._id} style={{ position: 'relative' }}>
@@ -364,46 +365,60 @@ export default function Profile() {
           </div>
         )}
 
-        {/* 📸 3. THE HIDDEN FABLE-STYLE EXPORT CANVAS */}
-        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
-          <div ref={exportRef} className="export-library-card">
-            <div className="export-header">
-              <h2>{profileData.username}'s Archives</h2>
-              <p>{getTabName()}</p>
-            </div>
-            
-            <div className="export-content">
-              {books.length > 0 && (
-                <div className="export-book-section">
-                  <div className="export-shelf-spines">
-                    {books.map(item => (
-                      <div key={item._id} className="export-book-spine" style={{ backgroundImage: `url(${item.coverImage || 'https://via.placeholder.com/150'})` }} crossOrigin="anonymous">
-                        <span className="export-spine-title">{item.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="export-shelf-lip-flat"></div>
-                </div>
-              )}
-
-              {moviesAndSeries.length > 0 && (
-                <div className="export-movie-section" style={{ marginTop: books.length > 0 ? '40px' : '0' }}>
-                  <div className="export-movie-posters">
-                    {moviesAndSeries.map(item => (
-                      <img key={item._id} src={item.coverImage || 'https://via.placeholder.com/150'} alt={item.title} className="export-movie-poster" crossOrigin="anonymous" />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="export-footer">Generated in Librarium ✨</div>
-          </div>
-        </div>
-
       </div>
     );
   };
+
+  const renderMyWorks = () => {
+    if (myArticles.length === 0) return <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px', fontSize: '1.1rem', fontStyle: 'italic' }}>You have not published any manuscripts yet.</p>;
+
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+        {myArticles.map(article => {
+          const cleanSnippet = article.snippet 
+            ? article.snippet.replace(/&nbsp;/g, ' ').replace(/&#160;/g, ' ').replace(/<[^>]+>/g, '') 
+            : '';
+
+          return (
+            <div 
+              key={article._id} 
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-8px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              style={{ background: 'var(--bg-panel)', padding: '20px', borderRadius: '12px', border: '1px solid #2c3e50', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', transition: 'transform 0.2s ease-in-out' }}
+            >
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                <h4 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.2rem', lineHeight: '1.4' }}>{article.title}</h4>
+                <span style={{ fontSize: '0.7rem', background: article.isPrivate ? '#e74c3c' : 'var(--success)', color: 'white', padding: '4px 8px', borderRadius: '12px', fontWeight: 'bold', letterSpacing: '0.5px' }}>
+                  {article.isPrivate ? 'PRIVATE' : 'PUBLIC'}
+                </span>
+              </div>
+              
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6', flexGrow: 1, marginBottom: '20px' }}>
+                {cleanSnippet}
+              </p>
+              
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => navigate('/write', { state: { article } })} style={{ flex: 1, padding: '8px', background: 'transparent', color: '#3498db', border: '1px solid #3498db', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s' }}>
+                  Edit ✏️
+                </button>
+                <button onClick={() => handleTogglePrivacy(article._id)} style={{ flex: 1, padding: '8px', background: 'transparent', color: 'var(--lantern-gold)', border: '1px solid var(--lantern-gold)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s' }}>
+                  {article.isPrivate ? 'Make Public 👁️' : 'Make Private 🔒'}
+                </button>
+                <button onClick={() => handleDeleteArticle(article._id)} style={{ padding: '8px 15px', background: 'transparent', color: '#e74c3c', border: '1px solid #e74c3c', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s' }}>
+                  Burn 🗑️
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px', position: 'relative' }}>
+      
       {/* 👤 PROFILE HEADER */}
       <div style={{ textAlign: 'center', marginBottom: '50px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${profileData.username}`} alt="Avatar" style={{ width: '90px', height: '90px', borderRadius: '50%', background: '#ecf0f1', border: '3px solid var(--lantern-gold)', marginBottom: '15px' }} />
