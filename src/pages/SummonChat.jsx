@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 export default function SummonChat() {
   const location = useLocation();
   const navigate = useNavigate();
-  const messagesEndRef = useRef(null);
+  const chatTunnelRef = useRef(null);
   
   const mediaTitle = location.state?.title || 'the archives';
 
@@ -14,9 +14,16 @@ export default function SummonChat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+ useEffect(() => {
+    // This tells ONLY the chat tunnel to scroll its own internal height, 
+    // leaving the main webpage completely alone.
+    if (chatTunnelRef.current) {
+      chatTunnelRef.current.scrollTo({
+        top: chatTunnelRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [messages, loading]);
 
   const handleSummon = (e) => {
     e.preventDefault();
@@ -94,8 +101,8 @@ export default function SummonChat() {
             </form>
           </div>
         ) : (
-          <>
-            <div className="chat-tunnel magical-chat-tunnel">
+         <>
+            <div className="chat-tunnel magical-chat-tunnel" ref={chatTunnelRef}>
               {messages.map((msg, index) => (
                 <div key={index} className={`bubble-wrapper ${msg.sender === 'user' ? 'sent' : 'received'}`} style={{ gap: '6px' }}>
                   
@@ -126,7 +133,7 @@ export default function SummonChat() {
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
+              
             </div>
 
            <form onSubmit={sendMessage} className="chat-input-area" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(20, 20, 23, 0.85)', borderTop: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', padding: '20px 25px', zIndex: 10 }}>
