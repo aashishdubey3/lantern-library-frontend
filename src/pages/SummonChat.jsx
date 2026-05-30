@@ -122,9 +122,24 @@ export default function SummonChat() {
               <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={sendMessage} className="chat-input-area" style={{ background: '#0B0E14', borderTop: '1px solid rgba(243, 156, 18, 0.2)' }}>
-              <input type="text" placeholder={`Speak to ${characterName}...`} value={input} onChange={(e) => setInput(e.target.value)} style={{ flexGrow: 1, padding: '12px 20px', borderRadius: '25px', outline: 'none', background: 'var(--bg-panel)', color: 'var(--text-main)', border: '1px solid var(--border-color)' }} disabled={loading} />
-              <button type="submit" disabled={loading} style={{ padding: '0 25px', background: 'var(--lantern-gold)', color: '#0B0E14', border: 'none', borderRadius: '25px', cursor: 'pointer', fontWeight: 'bold' }}>Send</button>
+           <form onSubmit={sendMessage} className="chat-input-area" style={{ background: 'var(--bg-panel)', borderTop: '1px solid var(--border-color)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', padding: '15px 20px' }}>
+              <input 
+                type="text" 
+                placeholder={`Speak to ${characterName}...`} 
+                value={input} 
+                onChange={(e) => setInput(e.target.value)} 
+                style={{ flexGrow: 1, padding: '12px 20px', borderRadius: '25px', outline: 'none', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }} 
+                disabled={loading} 
+              />
+              <button 
+                type="submit" 
+                disabled={loading} 
+                style={{ padding: '12px 25px', background: 'linear-gradient(135deg, var(--lantern-gold), #d35400)', color: '#fff', border: 'none', borderRadius: '25px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(245, 158, 11, 0.3)', transition: 'transform 0.2s ease' }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                Send
+              </button>
             </form>
           </>
         )}
