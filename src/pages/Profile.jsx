@@ -28,6 +28,9 @@ export default function Profile() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
+  const [isFullLibrary, setIsFullLibrary] = useState(false);
+  const [bookPage, setBookPage] = useState(0);
+
   const navigate = useNavigate();
 
   const fetchProfile = async () => {
@@ -249,6 +252,16 @@ export default function Profile() {
 
   if (loading) return <h2 style={{ textAlign: 'center', marginTop: '50px', color: 'var(--lantern-gold)' }}>Dusting off your archives...</h2>;
   if (!profileData) return <h2 style={{ textAlign: 'center', color: 'var(--danger)' }}>Error loading profile.</h2>;
+  
+
+  // 🔥 NEW: Helper function to slice books into perfect rows
+  const chunkArray = (arr, size) => {
+    const chunked = [];
+    for (let i = 0; i < arr.length; i += size) {
+      chunked.push(arr.slice(i, i + size));
+    }
+    return chunked;
+  };
 
   const renderList = (list) => {
     const filteredList = mediaFilter === 'all' ? list : list.filter(item => item.mediaType === mediaFilter);
@@ -261,25 +274,82 @@ export default function Profile() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '50px' }}>
         
         {/* 📚 1. THE WOODEN BOOKSHELF WITH SPINES */}
-        {books.length > 0 && (
-          <div>
-            <h3 style={{ color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '20px' }}>The Library</h3>
-            <div className="wooden-shelf-container">
-              {books.map(item => (
-                <div 
-                  key={item._id} 
-                  className="shelf-book-spine" 
-                  style={{ backgroundImage: `url(${item.coverImage || 'https://via.placeholder.com/150'})` }}
-                  onClick={() => openMediaModal(item)}
-                  title={item.title}
-                >
-                  <span className="spine-title">{item.title}</span>
+        {books.length > 0 && (() => {
+          // Chunk books into groups of 6 per shelf
+          const bookChunks = chunkArray(books, 6);
+          const currentShelf = bookChunks[bookPage] || [];
+
+          return (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '25px' }}>
+                <h3 style={{ margin: 0, color: 'var(--lantern-gold)', fontFamily: 'var(--font-heading)' }}>The Library</h3>
+                
+                {/* The Premium Toggle Button */}
+                {books.length > 6 && (
+                  <button 
+                    onClick={() => setIsFullLibrary(!isFullLibrary)}
+                    style={{ background: 'transparent', border: '1px solid var(--lantern-gold)', color: 'var(--lantern-gold)', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s ease' }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = 'var(--lantern-gold)'; e.currentTarget.style.color = 'var(--bg-deep)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--lantern-gold)'; }}
+                  >
+                    {isFullLibrary ? 'View Single Shelf' : 'View Full Library 📚'}
+                  </button>
+                )}
+              </div>
+
+              {isFullLibrary ? (
+                /* --- FULL LIBRARY VIEW --- */
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {bookChunks.map((chunk, index) => (
+                    <div key={index} className="wooden-shelf-container" style={{ marginBottom: index === bookChunks.length - 1 ? '0' : '-15px' }}>
+                      {chunk.map(item => (
+                        <div key={item._id} className="shelf-book-spine" style={{ backgroundImage: `url(${item.coverImage || 'https://via.placeholder.com/150'})` }} onClick={() => openMediaModal(item)} title={item.title}>
+                          <span className="spine-title">{item.title}</span>
+                        </div>
+                      ))}
+                      <div className="shelf-lip"></div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-              <div className="shelf-lip"></div>
+              ) : (
+                /* --- SINGLE SHELF (PAGINATED) VIEW --- */
+                <div>
+                  <div className="wooden-shelf-container">
+                    {currentShelf.map(item => (
+                      <div key={item._id} className="shelf-book-spine" style={{ backgroundImage: `url(${item.coverImage || 'https://via.placeholder.com/150'})` }} onClick={() => openMediaModal(item)} title={item.title}>
+                        <span className="spine-title">{item.title}</span>
+                      </div>
+                    ))}
+                    <div className="shelf-lip"></div>
+                  </div>
+
+                  {/* Pagination Arrows */}
+                  {bookChunks.length > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginTop: '10px' }}>
+                      <button 
+                        onClick={() => setBookPage(Math.max(0, bookPage - 1))} 
+                        disabled={bookPage === 0}
+                        style={{ background: 'transparent', border: 'none', color: bookPage === 0 ? '#555' : 'var(--lantern-gold)', cursor: bookPage === 0 ? 'default' : 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+                      >
+                        &larr; Prev
+                      </button>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                        Shelf {bookPage + 1} of {bookChunks.length}
+                      </span>
+                      <button 
+                        onClick={() => setBookPage(Math.min(bookChunks.length - 1, bookPage + 1))} 
+                        disabled={bookPage === bookChunks.length - 1}
+                        style={{ background: 'transparent', border: 'none', color: bookPage === bookChunks.length - 1 ? '#555' : 'var(--lantern-gold)', cursor: bookPage === bookChunks.length - 1 ? 'default' : 'pointer', fontSize: '1rem', fontWeight: 'bold' }}
+                      >
+                        Next &rarr;
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* 🎞️ 2. THE FILM STRIP */}
         {moviesAndSeries.length > 0 && (
