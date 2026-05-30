@@ -276,7 +276,9 @@ export default function Profile() {
         {/* 📚 1. THE WOODEN BOOKSHELF WITH SPINES */}
         {books.length > 0 && (() => {
           // Chunk books into groups of 6 per shelf
-          const bookChunks = chunkArray(books, 6);
+          // Dynamically set shelf capacity based on screen width
+          const booksPerShelf = window.innerWidth <= 768 ? 4 : 12;
+          const bookChunks = chunkArray(books, booksPerShelf);
           const currentShelf = bookChunks[bookPage] || [];
 
           return (
