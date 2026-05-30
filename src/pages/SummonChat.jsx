@@ -114,29 +114,36 @@ export default function SummonChat() {
               ))}
               
               {loading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', opacity: 0.7 }}>
-                  <div className="glowing-avatar" style={{ width: '25px', height: '25px' }}></div>
-                  <div style={{ color: 'var(--lantern-gold)', fontStyle: 'italic', fontSize: '0.9rem' }}>The spirit is responding...</div>
+                <div className="bubble-wrapper received" style={{ gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px', paddingLeft: '5px' }}>
+                    <div className="glowing-avatar" style={{ width: '30px', height: '30px', background: 'var(--bg-deep)' }}></div>
+                    <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Communing...</strong>
+                  </div>
+                  <div className="typing-indicator">
+                    <div className="typing-dot"></div>
+                    <div className="typing-dot"></div>
+                    <div className="typing-dot"></div>
+                  </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-           <form onSubmit={sendMessage} className="chat-input-area" style={{ background: 'var(--bg-panel)', borderTop: '1px solid var(--border-color)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', padding: '15px 20px' }}>
+           <form onSubmit={sendMessage} className="chat-input-area" style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(20, 20, 23, 0.85)', borderTop: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', padding: '20px 25px', zIndex: 10 }}>
               <input 
                 type="text" 
                 placeholder={`Speak to ${characterName}...`} 
                 value={input} 
                 onChange={(e) => setInput(e.target.value)} 
-                style={{ flexGrow: 1, padding: '12px 20px', borderRadius: '25px', outline: 'none', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }} 
+                style={{ flexGrow: 1, padding: '14px 22px', borderRadius: '30px', outline: 'none', background: 'var(--bg-deep)', color: 'var(--text-main)', border: '1px solid var(--border-color)', boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.2)', fontSize: '1.05rem', transition: 'border 0.3s ease' }} 
                 disabled={loading} 
               />
               <button 
                 type="submit" 
                 disabled={loading} 
-                style={{ padding: '12px 25px', background: 'linear-gradient(135deg, var(--lantern-gold), #d35400)', color: '#fff', border: 'none', borderRadius: '25px', cursor: 'pointer', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(245, 158, 11, 0.3)', transition: 'transform 0.2s ease' }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                style={{ padding: '14px 28px', background: 'linear-gradient(135deg, var(--lantern-gold), #d35400)', color: '#fff', border: 'none', borderRadius: '30px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.05rem', boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)', transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)', minWidth: '110px' }}
+                onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.05) translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(245, 158, 11, 0.6)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.4)'; }}
               >
                 Send
               </button>
